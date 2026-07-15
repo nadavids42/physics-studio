@@ -1,0 +1,33 @@
+import streamlit as st
+from physics_playground.canvas import legacy
+from physics_playground.canvas.ray_diagram import build_ray_diagram
+from physics_playground.contracts import ModelAssumption
+from physics_playground.missions import legacy as kidtools
+from physics_playground.presentation.learning_modes import LearningMode,mode_navigation,mode_heading,ChangedVariable,changed_variable_banner,assumptions_panel
+from physics_playground.presentation.notebook_ui import add_trial
+from .physics import ThinLensParameters,simulate
+from .missions import evaluate
+ID="thin_lenses";VERSION="thin-lens-1.0"
+def metrics(r):return {"object_distance_m":r.parameters.object_distance_m,"focal_length_m":r.parameters.focal_length_m,"image_distance_m":r.image_distance_m or 0.,"magnification":r.magnification or 0.,"image_height_m":r.image_height_m or 0.,"real_image":1. if r.real_image else 0.,"singular":1. if r.singular else 0.}
+def record(r,seed,obs,label=None,badges=()):add_trial(simulation_id=ID,parameters=r.parameters.to_dict(),prediction=st.session_state.get("lens_quiz_guess"),result_summary=r.outcome,metrics=metrics(r),earned_badges=badges,random_seed=seed,model_version=VERSION,learner_observation=obs,label=label)
+def diagram(r,seed):
+    span=max(5.,min(15.,r.parameters.object_distance_m,abs(r.image_distance_m or 5))*1.2);legacy.show(build_ray_diagram(rays=[x.to_dict() for x in r.rays],message=r.outcome,seed=seed,lens=True,lens_sign=1 if r.parameters.focal_length_m>0 else -1,bounds=(-span,span,-5,5)),height=500)
+def controls(prefix="lens"):
+    c=st.columns(3);do=c[0].slider("Object distance (m)",.1,10.,3.,.05,key=f"{prefix}_do");kind=c[1].radio("Lens type",["Converging","Diverging"],key=f"{prefix}_kind");magnitude=c[2].slider("Focal-length magnitude (m)",.1,5.,1.,.05,key=f"{prefix}_f");return ThinLensParameters(do,magnitude if kind=="Converging" else -magnitude,1.)
+def explore():
+    mode_heading(LearningMode.EXPLORE,"Form an image");r=simulate(controls());c=st.columns(3);c[0].metric("Image distance","∞" if r.image_distance_m is None else f"{r.image_distance_m:.2f} m");c[1].metric("Magnification","Undefined" if r.magnification is None else f"{r.magnification:.2f}×");c[2].metric("Image type","At infinity" if r.singular else ("Real, inverted" if r.real_image else "Virtual, upright"));st.caption("Text outcome: "+r.outcome);diagram(r,20262801);obs=st.text_input("Optional notebook observation",key="lens_obs")
+    if st.button("🔍 Trace principal rays",type="primary",use_container_width=True):record(r,20262801,obs,badges=kidtools.process_run(ID,evaluate(r)));st.rerun()
+    kidtools.mission_checklist("Thin Lenses")
+def compare():
+    mode_heading(LearningMode.COMPARE,"Converging versus diverging");a=simulate(ThinLensParameters(3,1));b=simulate(ThinLensParameters(3,-1));changed_variable_banner(ChangedVariable("Lens type","Converging","Diverging"));c=st.columns(2);c[0].metric("Converging image",f"{a.image_distance_m:.2f} m");c[1].metric("Diverging image",f"{b.image_distance_m:.2f} m")
+    if st.button("▶ Run lens comparison",use_container_width=True):
+        for label,r,seed in (("Run A",a,20262811),("Run B",b,20262812)):record(r,seed,"Lens sign changes real versus virtual behavior",label,kidtools.process_run(ID,evaluate(r,True)))
+    diagram(b,20262812)
+def analyze():
+    mode_heading(LearningMode.ANALYZE,"Image distance near the focal point");f=st.slider("Analysis focal length (m)",.2,3.,1.,.1);distances=[.1+i*.05 for i in range(200) if abs((.1+i*.05)-f)>.01];images=[simulate(ThinLensParameters(d,f)).image_distance_m for d in distances];st.line_chart({"object_distance_m":distances,"image_distance_m":images},x="object_distance_m",y="image_distance_m");st.caption("Accessible chart: image distance diverges at object distance equal to focal length, is negative for a virtual image inside the focus, and positive beyond it.")
+def model():
+    mode_heading(LearningMode.MODEL,"The signed thin-lens equation");st.latex(r"\frac1f=\frac1{d_o}+\frac1{d_i}\qquad m=-\frac{d_i}{d_o}=\frac{h_i}{h_o}");st.markdown("Positive focal length means converging; negative means diverging. Positive image distance is real, negative is virtual. Negative magnification is inverted.");assumptions_panel((ModelAssumption("thin","Lens thickness is negligible"),ModelAssumption("paraxial","Rays remain near the optical axis")),("No aberration or dispersion.","One ideal lens in air.","Near the focal point, tiny input changes produce enormous image-distance changes."))
+def render():
+    st.header("🔍 Thin Lenses");revealed=kidtools.prediction_quiz(key="lens_quiz",question="A converging lens has an object beyond its focal point. What kind of image can it form?",options=["Real and inverted","Always virtual","No image"],correct_index=0,reveal_text="Principal rays converge on the far side to form a real, inverted image.",mission_id="lens_predict")
+    if not revealed:return
+    mode=mode_navigation(key="lens_mode");{LearningMode.EXPLORE:explore,LearningMode.COMPARE:compare,LearningMode.ANALYZE:analyze,LearningMode.MODEL:model}[mode]()
