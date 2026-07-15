@@ -13,7 +13,7 @@ from typing import ClassVar, Generic, Protocol, TypeVar, runtime_checkable
 
 from physics_playground.contracts import ContractResult, ModelAssumption, ParameterSet
 from physics_playground.missions.definitions import MissionDefinition
-from physics_playground.models.simulations import SimulationDefinition, SimulationMode
+from physics_playground.models.simulations import InteractiveMode, SimulationDefinition
 
 
 class SubjectArea(StrEnum):
@@ -37,16 +37,16 @@ class PresentationCapability(StrEnum):
 class ModeRequirements:
     """Required behavior for one learning mode."""
 
-    mode: SimulationMode
+    mode: InteractiveMode
     capabilities: tuple[PresentationCapability, ...]
 
 
 REQUIRED_MODE_REQUIREMENTS = (
-    ModeRequirements(SimulationMode.EXPLORE, (PresentationCapability.PREDICTION,)),
-    ModeRequirements(SimulationMode.COMPARE, (PresentationCapability.BASELINE_COMPARISON,)),
-    ModeRequirements(SimulationMode.ANALYZE, (PresentationCapability.ANALYTICAL_CHARTS,)),
+    ModeRequirements(InteractiveMode.EXPLORE, (PresentationCapability.PREDICTION,)),
+    ModeRequirements(InteractiveMode.COMPARE, (PresentationCapability.BASELINE_COMPARISON,)),
+    ModeRequirements(InteractiveMode.ANALYZE, (PresentationCapability.ANALYTICAL_CHARTS,)),
     ModeRequirements(
-        SimulationMode.MODEL,
+        InteractiveMode.MODEL,
         (PresentationCapability.EQUATIONS, PresentationCapability.ASSUMPTIONS,
          PresentationCapability.LIMITATIONS),
     ),

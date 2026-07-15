@@ -3,19 +3,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import StrEnum
 from typing import Iterable, Mapping
 
 import streamlit as st
 
 from physics_playground.contracts import ModelAssumption, SummaryMetric
+from physics_playground.models.simulations import InteractiveMode
 
-
-class LearningMode(StrEnum):
-    EXPLORE = "Explore"
-    COMPARE = "Compare"
-    ANALYZE = "Analyze"
-    MODEL = "Model"
+# Compatibility name retained for every existing Streamlit page. New domain
+# code should import InteractiveMode from models.simulations directly.
+LearningMode = InteractiveMode
 
 
 MODE_HELP = {

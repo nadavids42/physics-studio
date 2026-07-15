@@ -5,9 +5,11 @@ from __future__ import annotations
 import streamlit as st
 
 from physics_playground.notebook import ExperimentNotebook, TrialRecord
+from physics_playground.setup_handoff import SETUP_REQUEST_KEY, SimulationSetupRequest, queue_setup_request
 
 NOTEBOOK_STATE_KEY = "experiment_notebook"
-REUSE_REQUEST_KEY = "notebook_reuse_request"
+# Compatibility export retained for existing simulation pages.
+REUSE_REQUEST_KEY = SETUP_REQUEST_KEY
 
 
 def get_notebook() -> ExperimentNotebook:
@@ -54,11 +56,12 @@ def render_notebook_sidebar() -> None:
             notebook.pin(selected.id)
             st.rerun()
         if c2.button("↩ Reuse setup", key="notebook_reuse", use_container_width=True):
-            st.session_state[REUSE_REQUEST_KEY] = {
-                "simulation_id": selected.simulation_id,
-                "parameters": dict(selected.parameters),
-                "source_trial": selected.trial_number,
-            }
+            queue_setup_request(st.session_state, SimulationSetupRequest(
+                simulation_id=selected.simulation_id,
+                parameters=selected.parameters,
+                source_label=f"Trial #{selected.trial_number}",
+                source_trial=selected.trial_number,
+            ))
             st.toast(f"Trial #{selected.trial_number} is ready to reuse.")
         if st.button("🗑 Delete selected", key="notebook_delete", use_container_width=True):
             notebook.delete(selected.id)

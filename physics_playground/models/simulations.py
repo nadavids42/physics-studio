@@ -2,10 +2,20 @@
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Mapping
+
+
+class InteractiveMode(StrEnum):
+    """Canonical modes shared by every modern simulation experience."""
+
+    EXPLORE = "Explore"
+    COMPARE = "Compare"
+    ANALYZE = "Analyze"
+    MODEL = "Model"
 
 
 class SimulationMode(StrEnum):
+    """Backward-compatible mode names used by the original contracts."""
+
     KID = "kid"
     EXPERT = "expert"
     EXPLORE = "Explore"
@@ -36,7 +46,7 @@ class SimulationDefinition:
     description: str
     page_module: str
     mission_group: str
-    modes: tuple[SimulationMode, ...] = (SimulationMode.KID,)
+    modes: tuple[InteractiveMode | SimulationMode, ...] = (SimulationMode.KID,)
     central_question: str = "What will happen?"
     concepts: tuple[str, ...] = ()
     difficulty: Difficulty = Difficulty.BEGINNER

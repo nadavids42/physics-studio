@@ -1,8 +1,8 @@
 """Complete simulation registry used by navigation and the home screen."""
 
-from physics_playground.models.simulations import Difficulty,SimulationDefinition,SimulationMode,VisualMetadata
+from physics_playground.models.simulations import Difficulty,InteractiveMode,SimulationDefinition,VisualMetadata
 
-LEARNING_MODES=(SimulationMode.EXPLORE,SimulationMode.COMPARE,SimulationMode.ANALYZE,SimulationMode.MODEL)
+LEARNING_MODES=tuple(InteractiveMode)
 
 SIMULATION_REGISTRY=(
 SimulationDefinition(id="diffusion",title="Diffusion and Random Walks",icon="🟣",description="Follow seeded particles as random steps spread into a measurable distribution.",page_module="physics_playground.subjects.fluids_and_matter.diffusion.page",mission_group="Diffusion and Random Walks",modes=LEARNING_MODES,central_question="How can unpredictable individual steps create predictable collective spreading?",concepts=("Diffusion","Probability","Statistics"),difficulty=Difficulty.INTERMEDIATE,badge_count=5,renderer="shared-random-walk-player",model_version="diffusion-1.0",simulation_type="Seeded stochastic simulation",visual=VisualMetadata("#7B1FA2","#F3E5F5","⋯","Colored particle paths spreading from a common origin")),

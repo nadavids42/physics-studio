@@ -10,16 +10,18 @@ from physics_playground.canvas import legacy as canvas_kit
 from physics_playground.canvas.cannonball import PLAYER_HEIGHT, build_cannon_canvas, build_cannon_comparison_canvas
 from physics_playground.missions import legacy as kidtools
 from physics_playground.missions.cannonball import evaluate_cannonball_missions
-from physics_playground.models.projectile import ProjectileParameters, ProjectileResult, simulate_no_drag, simulate_projectile
+from physics_playground.model_metadata import PROJECTILE_MODEL_METADATA
+from physics_playground.models.projectile import PROJECTILE_MODEL_VERSION, ProjectileParameters, ProjectileResult, simulate_no_drag, simulate_projectile
 from physics_playground.simulation_cache import cached_projectile as simulate_projectile, cached_projectile_no_drag as simulate_no_drag
 from physics_playground.presentation.learning_modes import ChangedVariable, LearningMode, assumptions_panel, changed_variable_banner, comparison_metrics, mode_heading, mode_navigation
-from physics_playground.presentation.notebook_ui import REUSE_REQUEST_KEY, add_trial
+from physics_playground.presentation.notebook_ui import add_trial
+from physics_playground.setup_handoff import consume_setup_request
 from physics_playground.presentation.projectile_charts import plot_figure, range_by_angle_figure
 from physics_playground.validation import PhysicsValidationError
 from physics_playground.presentation.accessibility import render_chart
 
 WORLDS={"Earth 🌍":9.81,"The Moon 🌕":1.62,"Jupiter 🟠":24.8}
-MODEL_VERSION="projectile-2.0"
+MODEL_VERSION=PROJECTILE_MODEL_VERSION
 
 
 def _init() -> None:
@@ -37,15 +39,15 @@ def _target() -> float:
 
 
 def _apply_reuse()->None:
-    request=st.session_state.get(REUSE_REQUEST_KEY)
-    if not request or request.get("simulation_id")!="cannonball":return
-    p=request["parameters"]
+    request=consume_setup_request(st.session_state,"cannonball")
+    if request is None:return
+    p=request.parameters
     st.session_state["cannon_speed"]=min(40.0,max(5.0,float(p["launch_speed_m_s"])))
     st.session_state["cannon_angle"]=min(89,max(5,int(round(float(p["launch_angle_deg"])))))
     gravity=float(p["gravity_m_s2"]);st.session_state["cannon_world"]=min(WORLDS,key=lambda label:abs(WORLDS[label]-gravity))
     st.session_state["cannon_target_override"]=float(p.get("target_m",_target()))
     st.session_state["cannon_learning_mode"]=LearningMode.EXPLORE.value
-    del st.session_state[REUSE_REQUEST_KEY];st.toast(f"Reused setup from Trial #{request['source_trial']}.")
+    st.toast(f"Loaded setup from {request.source_label}.")
 
 
 def _summary(result: ProjectileResult) -> None:
@@ -150,9 +152,7 @@ def render_model()->None:
     st.latex(r"R=\frac{v_0^2\sin(2\theta)}{g}\quad(y_0=0)")
     st.markdown("#### Quadratic-drag numerical model");st.latex(r"\vec F_d=-k|\vec v|\vec v")
     st.markdown("The drag model uses fixed-step fourth-order Runge–Kutta (RK4). When a step crosses the ground, the final state and time are linearly interpolated to **exactly y = 0**, avoiding range overshoot from simple clamping.")
-    assumptions=simulate_no_drag(ProjectileParameters(20,45)).assumptions
-    assumptions_panel(assumptions,("Earth curvature and rotation are ignored.","Wind, lift, spin, and changing air density are omitted.",
-        "The drag coefficient combines shape, area, and air density into one constant.","Fixed-step RK4 is accurate but not adaptive."))
+    assumptions_panel(PROJECTILE_MODEL_METADATA.assumptions,PROJECTILE_MODEL_METADATA.limitations)
     with st.expander("🔧 Optional advanced controls"):
         c1,c2,c3=st.columns(3)
         with c1:speed=st.number_input("Model speed",1.0,100.0,25.0);angle=st.number_input("Model angle",1.0,89.0,40.0)

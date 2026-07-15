@@ -22,6 +22,9 @@ Buoyancy and Fluid Pressure begin the Fluids and Matter expansion and share `can
 
 ## Run locally
 
+Physics Playground requires Python 3.11 or newer. The repository's
+`.python-version` selects the tested Python 3.11 environment when using pyenv.
+
 ```bash
 python -m pip install -r requirements.txt
 streamlit run app.py
@@ -31,7 +34,7 @@ streamlit run app.py
 
 ```bash
 python -m compileall app.py physics_playground tests
-pytest -q
+python -m pytest -q
 ```
 
 The original uploaded files remain untouched in `upload/`. The runnable copies live in `physics_playground/pages/`; their current calculations and interfaces are preserved while newer typed contracts are introduced for later migration steps.

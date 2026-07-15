@@ -5,34 +5,13 @@ from dataclasses import asdict,dataclass
 from io import BytesIO,StringIO
 from typing import Mapping,Protocol
 import matplotlib.pyplot as plt
+from physics_playground.model_metadata import MODEL_METADATA
 from physics_playground.notebook import ExperimentNotebook,TrialRecord
 from physics_playground.registry import SIMULATIONS_BY_ID
 from physics_playground.serialization import dumps
 
-ASSUMPTIONS={
-"gas_laws":("Ideal-gas particles","Uniform equilibrium states","No phase change or chemical reaction"),
-"diffusion":("Independent seeded steps","Fixed step size and timestep","No boundaries or particle interactions"),
-"buoyancy":("Uniform object and fluid densities","Static equilibrium or fully submerged state","No surface tension or drag dynamics"),
-"fluid_pressure":("Fluid at rest","Constant density and gravity","Uniform surface pressure"),
-"magnetic_forces":("Uniform magnetic field","Nonrelativistic point charge or straight wire","Vectors represented in the screen plane"),
-"electric_fields":("Ideal stationary point charges","Vacuum Coulomb law","Minimum-distance singularity exclusion for visualization"),
-"reflection_refraction":("Geometric-optics rays","Flat boundary between uniform isotropic media","No absorption or dispersion"),
-"thin_lenses":("Thin-lens approximation","Paraxial rays","Single ideal lens in air"),
-"doppler_effect":("Stationary uniform sound medium","Classical subsonic motion","One-dimensional source and observer"),
-"wave_interference":("Linear superposition","Ideal sinusoidal traveling waves","No damping, reflection, or dispersion"),
-"roller_coaster":("Point-mass car","Uniform gravity","Piecewise-linear track and optional constant loss per meter"),
-"rotational_motion":("Rigid body","Fixed rotation axis","Constant applied torque"),
-"inclined_plane":("Rigid block and ramp","Constant friction coefficients","Uniform gravitational field"),
-"torque_levers":("Rigid massless lever","Frictionless pivot","Forces perpendicular to the beam"),
-"center_of_mass":("Objects represented by point masses","One-dimensional positions","Fixed reference frame"),
-"bumper_cars":("One-dimensional motion","Instantaneous collision","No external horizontal force"),
-"cannonball":("Constant gravity","Flat ground","Point projectile"),
-"boing":("Hooke's law","Point mass and massless spring","Linear damping where enabled"),
-"pendulum":("Point bob and rigid massless rope","Fixed gravity","No air or pivot friction"),
-"orbital_gravity":("Fixed central mass","Test-particle planet","No drag or third-body perturbations"),
-"earth_tunnel":("Spherical planet","Vacuum tunnel","No planetary rotation"),
-"double_pendulum":("Point masses and rigid rods","No damping","Ideal frictionless pivots"),
-}
+# Compatibility mapping for callers that previously imported ASSUMPTIONS.
+ASSUMPTIONS={key:value.assumption_statements for key,value in MODEL_METADATA.items()}
 @dataclass(frozen=True,slots=True)
 class ReportTrial:
     trial_number:int;prediction:str|None;parameters:Mapping[str,object];model_used:str;result_summary:str

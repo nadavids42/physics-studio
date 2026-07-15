@@ -10,11 +10,15 @@ import numpy as np
 
 from physics_playground.contracts import (
     AnimationData, AnimationKind, AnimationTrack, ContractResult, EventKind,
-    ModelAssumption, PlotData, PlotSeries, SimulationEvent, SummaryMetric,
+    PlotData, PlotSeries, SimulationEvent, SummaryMetric,
 )
+from physics_playground.model_metadata import PROJECTILE_MODEL_METADATA
 from physics_playground.serialization import to_jsonable
 from physics_playground.validation import PhysicsValidationError, require_finite, require_positive
 from physics_playground.performance import MAX_INTEGRATION_STEPS,MAX_TRAJECTORY_SAMPLES,enforce_budget,validate_finite_parameters
+
+
+PROJECTILE_MODEL_VERSION = "projectile-2.0"
 
 
 @dataclass(frozen=True, slots=True)
@@ -112,11 +116,15 @@ def _build_result(
                                 (AnimationTrack("projectile", "Cannonball", tuple(x_m), tuple(y_m)),),
                                 3_200, {"x_min": 0.0, "x_max": max(1.0, range_m*1.12),
                                         "y_min": 0.0, "y_max": max(1.0, maximum_height*1.25)}),
-        assumptions=(
-            ModelAssumption("flat_ground", "Launch and landing ground are flat and stationary."),
-            ModelAssumption("constant_gravity", "Gravity is uniform and points straight down."),
-            ModelAssumption("point_projectile", "The cannonball is treated as a point mass."),
-        ), completed=landed, warnings=warnings, landed=landed, range_m=range_m,
+        assumptions=PROJECTILE_MODEL_METADATA.assumptions,
+        completed=landed,
+        warnings=warnings,
+        outcome_description=(
+            f"The projectile landed after traveling {range_m:.1f} meters horizontally."
+            if landed else "The projectile did not land before the simulation limit."
+        ),
+        model_version=PROJECTILE_MODEL_VERSION,
+        landed=landed, range_m=range_m,
         maximum_height_m=maximum_height, flight_time_s=flight_time, impact_speed_m_s=impact_speed,
     )
 
