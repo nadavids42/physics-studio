@@ -32,8 +32,21 @@ Cross-cutting state is provided by:
 - `physics_playground/missions/` for definitions, pure evaluation, and Streamlit integration;
 - `physics_playground/notebook.py` for UI-independent trial records;
 - `physics_playground/profiles.py` for local SQLite/JSON profile persistence;
-- `physics_playground/accessibility.py` for UI-independent accessibility preferences;
+- `physics_playground/accessibility_settings.py` for UI-independent accessibility preferences;
 - `physics_playground/presentation/` for Streamlit-facing adapters and charts.
+
+Canonical shared-module responsibilities are intentionally explicit:
+
+- `binding_models.py` defines binding and preset types;
+- `binding_catalog.py` owns registered binding and preset instances;
+- `accessibility_settings.py` owns framework-neutral preference data;
+- `presentation/accessibility_ui.py` owns Streamlit controls and chart accessibility;
+- `visual/primitives.py` owns low-level shared Canvas JavaScript;
+- `missions/ui.py` owns the active Streamlit mission adapter;
+- `canvas/embed.py` owns Streamlit iframe embedding.
+
+Older ambiguous import paths remain thin compatibility re-exports only. New code must use the
+canonical modules above.
 
 ## Pure physics-model boundary
 

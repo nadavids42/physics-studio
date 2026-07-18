@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 import streamlit as st
 
-from physics_playground.canvas import legacy
+from physics_playground.canvas import embed
 from physics_playground.canvas.fluid_container import build_fluid_document
 from physics_playground.contracts import ModelAssumption
-from physics_playground.missions import legacy as kidtools
-from physics_playground.presentation.accessibility import render_chart
+from physics_playground.missions import ui as mission_ui
+from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.chart_system import series_figure
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
@@ -49,7 +49,7 @@ def record(r, seed, obs, label=None, badges=()):
 
 
 def diagram(r, seed):
-    legacy.show(
+    embed.show(
         build_fluid_document(
             kind="pressure",
             message=r.outcome,
@@ -105,9 +105,9 @@ def explore():
     diagram(r, 20263201)
     obs = st.text_input("Optional notebook observation", key="pressure_obs")
     if st.button("🌊 Measure pressure", type="primary", use_container_width=True):
-        record(r, 20263201, obs, badges=kidtools.process_run(ID, evaluate(r)))
+        record(r, 20263201, obs, badges=mission_ui.process_run(ID, evaluate(r)))
         st.rerun()
-    kidtools.mission_checklist("Fluid Pressure")
+    mission_ui.mission_checklist("Fluid Pressure")
 
 
 def compare():
@@ -125,7 +125,7 @@ def compare():
                 seed,
                 "Pressure increases linearly with depth",
                 label,
-                kidtools.process_run(ID, evaluate(r, True)),
+                mission_ui.process_run(ID, evaluate(r, True)),
             )
     diagram(b, 20263212)
 
@@ -168,7 +168,7 @@ def model():
 
 def render():
     st.header("🌊 Fluid Pressure")
-    revealed = kidtools.prediction_quiz(
+    revealed = mission_ui.prediction_quiz(
         key="pressure_quiz",
         question="In a resting fluid, what happens to pressure as depth increases?",
         options=["It increases", "It decreases", "Container width decides"],

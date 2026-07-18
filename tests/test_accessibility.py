@@ -1,4 +1,4 @@
-from physics_playground.accessibility import AccessibilitySettings
+from physics_playground.accessibility_settings import AccessibilitySettings
 from physics_playground.profiles import LocalProfile
 
 

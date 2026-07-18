@@ -6,8 +6,8 @@ from collections.abc import Mapping, MutableMapping
 from dataclasses import dataclass
 from typing import Any
 
+from physics_playground.binding_models import SimulationPreset
 from physics_playground.contracts import JsonValue
-from physics_playground.simulation_binding import SimulationPreset
 
 SETUP_REQUEST_KEY = "notebook_reuse_request"
 

@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 from physics_playground.contracts import ModelAssumption
-from physics_playground.missions import legacy as kidtools
-from physics_playground.presentation.accessibility import render_chart
+from physics_playground.missions import ui as mission_ui
+from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.chart_system import series_figure
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
@@ -98,13 +98,13 @@ def explore():
             st.session_state.get("coaster_quiz_guess"),
             r.outcome,
             numbers(r),
-            kidtools.process_run(ID, evaluate(r)),
+            mission_ui.process_run(ID, evaluate(r)),
             20262301,
             VERSION,
             obs,
         )
         st.rerun()
-    kidtools.mission_checklist("Roller-Coaster Energy")
+    mission_ui.mission_checklist("Roller-Coaster Energy")
 
 
 def compare():
@@ -126,7 +126,7 @@ def compare():
                 "Losses reduce available mechanical energy",
                 r.outcome,
                 numbers(r),
-                kidtools.process_run(ID, evaluate(r)),
+                mission_ui.process_run(ID, evaluate(r)),
                 seed,
                 VERSION,
                 None,
@@ -190,7 +190,7 @@ def model():
 
 def render():
     st.header("🎢 Roller-Coaster Energy")
-    revealed = kidtools.prediction_quiz(
+    revealed = mission_ui.prediction_quiz(
         key="coaster_quiz",
         question="As a coaster rolls downhill without losses, what happens to its gravitational potential energy?",
         options=["It becomes kinetic energy", "It disappears", "It stays unchanged"],

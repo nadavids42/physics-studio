@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 from physics_playground.contracts import ModelAssumption
-from physics_playground.missions import legacy as kidtools
-from physics_playground.presentation.accessibility import render_chart
+from physics_playground.missions import ui as mission_ui
+from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.chart_system import series_figure
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
@@ -139,7 +139,7 @@ def explore():
     animate(r, 20262001, False)
     obs = st.text_input("Optional notebook observation", key="incline_obs")
     if st.button("▶ Run ramp", type="primary", use_container_width=True):
-        badges = kidtools.process_run(ID, evaluate(r))
+        badges = mission_ui.process_run(ID, evaluate(r))
         record(
             ID,
             r.parameters.to_dict(),
@@ -152,7 +152,7 @@ def explore():
             obs,
         )
         st.rerun()
-    kidtools.mission_checklist("Inclined Plane")
+    mission_ui.mission_checklist("Inclined Plane")
 
 
 def compare():
@@ -179,7 +179,7 @@ def compare():
                 "Lower friction slides faster",
                 r.outcome,
                 numeric(r),
-                kidtools.process_run(ID, evaluate(r)),
+                mission_ui.process_run(ID, evaluate(r)),
                 seed,
                 VERSION,
                 None,
@@ -231,7 +231,7 @@ def model():
 
 def render():
     st.header("📐 Inclined Plane with Friction")
-    revealed = kidtools.prediction_quiz(
+    revealed = mission_ui.prediction_quiz(
         key="incline_quiz",
         question="If a ramp gets steeper while friction stays the same, is the block more likely to slide?",
         options=["Yes", "No", "Mass alone decides"],

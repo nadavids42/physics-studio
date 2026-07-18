@@ -13,9 +13,9 @@ from typing import Any
 
 from physics_playground.visual.animation import CANVAS_ANIMATION_JS
 from physics_playground.visual.assets import CANVAS_ASSET_JS
-from physics_playground.visual.canvas import CANVAS_VISUAL_JS
 from physics_playground.visual.css import shared_css
 from physics_playground.visual.experience import CANVAS_EXPERIENCE_JS, DEFAULT_PRESENTATION_LEVEL
+from physics_playground.visual.primitives import CANVAS_VISUAL_JS
 from physics_playground.visual.tokens import DARK_THEME, LIGHT_THEME, theme_payload
 from physics_playground.visual.vectors import CANVAS_VECTOR_JS
 
@@ -224,7 +224,7 @@ def build_player_document(
         "theme": config.get("theme", "auto"),
     }
     try:
-        from physics_playground.presentation.accessibility import (
+        from physics_playground.presentation.accessibility_ui import (
             get_accessibility_settings,
             get_visual_preferences,
         )

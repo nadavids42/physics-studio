@@ -1,4 +1,4 @@
-"""Mission definitions and legacy-compatible mission UI."""
+"""Pure mission definitions and the active Streamlit mission adapter."""
 
 from physics_playground.missions.definitions import MISSION_DEFINITIONS, MissionDefinition
 

@@ -1,1 +1,1 @@
-"""Canvas component infrastructure and legacy compatibility layer."""
+"""Shared-player scene adapters and Streamlit embedding infrastructure."""

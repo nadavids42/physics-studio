@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 import streamlit as st
 
-from physics_playground.canvas import legacy
+from physics_playground.canvas import embed
 from physics_playground.canvas.vector_field import build_vector_field_document
 from physics_playground.contracts import ModelAssumption
-from physics_playground.missions import legacy as kidtools
-from physics_playground.presentation.accessibility import render_chart
+from physics_playground.missions import ui as mission_ui
+from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.chart_system import series_figure
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
@@ -56,7 +56,7 @@ def diagram(r, seed):
         for p in r.samples
     ]
     charges = [{"q": q.charge_c, "x": q.x_m, "y": q.y_m} for q in r.parameters.charges]
-    legacy.show(
+    embed.show(
         build_vector_field_document(
             samples=samples,
             charges=charges,
@@ -112,9 +112,9 @@ def explore():
     diagram(r, 20262901)
     obs = st.text_input("Optional notebook observation", key="field_obs")
     if st.button("⚡ Map electric field", type="primary", use_container_width=True):
-        record(r, 20262901, obs, badges=kidtools.process_run(ID, evaluate(r)))
+        record(r, 20262901, obs, badges=mission_ui.process_run(ID, evaluate(r)))
         st.rerun()
-    kidtools.mission_checklist("Electric Fields")
+    mission_ui.mission_checklist("Electric Fields")
 
 
 def compare():
@@ -136,7 +136,7 @@ def compare():
                 seed,
                 "Changing one sign reshapes both field and potential",
                 label,
-                kidtools.process_run(ID, evaluate(r, True)),
+                mission_ui.process_run(ID, evaluate(r, True)),
             )
     diagram(b, 20262912)
 
@@ -205,7 +205,7 @@ def model():
 
 def render():
     st.header("⚡ Electric Fields")
-    revealed = kidtools.prediction_quiz(
+    revealed = mission_ui.prediction_quiz(
         key="field_quiz",
         question="Which direction does the electric field point near a positive source charge?",
         options=["Away from it", "Toward it", "Clockwise around it"],

@@ -33,7 +33,7 @@ The application has already resolved several likely historical concerns: all 22 
 | **Already resolved** | All 22 registered simulations use the shared JavaScript player and shared visual vocabulary; no simulation owns a separate animation loop. |
 | **Already resolved** | Explore, Compare, Analyze, and Model are declared for every registry item. |
 | **Already resolved** | Typed parameter/result models, deterministic tests, structured mission evidence, notebook capture, local profiles, accessibility preferences, and responsive rendering exist and are tested. |
-| **Already resolved** | The old standalone HTML generator in `canvas/legacy.py` is gone; only the compatibility `show()` iframe wrapper remains and has active consumers. |
+| **Already resolved** | The old standalone HTML generator is gone. `canvas/embed.py` is the canonical one-function iframe adapter, and `canvas/legacy.py` is a compatibility re-export. |
 | **Already resolved** | Contrary to the review, the repository now has an installable `pyproject.toml` and a `.python-version` file. |
 | **Partially resolved** | Vertical-slice manifests cover the 15 subject simulations, but the registry and mission catalog still live centrally and canvas ownership is often shared by family rather than slice. |
 | **Partially resolved** | Model metadata covers 22 simulations, but page-level assumptions and defaults are still duplicated and can diverge. |
@@ -42,7 +42,7 @@ The application has already resolved several likely historical concerns: all 22 
 | **No longer applicable** | Claims that the app has seven simulations, only 25 missions, only an initial pilot renderer set, or an unfinished visual migration are obsolete. Current counts are 22 simulations and 85 mission definitions. |
 | **Newly discovered** | The README says the free-fall example is outside a seven-item registry and refers to original uploaded files; both statements are stale in the current 22-simulation repository. |
 | **Newly discovered** | `presentation/formatting.py` and `units.py` have no production or test consumers even though equivalent formatting and constants are duplicated elsewhere. |
-| **Newly discovered** | `simulation_bindings.py` is a production-quality architecture with tests but is effectively a one-simulation pilot, creating a second incomplete catalog beside expansion manifests. |
+| **Newly discovered** | `binding_catalog.py` is a production-quality architecture with tests but is effectively a one-simulation pilot, creating a second incomplete catalog beside expansion manifests. |
 
 ## Principal Architect Review claim verification
 
@@ -55,7 +55,7 @@ The table below covers the review's material, repository-testable assertions. Pr
 | `.python-version` does not exist. | `.python-version` exists. | **Already resolved** |
 | `pyproject.toml` does not exist and the package is not installable. | A setuptools `pyproject.toml` exists with project metadata, package discovery, runtime dependencies, pytest config, and a test extra. | **Already resolved** |
 | There is no LICENSE, CONTRIBUTING guide, formatter/linter/type config, pre-commit, or CI workflow. | None is present; `pyproject.toml` configures packaging and pytest only. | **Confirmed** |
-| The binding registry contains exactly one simulation. | `simulation_bindings.py` contains the Cannonball binding only. | **Confirmed** |
+| The binding registry contains exactly one simulation. | `binding_catalog.py` contains the Cannonball binding only. | **Confirmed** |
 | `units.py` is imported only by tests. | It has no production or test import. It is more unused than the review states. | **Partially resolved** |
 | `integrators.py` is imported only by tests. | `tests/test_foundation.py` imports `rk4_step`; package code does not. | **Confirmed** |
 | `examples/free_fall.py` is used by nothing. | It is exported and exercised by contract/foundation tests, but is not registry-enrolled runtime functionality. | **Partially resolved** |
@@ -65,7 +65,7 @@ The table below covers the review's material, repository-testable assertions. Pr
 | Mission, accessibility, player, and profile integration use lazy imports and broad suppression to break cycles. | Broad suppression exists at the persistence seams and player preference fallback. The exact issue is runtime coupling through session/profile persistence, not one single Python import cycle proven by tooling. | **Partially resolved** |
 | Rendering JavaScript lives inside Python strings and is tested structurally. | The six named shared JS bundles and scene scripts are Python strings concatenated into iframe HTML. Tests include substring and hash assertions; no JS runner is configured. | **Confirmed** |
 | No JS linting, formatting, source maps, runtime unit tests, or bundler exists. | No JS project/toolchain configuration exists. | **Confirmed** |
-| Naming is ambiguous (`accessibility` twice, `simulation_binding[s]`, canvas package/module, live `missions/legacy.py`). | All named pairs/paths exist and `missions/legacy.py` is a live UI adapter. | **Confirmed** |
+| Naming is ambiguous (`accessibility` twice, `simulation_binding[s]`, canvas package/module, live `missions/legacy.py`). | Responsibility-based canonical modules now own each implementation; old paths are compatibility re-exports only. | **Already resolved** |
 | Session keys are ad hoc and unnamespaced. | Static analysis finds at least 131 literal widget/session keys with page-local prefixes. | **Confirmed** |
 | Registry is the single source for navigation and page loading. | `app.py` and home/navigation resolve through `SIMULATION_REGISTRY` with lazy page imports. | **Confirmed** |
 | Expansion manifests gate registry entry. | Manifests are validated by tests/catalog integration, but the runtime registry is still separately declared rather than generated from them. | **Partially resolved** |
@@ -99,9 +99,9 @@ app.py
   ├─ registry.py ──> dynamic import of each SimulationDefinition.page_module
   ├─ presentation/home.py
   ├─ presentation/profile_ui.py ──> profiles.py (SQLite/JSON)
-  ├─ presentation/accessibility.py ──> accessibility.py + visual/*
+  ├─ presentation/accessibility_ui.py ──> accessibility_settings.py + visual/*
   ├─ presentation/notebook_ui.py ──> notebook.py + setup_handoff.py
-  └─ missions/legacy.py ──> missions/service.py + missions/definitions.py
+  └─ missions/ui.py ──> missions/service.py + missions/definitions.py
 
 simulation page
   ├─ parameter widgets / mode orchestration / session keys
@@ -122,13 +122,13 @@ parallel catalogs
   ├─ model_metadata.py                   22 model metadata records
   ├─ missions/definitions.py             85 centralized mission definitions
   ├─ expansion_catalog.py + manifests    15 vertical-slice definitions
-  └─ simulation_bindings.py              1 reusable binding and preset
+  └─ binding_catalog.py              1 reusable binding and preset
 ```
 
 ### Runtime boundaries
 
-- **Pure/domain layer:** most files in `models/`, slice `physics.py` modules, `contracts.py`, `notebook.py`, `history.py`, `simulation_binding.py`, validation, units, and integrators.
-- **Application/presentation layer:** `app.py`, all page modules, `presentation/*`, `missions/legacy.py`, and Streamlit session state.
+- **Pure/domain layer:** most files in `models/`, slice `physics.py` modules, `contracts.py`, `notebook.py`, `history.py`, `binding_models.py`, validation, units, and integrators.
+- **Application/presentation layer:** `app.py`, all page modules, `presentation/*`, `missions/ui.py`, and Streamlit session state.
 - **Browser rendering boundary:** Python serializes immutable results into a complete HTML document; JavaScript interpolates display samples but does not run physics models.
 - **Persistence boundary:** `ProfileStore` stores one JSON profile payload per SQLite row; the profile embeds notebook data, mission IDs, accessibility settings, and recent parameters.
 
@@ -169,7 +169,7 @@ Each subject also owns a `manifests.py`; `expansion_catalog.py` aggregates all 1
 missions/definitions.py (85 MissionDefinition records)
   ├─ MISSIONS_BY_SIMULATION
   ├─ missions/service.py (pure MissionProgress and evaluate_run)
-  ├─ missions/legacy.py (Streamlit compatibility/UI/state)
+  ├─ missions/ui.py (Streamlit compatibility/UI/state)
   ├─ per-simulation evaluator modules (pure MissionEvaluation evidence)
   └─ subject manifests (copy mission tuples into ExpansionDefinition)
 
@@ -204,10 +204,10 @@ Failure to open the database intentionally degrades to session-only mode. Save f
 ### Accessibility
 
 ```text
-accessibility.py
+accessibility_settings.py
   -> AccessibilitySettings(reduced_motion, high_contrast, large_text)
 
-presentation/accessibility.py
+presentation/accessibility_ui.py
   -> Streamlit widgets/session keys
   -> global CSS and Matplotlib line/color/marker cycle
   -> VisualPreferences(presentation level, theme)
@@ -250,11 +250,11 @@ model result / AnimationData / simulation geometry
        -> PLAYER_JS requestAnimationFrame lifecycle
        -> shared token/theme payload
        -> PhysicsAssets / PhysicsAnnotations / PhysicsAnimation / PhysicsExperience
-  -> canvas/legacy.show()
+  -> canvas/embed.show()
   -> Streamlit iframe
 ```
 
-All simulation adapters use the shared player. `canvas/legacy.py` is not a legacy renderer; it is an actively used one-function iframe compatibility wrapper.
+All simulation adapters use the shared player. `canvas/embed.py` is the active one-function iframe adapter; `canvas/legacy.py` is a compatibility re-export.
 
 ## 5. Technical-debt inventory
 
@@ -262,13 +262,13 @@ All simulation adapters use the shared player. `canvas/legacy.py` is not a legac
 
 | Module | Status | Evidence and disposition |
 |---|---|---|
-| `presentation/formatting.py` | **Confirmed dead candidate** | No production or test imports. Duplicates `missions/legacy.py` friendly speed/time helpers. Deprecate only after deciding the canonical formatting API. |
+| `presentation/formatting.py` | **Confirmed dead candidate** | No production or test imports. Duplicates `missions/ui.py` friendly speed/time helpers. Deprecate only after deciding the canonical formatting API. |
 | `units.py` | **Confirmed unused candidate** | Defines useful gravity/unit constants but has no imports; callers duplicate the constants. Adopt it first, then keep it as canonical rather than deleting it. |
 | `examples/free_fall.py` | **Intentional speculative example** | Exported by `examples/__init__.py` and exercised by contract tests; not registry enrolled. Keep as contract documentation or replace with a real slice fixture later. |
 | `history.py` | **Test/example-only abstraction** | Used by contract tests, not the running app; overlaps `ExperimentNotebook`. Decide whether generic contract history or notebook is canonical. |
-| `simulation_bindings.py` | **Partial production pilot** | Strongly tested but contains only Cannonball. Expand to 22 or explicitly scope it to lessons/presets. |
+| `binding_catalog.py` | **Partial production pilot** | Strongly tested but contains only Cannonball. Expand to 22 or explicitly scope it to lessons/presets. |
 | `models/expansion.py`, manifests, `expansion_catalog.py` | **Active architecture scaffold** | Used by validation and cross-simulation tests for 15 slices, but not runtime navigation. Not dead; consolidate with the registry rather than removing. |
-| `canvas/legacy.py` | **Active compatibility surface** | `show()` has many consumers. Do not remove until pages call a replacement embedding API. |
+| `canvas/legacy.py` | **Compatibility surface** | Re-exports `canvas.embed.show()` for downstream imports; internal consumers use the canonical module. |
 
 Dynamic registry page imports make simple static “zero inbound import” reports unreliable for page modules; pages are active even when no static import points to them.
 
@@ -287,9 +287,9 @@ Defaults in typed parameter models are legitimate. The migration target is one c
 
 | Location | Behavior | Risk |
 |---|---|---|
-| `missions/legacy.py::process_run` | Broad `except Exception: pass` around profile persistence | Mission succeeds but persistence failure can be invisible. |
+| `missions/ui.py::process_run` | Broad `except Exception: pass` around profile persistence | Mission succeeds but persistence failure can be invisible. |
 | `presentation/notebook_ui.py::add_trial` | Broad `except Exception: pass` around profile persistence | Trial exists in session but may not persist, without local feedback. |
-| `presentation/accessibility.py::render_accessibility_panel` | Broad inline suppression around profile persistence | Preference persistence may fail silently. |
+| `presentation/accessibility_ui.py::render_accessibility_panel` | Broad inline suppression around profile persistence | Preference persistence may fail silently. |
 | `canvas/player.py::build_player_document` | Broad exception fallback when reading Streamlit preferences | Intentional framework-neutral fallback, but catches programming errors as well as missing runtime context. |
 | `electric_fields/page.py::analyze` | Broad exception converts field probes to `None` | Produces chart gaps without recording which numerical/validation error occurred. |
 
@@ -452,7 +452,7 @@ Exit condition: the current flat discovery experience remains available as a fal
 1. Choose between `TrialHistory` and `ExperimentNotebook` for each intended use; document or consolidate without breaking imports.
 2. Merge or deprecate `presentation/formatting.py` after moving callers to the chosen shared API.
 3. Update README counts and remove references to `EXPANSION_ARCHITECTURE.md`, `upload/`, the seven-item registry, and unfinished visual migrations—or create the missing architecture document if it remains desired.
-4. Retain `canvas/legacy.show()` until all known internal and external compatibility consumers have a replacement and a deprecation window.
+4. Retain the `canvas/legacy.py` re-export through a documented compatibility window; use `canvas/embed.py` internally.
 
 Exit condition: documentation describes the architecture that actually runs, and removal candidates have zero production, test, dynamic, and documented consumers.
 

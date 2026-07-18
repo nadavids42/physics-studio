@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 import streamlit as st
 
-from physics_playground.canvas import legacy
+from physics_playground.canvas import embed
 from physics_playground.canvas.ray_diagram import build_ray_diagram
 from physics_playground.contracts import ModelAssumption
-from physics_playground.missions import legacy as kidtools
-from physics_playground.presentation.accessibility import render_chart
+from physics_playground.missions import ui as mission_ui
+from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.chart_system import series_figure
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
@@ -50,7 +50,7 @@ def record(r, seed, obs, label=None, badges=()):
 
 
 def diagram(r, seed):
-    legacy.show(
+    embed.show(
         build_ray_diagram(
             rays=[x.to_dict() for x in r.rays],
             message=r.outcome,
@@ -93,9 +93,9 @@ def explore():
     diagram(r, 20262701)
     obs = st.text_input("Optional notebook observation", key="optics_obs")
     if st.button("🔦 Trace ray", type="primary", use_container_width=True):
-        record(r, 20262701, obs, badges=kidtools.process_run(ID, evaluate(r)))
+        record(r, 20262701, obs, badges=mission_ui.process_run(ID, evaluate(r)))
         st.rerun()
-    kidtools.mission_checklist("Reflection and Refraction")
+    mission_ui.mission_checklist("Reflection and Refraction")
 
 
 def compare():
@@ -115,7 +115,7 @@ def compare():
                 seed,
                 "Rays bend toward higher refractive index",
                 label,
-                kidtools.process_run(ID, evaluate(r, True)),
+                mission_ui.process_run(ID, evaluate(r, True)),
             )
     diagram(b, 20262712)
 
@@ -165,7 +165,7 @@ def model():
 
 def render():
     st.header("🔦 Reflection and Refraction")
-    revealed = kidtools.prediction_quiz(
+    revealed = mission_ui.prediction_quiz(
         key="optics_quiz",
         question="A light ray strikes a mirror at 30° from the normal. What is its reflection angle?",
         options=["30°", "60°", "It depends on refractive index"],

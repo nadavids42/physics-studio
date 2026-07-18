@@ -17,6 +17,8 @@ not consistently tagged as releases.
 - Reformatted Python source and established lint and type-checking ratchets without changing
   simulation behavior.
 - Replaced the historical implementation log in the README with a concise project overview.
+- Assigned canonical responsibility-based names to shared binding, accessibility, visual,
+  mission-UI, and canvas-embedding modules while retaining thin import compatibility shims.
 
 ## 1.0.0 - 2026-07-18
 

@@ -5,19 +5,19 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import streamlit as st
 
-from physics_playground.canvas import legacy as canvas_kit
+from physics_playground.canvas import embed as canvas_embed
 from physics_playground.canvas.orbit import (
     PLAYER_HEIGHT,
     build_orbit_canvas,
     build_orbit_comparison_canvas,
 )
-from physics_playground.missions import legacy as kidtools
+from physics_playground.missions import ui as mission_ui
 from physics_playground.missions.orbit import evaluate_orbit_missions
 from physics_playground.models.orbit import (
     OrbitParameters,
     timestep_warning,
 )
-from physics_playground.presentation.accessibility import render_chart
+from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
     LearningMode,
@@ -29,7 +29,7 @@ from physics_playground.presentation.learning_modes import (
 )
 from physics_playground.presentation.notebook_ui import REUSE_REQUEST_KEY, add_trial
 from physics_playground.presentation.orbit_charts import plot_figure
-from physics_playground.simulation_cache import cached_orbit as simulate_orbit
+from physics_playground.simulation_cache import cached_orbit
 from physics_playground.validation import PhysicsValidationError
 
 VERSION = "orbit-verlet-1.0"
@@ -82,7 +82,7 @@ def _record(r, seed, obs, label=None, badges=()):
 
 
 def _award(r):
-    return kidtools.process_run("orbital_gravity", evaluate_orbit_missions(r))
+    return mission_ui.process_run("orbital_gravity", evaluate_orbit_missions(r))
 
 
 def _reuse():
@@ -118,10 +118,10 @@ def render_explore():
     warning = timestep_warning(p)
     if warning:
         st.warning(warning)
-    r = simulate_orbit(p)
+    r = cached_orbit(p)
     _summary(r)
     autoplay = st.session_state.orbit_launched == p.to_dict()
-    canvas_kit.show(
+    canvas_embed.show(
         build_orbit_canvas(r, seed=20261900 + st.session_state.orbit_nonce, autoplay=autoplay),
         height=PLAYER_HEIGHT,
     )
@@ -132,7 +132,7 @@ def render_explore():
         badges = _award(r)
         _record(r, 20261900 + st.session_state.orbit_nonce, obs, badges=badges)
         st.rerun()
-    kidtools.mission_checklist("Planet Launcher")
+    mission_ui.mission_checklist("Planet Launcher")
 
 
 def _pair(kind):
@@ -156,7 +156,7 @@ def _pair(kind):
         b = OrbitParameters(20, 12, (20 / 5) ** 0.5)
         change = ChangedVariable("Launch radius", "5", "12")
         labels = ("Near", "Far")
-    return simulate_orbit(a), simulate_orbit(b), labels, change
+    return cached_orbit(a), cached_orbit(b), labels, change
 
 
 def render_compare():
@@ -180,7 +180,7 @@ def render_compare():
         n = st.session_state.orbit_compare_nonce
         _record(a, 20262000 + n, obs, "Run A")
         _record(b, 20262100 + n, obs, "Run B")
-    canvas_kit.show(
+    canvas_embed.show(
         build_orbit_comparison_canvas(
             a,
             b,
@@ -205,7 +205,7 @@ def _latest():
 
 def render_analyze():
     mode_heading(LearningMode.ANALYZE, "Conservation and orbital elements")
-    r = simulate_orbit(_latest())
+    r = cached_orbit(_latest())
     _summary(r)
     c = st.columns(2)
     c[0].metric("Numerical energy drift", f"{r.energy_drift_fraction * 100:.5f}%")
@@ -224,7 +224,7 @@ def render_model():
     st.markdown(
         "Position advances using the current acceleration; velocity then advances using the average of the old and new accelerations. This velocity-Verlet method is time-reversible and strongly improves long-term conservation over the previous Euler step."
     )
-    assumptions = simulate_orbit(OrbitParameters(20, 7, (20 / 7) ** 0.5)).assumptions
+    assumptions = cached_orbit(OrbitParameters(20, 7, (20 / 7) ** 0.5)).assumptions
     assumptions_panel(
         assumptions,
         (
@@ -243,7 +243,7 @@ def render():
     st.markdown(
         "Launch a planet and discover circular, elliptical, crash, and escape trajectories."
     )
-    revealed = kidtools.prediction_quiz(
+    revealed = mission_ui.prediction_quiz(
         key="orbit_quiz",
         question="What happens when a planet is thrown much too slowly?",
         options=["It escapes", "It crashes inward", "It makes a circular orbit"],

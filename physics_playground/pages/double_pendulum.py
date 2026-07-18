@@ -5,15 +5,15 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import streamlit as st
 
-from physics_playground.canvas import legacy as canvas_kit
+from physics_playground.canvas import embed as canvas_embed
 from physics_playground.canvas.double_pendulum import PLAYER_HEIGHT, build_double_canvas
-from physics_playground.missions import legacy as kidtools
+from physics_playground.missions import ui as mission_ui
 from physics_playground.missions.double_pendulum import evaluate_double_missions
 from physics_playground.models.double_pendulum import (
     DoublePendulumParameters,
     convergence_warning,
 )
-from physics_playground.presentation.accessibility import render_chart
+from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.double_pendulum_charts import plot_figure
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
@@ -25,7 +25,7 @@ from physics_playground.presentation.learning_modes import (
     mode_navigation,
 )
 from physics_playground.presentation.notebook_ui import REUSE_REQUEST_KEY, add_trial
-from physics_playground.simulation_cache import cached_double_pendulum as simulate_double_pendulum
+from physics_playground.simulation_cache import cached_double_pendulum
 from physics_playground.validation import PhysicsValidationError
 
 VERSION = "double-pendulum-rk4-2.0"
@@ -80,7 +80,7 @@ def _record(r, seed, obs, label=None, badges=()):
 
 
 def _award(r):
-    return kidtools.process_run("double_pendulum", evaluate_double_missions(r))
+    return mission_ui.process_run("double_pendulum", evaluate_double_missions(r))
 
 
 def _reuse():
@@ -116,7 +116,7 @@ def render_explore():
     warning = convergence_warning(p)
     if warning:
         st.warning(warning)
-    r = simulate_double_pendulum(p)
+    r = cached_double_pendulum(p)
     _summary(r)
     show_separation = st.checkbox(
         "Show recorded separation callout", value=True, key="chaos_show_separation"
@@ -128,7 +128,7 @@ def render_explore():
     )
     inspect_system = {"Baseline A": "a", "Perturbed B": "b"}.get(inspect)
     autoplay = st.session_state.chaos_launched == p.to_dict()
-    canvas_kit.show(
+    canvas_embed.show(
         build_double_canvas(
             r,
             seed=20262600 + st.session_state.chaos_nonce,
@@ -145,7 +145,7 @@ def render_explore():
         badges = _award(r)
         _record(r, 20262600 + st.session_state.chaos_nonce, obs, badges=badges)
         st.rerun()
-    kidtools.mission_checklist("Double Pendulum of Chaos")
+    mission_ui.mission_checklist("Double Pendulum of Chaos")
 
 
 def _pair(kind):
@@ -165,7 +165,7 @@ def _pair(kind):
         a = DoublePendulumParameters(time_step_s=0.002)
         b = DoublePendulumParameters(time_step_s=0.02)
         change = ChangedVariable("Time step", "0.002", "0.020")
-    return simulate_double_pendulum(a), simulate_double_pendulum(b), change
+    return cached_double_pendulum(a), cached_double_pendulum(b), change
 
 
 def render_compare():
@@ -190,7 +190,7 @@ def render_compare():
         _record(a, 20262700 + n, obs, "Run A")
         _record(b, 20262800 + n, obs, "Run B")
     st.markdown("#### Run A")
-    canvas_kit.show(
+    canvas_embed.show(
         build_double_canvas(
             a,
             seed=20262900 + st.session_state.chaos_compare_nonce,
@@ -199,7 +199,7 @@ def render_compare():
         height=PLAYER_HEIGHT,
     )
     st.markdown("#### Run B")
-    canvas_kit.show(
+    canvas_embed.show(
         build_double_canvas(
             b,
             seed=20263000 + st.session_state.chaos_compare_nonce,
@@ -222,7 +222,7 @@ def _latest():
 
 def render_analyze():
     mode_heading(LearningMode.ANALYZE, "Measure divergence and convergence")
-    r = simulate_double_pendulum(_latest())
+    r = cached_double_pendulum(_latest())
     _summary(r)
     for plot in r.plots:
         fig = plot_figure(plot)
@@ -238,7 +238,7 @@ def render_model():
     st.latex(
         r"\Delta(t)\approx\Delta_0e^{\lambda t}\quad\Rightarrow\quad\ln\Delta(t)\approx\ln\Delta_0+\lambda t"
     )
-    assumptions = simulate_double_pendulum(DoublePendulumParameters(duration_s=2)).assumptions
+    assumptions = cached_double_pendulum(DoublePendulumParameters(duration_s=2)).assumptions
     assumptions_panel(
         assumptions,
         (
@@ -255,7 +255,7 @@ def render():
     _reuse()
     st.header("🌀 Double Pendulum of Chaos")
     st.markdown("Release two nearly identical double pendulums and watch predictability disappear.")
-    revealed = kidtools.prediction_quiz(
+    revealed = mission_ui.prediction_quiz(
         key="chaos_quiz",
         question="Two double pendulums start almost—but not exactly—the same. What happens?",
         options=[

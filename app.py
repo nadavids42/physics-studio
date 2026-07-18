@@ -6,8 +6,8 @@ from importlib import import_module
 
 import streamlit as st
 
-from physics_playground.missions import legacy as kidtools
-from physics_playground.presentation.accessibility import (
+from physics_playground.missions import ui as mission_ui
+from physics_playground.presentation.accessibility_ui import (
     apply_global_accessibility,
     render_accessibility_panel,
 )
@@ -22,7 +22,7 @@ from physics_playground.registry import SIMULATION_REGISTRY, SIMULATIONS_BY_ID
 from physics_playground.validation import PhysicsValidationError
 
 st.set_page_config(page_title="Physics Mission Control", page_icon="🚀", layout="wide")
-kidtools.init_missions()
+mission_ui.init_missions()
 st.session_state.setdefault("active_simulation_id", None)
 with st.sidebar:
     render_profile_sidebar()
@@ -46,8 +46,8 @@ with st.sidebar:
     st.session_state.active_simulation_id = None if selected == "home" else selected
     st.divider()
     st.subheader("🏅 Badge collection")
-    kidtools.sidebar_badges()
-    total = len(kidtools.MISSION_LABELS)
+    mission_ui.sidebar_badges()
+    total = len(mission_ui.MISSION_LABELS)
     if len(st.session_state.missions) == total:
         st.success("🏆 ALL BADGES EARNED! You are officially a Physics Champion!")
     st.divider()

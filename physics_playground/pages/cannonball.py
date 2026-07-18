@@ -7,13 +7,13 @@ import random
 import matplotlib.pyplot as plt
 import streamlit as st
 
-from physics_playground.canvas import legacy as canvas_kit
+from physics_playground.canvas import embed as canvas_embed
 from physics_playground.canvas.cannonball import (
     PLAYER_HEIGHT,
     build_cannon_canvas,
     build_cannon_comparison_canvas,
 )
-from physics_playground.missions import legacy as kidtools
+from physics_playground.missions import ui as mission_ui
 from physics_playground.missions.cannonball import evaluate_cannonball_missions
 from physics_playground.model_metadata import PROJECTILE_MODEL_METADATA
 from physics_playground.models.projectile import (
@@ -21,7 +21,7 @@ from physics_playground.models.projectile import (
     ProjectileParameters,
     ProjectileResult,
 )
-from physics_playground.presentation.accessibility import render_chart
+from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
     LearningMode,
@@ -35,10 +35,8 @@ from physics_playground.presentation.notebook_ui import add_trial
 from physics_playground.presentation.projectile_charts import plot_figure, range_by_angle_figure
 from physics_playground.setup_handoff import consume_setup_request
 from physics_playground.simulation_cache import (
-    cached_projectile as simulate_projectile,
-)
-from physics_playground.simulation_cache import (
-    cached_projectile_no_drag as simulate_no_drag,
+    cached_projectile,
+    cached_projectile_no_drag,
 )
 from physics_playground.validation import PhysicsValidationError
 
@@ -131,7 +129,7 @@ def _record(
 
 
 def _award(result: ProjectileResult, target: float) -> tuple[str, ...]:
-    return kidtools.process_run("cannonball", evaluate_cannonball_missions(result, target))
+    return mission_ui.process_run("cannonball", evaluate_cannonball_missions(result, target))
 
 
 def render_explore() -> None:
@@ -150,7 +148,7 @@ def render_explore() -> None:
         st.rerun()
     target = _target()
     st.info(f"🎯 Target: {target:.1f} m")
-    result = simulate_no_drag(ProjectileParameters(speed, angle, gravity))
+    result = cached_projectile_no_drag(ProjectileParameters(speed, angle, gravity))
     _summary(result)
     autoplay = st.session_state.cannon_launched_parameters == result.parameters.to_dict()
     doc = build_cannon_canvas(
@@ -160,7 +158,7 @@ def render_explore() -> None:
         seed=st.session_state.cannon_target_seed,
         autoplay=autoplay,
     )
-    canvas_kit.show(doc, height=PLAYER_HEIGHT)
+    canvas_embed.show(doc, height=PLAYER_HEIGHT)
     observation = st.text_input(
         "Optional notebook observation",
         placeholder="What did you notice?",
@@ -176,27 +174,27 @@ def render_explore() -> None:
             st.session_state.cannon_target_override = None
             st.session_state.cannon_target_seed += 1
         st.rerun()
-    kidtools.mission_checklist("Cannonball Launcher")
+    mission_ui.mission_checklist("Cannonball Launcher")
 
 
 def _comparison_results(
     kind: str,
 ) -> tuple[ProjectileResult, ProjectileResult, tuple[str, str], ChangedVariable]:
     if kind == "30° versus 60°":
-        a = simulate_no_drag(ProjectileParameters(25, 30, 9.81))
-        b = simulate_no_drag(ProjectileParameters(25, 60, 9.81))
+        a = cached_projectile_no_drag(ProjectileParameters(25, 30, 9.81))
+        b = cached_projectile_no_drag(ProjectileParameters(25, 60, 9.81))
         return a, b, ("30°", "60°"), ChangedVariable("Launch angle", "30°", "60°")
     if kind == "With drag versus without drag":
-        a = simulate_no_drag(ProjectileParameters(25, 40, 9.81))
-        b = simulate_projectile(ProjectileParameters(25, 40, 9.81, drag_coefficient_kg_m=0.05))
+        a = cached_projectile_no_drag(ProjectileParameters(25, 40, 9.81))
+        b = cached_projectile(ProjectileParameters(25, 40, 9.81, drag_coefficient_kg_m=0.05))
         return (
             a,
             b,
             ("No drag", "Quadratic drag"),
             ChangedVariable("Air resistance", "None", "Quadratic drag"),
         )
-    a = simulate_no_drag(ProjectileParameters(25, 45, 9.81))
-    b = simulate_no_drag(ProjectileParameters(25, 45, 1.62))
+    a = cached_projectile_no_drag(ProjectileParameters(25, 45, 9.81))
+    b = cached_projectile_no_drag(ProjectileParameters(25, 45, 1.62))
     return a, b, ("Earth", "Moon"), ChangedVariable("Gravity", "9.81 m/s²", "1.62 m/s²")
 
 
@@ -224,7 +222,7 @@ def render_compare() -> None:
         seed=20261000 + st.session_state.cannon_compare_nonce,
         autoplay=st.session_state.cannon_compare_signature == signature,
     )
-    canvas_kit.show(doc, height=PLAYER_HEIGHT)
+    canvas_embed.show(doc, height=PLAYER_HEIGHT)
     comparison_metrics(
         {k: (k, v) for k, v in _metrics(a).items()}, {k: (k, v) for k, v in _metrics(b).items()}
     )
@@ -239,7 +237,7 @@ def render_analyze() -> None:
     mode_heading(LearningMode.ANALYZE, "Inspect the flight data")
     base = _latest()
     drag = st.slider("Analysis drag coefficient", 0.0, 0.3, base.drag_coefficient_kg_m, 0.01)
-    result = simulate_projectile(
+    result = cached_projectile(
         ProjectileParameters(
             base.launch_speed_m_s,
             base.launch_angle_deg,
@@ -287,7 +285,7 @@ def render_model() -> None:
         with c3:
             dt = st.number_input("Time step (s)", 0.0005, 0.1, 0.005, 0.0005, format="%.4f")
             limit = st.number_input("Maximum time (s)", 1.0, 300.0, 120.0)
-        result = simulate_projectile(
+        result = cached_projectile(
             ProjectileParameters(
                 speed,
                 angle,
@@ -312,7 +310,7 @@ def render() -> None:
     st.markdown(
         "Launch a cannonball, compare trajectories, analyze the measurements, or inspect the model."
     )
-    revealed = kidtools.prediction_quiz(
+    revealed = mission_ui.prediction_quiz(
         key="cannon_quiz",
         question="For maximum no-drag range on level ground, which angle wins?",
         options=["15°", "45°", "75°", "90°"],

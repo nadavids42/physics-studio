@@ -2,12 +2,12 @@
 
 import streamlit as st
 
-from physics_playground.canvas import legacy
+from physics_playground.canvas import embed
 from physics_playground.presentation.notebook_ui import add_trial
 
 
 def show(document):
-    legacy.show(document, height=430)
+    embed.show(document, height=430)
 
 
 def record(

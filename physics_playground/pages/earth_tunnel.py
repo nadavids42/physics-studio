@@ -5,19 +5,19 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import streamlit as st
 
-from physics_playground.canvas import legacy as canvas_kit
+from physics_playground.canvas import embed as canvas_embed
 from physics_playground.canvas.earth_tunnel import (
     PLAYER_HEIGHT,
     build_tunnel_canvas,
     build_tunnel_comparison_canvas,
 )
-from physics_playground.missions import legacy as kidtools
+from physics_playground.missions import ui as mission_ui
 from physics_playground.missions.earth_tunnel import evaluate_tunnel_missions
 from physics_playground.models.earth_tunnel import (
     TunnelModel,
     TunnelParameters,
 )
-from physics_playground.presentation.accessibility import render_chart
+from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
     LearningMode,
@@ -29,7 +29,7 @@ from physics_playground.presentation.learning_modes import (
 )
 from physics_playground.presentation.notebook_ui import REUSE_REQUEST_KEY, add_trial
 from physics_playground.presentation.tunnel_charts import plot_figure
-from physics_playground.simulation_cache import cached_tunnel as simulate_tunnel
+from physics_playground.simulation_cache import cached_tunnel
 from physics_playground.validation import PhysicsValidationError
 
 PLANETS = {
@@ -85,7 +85,7 @@ def _record(r, seed, obs, label=None, badges=()):
 
 
 def _award(r):
-    return kidtools.process_run("earth_tunnel", evaluate_tunnel_missions(r))
+    return mission_ui.process_run("earth_tunnel", evaluate_tunnel_missions(r))
 
 
 def _reuse():
@@ -130,10 +130,10 @@ def render_explore():
     if model == TunnelModel.RADIAL:
         gradient = st.slider("Center-to-surface density gradient", 0.0, 0.95, 0.75, 0.05)
     p = TunnelParameters(radius, g, 1 if start == "Surface" else 0.5, model, gradient)
-    r = simulate_tunnel(p)
+    r = cached_tunnel(p)
     _summary(r)
     autoplay = st.session_state.tunnel_launched == p.to_dict()
-    canvas_kit.show(
+    canvas_embed.show(
         build_tunnel_canvas(r, seed=20262300 + st.session_state.tunnel_nonce, autoplay=autoplay),
         height=PLAYER_HEIGHT,
     )
@@ -144,33 +144,33 @@ def render_explore():
         badges = _award(r)
         _record(r, 20262300 + st.session_state.tunnel_nonce, obs, badges=badges)
         st.rerun()
-    kidtools.mission_checklist("The Big Fall")
+    mission_ui.mission_checklist("The Big Fall")
 
 
 def _pair(kind):
     if kind == "Surface versus halfway start":
         items = [
-            ("Surface", simulate_tunnel(TunnelParameters(6371000, 9.81, 1)), "#42A5F5"),
-            ("Halfway", simulate_tunnel(TunnelParameters(6371000, 9.81, 0.5)), "#FF8A65"),
+            ("Surface", cached_tunnel(TunnelParameters(6371000, 9.81, 1)), "#42A5F5"),
+            ("Halfway", cached_tunnel(TunnelParameters(6371000, 9.81, 0.5)), "#FF8A65"),
         ]
         change = ChangedVariable("Starting amplitude", "Surface", "Halfway")
     elif kind == "Earth versus Moon versus custom planet":
         items = [
-            ("Earth", simulate_tunnel(TunnelParameters(6371000, 9.81)), "#42A5F5"),
-            ("Moon", simulate_tunnel(TunnelParameters(1737000, 1.62)), "#B0BEC5"),
-            ("Custom", simulate_tunnel(TunnelParameters(3000000, 12)), "#AB47BC"),
+            ("Earth", cached_tunnel(TunnelParameters(6371000, 9.81)), "#42A5F5"),
+            ("Moon", cached_tunnel(TunnelParameters(1737000, 1.62)), "#B0BEC5"),
+            ("Custom", cached_tunnel(TunnelParameters(3000000, 12)), "#AB47BC"),
         ]
         change = ChangedVariable("Planet", "Earth", "Moon and custom")
     else:
         items = [
             (
                 "Uniform",
-                simulate_tunnel(TunnelParameters(6371000, 9.81, model=TunnelModel.UNIFORM)),
+                cached_tunnel(TunnelParameters(6371000, 9.81, model=TunnelModel.UNIFORM)),
                 "#42A5F5",
             ),
             (
                 "Radial",
-                simulate_tunnel(TunnelParameters(6371000, 9.81, model=TunnelModel.RADIAL)),
+                cached_tunnel(TunnelParameters(6371000, 9.81, model=TunnelModel.RADIAL)),
                 "#FF8A65",
             ),
         ]
@@ -198,7 +198,7 @@ def render_compare():
         n = st.session_state.tunnel_compare_nonce
         for i, (label, r, _) in enumerate(items):
             _record(r, 20262400 + n + i, obs, f"Run {chr(65 + i)} — {label}")
-    canvas_kit.show(
+    canvas_embed.show(
         build_tunnel_comparison_canvas(
             items,
             seed=20262500 + st.session_state.tunnel_compare_nonce,
@@ -223,7 +223,7 @@ def _latest():
 
 def render_analyze():
     mode_heading(LearningMode.ANALYZE, "Position, velocity, acceleration, and energy")
-    r = simulate_tunnel(_latest())
+    r = cached_tunnel(_latest())
     _summary(r)
     for plot in r.plots:
         fig = plot_figure(plot)
@@ -239,7 +239,7 @@ def render_model():
     st.markdown(
         "Uniform density makes enclosed mass grow as r³, so gravitational acceleration becomes proportional to −r: exactly the defining equation of simple harmonic motion. The radial-density model instead integrates the enclosed mass of a center-heavy profile with RK4."
     )
-    assumptions = simulate_tunnel(TunnelParameters(6371000, 9.81)).assumptions
+    assumptions = cached_tunnel(TunnelParameters(6371000, 9.81)).assumptions
     assumptions_panel(
         assumptions,
         (
@@ -258,7 +258,7 @@ def render():
     st.markdown(
         "Default model: **uniform-density planet**. An advanced radial-density profile is also available."
     )
-    revealed = kidtools.prediction_quiz(
+    revealed = mission_ui.prediction_quiz(
         key="tunnel_quiz",
         question="About how long does the ideal uniform-density Earth fall take from one surface to the other?",
         options=["5 minutes", "42 minutes", "3 hours", "Forever"],

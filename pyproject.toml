@@ -67,7 +67,7 @@ line-ending = "lf"
 [tool.mypy]
 python_version = "3.11"
 files = [
-    "physics_playground/accessibility.py",
+    "physics_playground/accessibility_settings.py",
     "physics_playground/contracts.py",
     "physics_playground/history.py",
     "physics_playground/integrators.py",

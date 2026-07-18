@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 import streamlit as st
 
-from physics_playground.canvas import legacy
+from physics_playground.canvas import embed
 from physics_playground.canvas.wavefronts import build_wavefront_document
 from physics_playground.contracts import ModelAssumption
-from physics_playground.missions import legacy as kidtools
-from physics_playground.presentation.accessibility import render_chart
+from physics_playground.missions import ui as mission_ui
+from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.chart_system import series_figure
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
@@ -62,7 +62,7 @@ def animation(r, seed):
         for f in r.frames
     ]
     extent = p.speed_of_sound_m_s * p.duration_s
-    legacy.show(
+    embed.show(
         build_wavefront_document(
             frames=frames,
             world_min=min(-extent, p.initial_source_position_m - 10),
@@ -115,9 +115,9 @@ def explore():
     animation(r, 20262601)
     obs = st.text_input("Optional notebook observation", key="doppler_obs")
     if st.button("🔊 Run sound experiment", type="primary", use_container_width=True):
-        record(r, 20262601, obs, badges=kidtools.process_run(ID, evaluate(r)))
+        record(r, 20262601, obs, badges=mission_ui.process_run(ID, evaluate(r)))
         st.rerun()
-    kidtools.mission_checklist("Sound and Doppler Effect")
+    mission_ui.mission_checklist("Sound and Doppler Effect")
 
 
 def compare():
@@ -137,7 +137,7 @@ def compare():
                 seed,
                 "Approach raises pitch; recession lowers it",
                 label,
-                kidtools.process_run(ID, evaluate(r, True)),
+                mission_ui.process_run(ID, evaluate(r, True)),
             )
     animation(b, 20262612)
 
@@ -184,7 +184,7 @@ def model():
 
 def render():
     st.header("🔊 Sound and Doppler Effect")
-    revealed = kidtools.prediction_quiz(
+    revealed = mission_ui.prediction_quiz(
         key="doppler_quiz",
         question="An ambulance approaches you while its siren emits a steady frequency. What pitch do you hear?",
         options=["Higher", "Lower", "Unchanged"],

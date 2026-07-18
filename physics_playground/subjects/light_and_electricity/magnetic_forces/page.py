@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 import streamlit as st
 
-from physics_playground.canvas import legacy
+from physics_playground.canvas import embed
 from physics_playground.canvas.vector_diagram import build_vector_direction_document
 from physics_playground.contracts import ModelAssumption
-from physics_playground.missions import legacy as kidtools
-from physics_playground.presentation.accessibility import render_chart
+from physics_playground.missions import ui as mission_ui
+from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.chart_system import series_figure
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
@@ -52,7 +52,7 @@ def record(r, seed, obs, label=None, badges=()):
 
 
 def diagram(r, seed):
-    legacy.show(
+    embed.show(
         build_vector_direction_document(
             motion=r.motion_vector,
             field=r.field_vector,
@@ -139,9 +139,9 @@ def explore():
     diagram(r, 20263001)
     obs = st.text_input("Optional notebook observation", key="magnetic_obs")
     if st.button("🧲 Calculate magnetic force", type="primary", use_container_width=True):
-        record(r, 20263001, obs, badges=kidtools.process_run(ID, evaluate(r)))
+        record(r, 20263001, obs, badges=mission_ui.process_run(ID, evaluate(r)))
         st.rerun()
-    kidtools.mission_checklist("Magnetic Forces")
+    mission_ui.mission_checklist("Magnetic Forces")
 
 
 def compare():
@@ -159,7 +159,7 @@ def compare():
                 seed,
                 "Magnetic force depends on sin θ",
                 label,
-                kidtools.process_run(ID, evaluate(r, True)),
+                mission_ui.process_run(ID, evaluate(r, True)),
             )
     diagram(b, 20263012)
 
@@ -211,7 +211,7 @@ def model():
 
 def render():
     st.header("🧲 Magnetic Forces")
-    revealed = kidtools.prediction_quiz(
+    revealed = mission_ui.prediction_quiz(
         key="magnetic_quiz",
         question="A positive charge moves exactly parallel to a magnetic field. What magnetic force acts on it?",
         options=["Zero", "Maximum", "It accelerates along the field"],

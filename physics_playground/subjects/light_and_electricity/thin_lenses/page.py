@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 import streamlit as st
 
-from physics_playground.canvas import legacy
+from physics_playground.canvas import embed
 from physics_playground.canvas.ray_diagram import build_ray_diagram
 from physics_playground.contracts import ModelAssumption
-from physics_playground.missions import legacy as kidtools
-from physics_playground.presentation.accessibility import render_chart
+from physics_playground.missions import ui as mission_ui
+from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.chart_system import series_figure
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
@@ -53,7 +53,7 @@ def record(r, seed, obs, label=None, badges=()):
 
 def diagram(r, seed):
     span = max(5.0, min(15.0, r.parameters.object_distance_m, abs(r.image_distance_m or 5)) * 1.2)
-    legacy.show(
+    embed.show(
         build_ray_diagram(
             rays=[x.to_dict() for x in r.rays],
             message=r.outcome,
@@ -92,9 +92,9 @@ def explore():
     diagram(r, 20262801)
     obs = st.text_input("Optional notebook observation", key="lens_obs")
     if st.button("🔍 Trace principal rays", type="primary", use_container_width=True):
-        record(r, 20262801, obs, badges=kidtools.process_run(ID, evaluate(r)))
+        record(r, 20262801, obs, badges=mission_ui.process_run(ID, evaluate(r)))
         st.rerun()
-    kidtools.mission_checklist("Thin Lenses")
+    mission_ui.mission_checklist("Thin Lenses")
 
 
 def compare():
@@ -112,7 +112,7 @@ def compare():
                 seed,
                 "Lens sign changes real versus virtual behavior",
                 label,
-                kidtools.process_run(ID, evaluate(r, True)),
+                mission_ui.process_run(ID, evaluate(r, True)),
             )
     diagram(b, 20262812)
 
@@ -157,7 +157,7 @@ def model():
 
 def render():
     st.header("🔍 Thin Lenses")
-    revealed = kidtools.prediction_quiz(
+    revealed = mission_ui.prediction_quiz(
         key="lens_quiz",
         question="A converging lens has an object beyond its focal point. What kind of image can it form?",
         options=["Real and inverted", "Always virtual", "No image"],

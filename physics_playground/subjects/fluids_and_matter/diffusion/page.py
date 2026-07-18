@@ -3,11 +3,11 @@ import math
 import matplotlib.pyplot as plt
 import streamlit as st
 
-from physics_playground.canvas import legacy
+from physics_playground.canvas import embed
 from physics_playground.canvas.diffusion_player import build_diffusion_document
 from physics_playground.contracts import ModelAssumption
-from physics_playground.missions import legacy as kidtools
-from physics_playground.presentation.accessibility import render_chart
+from physics_playground.missions import ui as mission_ui
+from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.chart_system import series_figure
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
@@ -58,7 +58,7 @@ def diagram(r):
         )
         * 1.1
     )
-    legacy.show(
+    embed.show(
         build_diffusion_document(
             paths=r.sample_trajectories,
             dimensions=int(r.parameters.dimensions),
@@ -151,9 +151,9 @@ def explore():
     diagram(r)
     obs = st.text_input("Optional notebook observation", key="diffusion_obs")
     if st.button("🟣 Run random walks", type="primary", use_container_width=True):
-        record(r, obs, badges=kidtools.process_run(ID, evaluate(r)))
+        record(r, obs, badges=mission_ui.process_run(ID, evaluate(r)))
         st.rerun()
-    kidtools.mission_checklist("Diffusion and Random Walks")
+    mission_ui.mission_checklist("Diffusion and Random Walks")
 
 
 def compare():
@@ -170,7 +170,7 @@ def compare():
                 r,
                 "Bias shifts the distribution while random spreading remains",
                 label,
-                kidtools.process_run(ID, evaluate(r, True)),
+                mission_ui.process_run(ID, evaluate(r, True)),
             )
     diagram(b)
 
@@ -227,7 +227,7 @@ def model():
 
 def render():
     st.header("🟣 Diffusion and Random Walks")
-    revealed = kidtools.prediction_quiz(
+    revealed = mission_ui.prediction_quiz(
         key="diffusion_quiz",
         question="For many unbiased walkers, what happens to the mean-squared displacement as time increases?",
         options=["It grows roughly linearly", "It stays exactly zero", "It always decreases"],

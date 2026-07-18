@@ -3,11 +3,11 @@ import math
 import matplotlib.pyplot as plt
 import streamlit as st
 
-from physics_playground.canvas import legacy
+from physics_playground.canvas import embed
 from physics_playground.canvas.scalar_field import build_scalar_field_document
 from physics_playground.contracts import ModelAssumption
-from physics_playground.missions import legacy as kidtools
-from physics_playground.presentation.accessibility import render_chart
+from physics_playground.missions import ui as mission_ui
+from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.chart_system import series_figure
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
@@ -59,7 +59,7 @@ def animation(r, seed, autoplay=False):
         if min(phase_delta, 360 - phase_delta) < 15
         else ("Destructive interference" if abs(phase_delta - 180) < 15 else "Mixed interference")
     )
-    legacy.show(
+    embed.show(
         build_scalar_field_document(
             x=r.position_m,
             frames=r.superposition_frames,
@@ -132,9 +132,9 @@ def explore():
     )
     obs = st.text_input("Optional notebook observation", key="wave_obs")
     if st.button("🌊 Run waves", type="primary", use_container_width=True):
-        record(r, 20262501, obs, badges=kidtools.process_run(ID, evaluate(r)))
+        record(r, 20262501, obs, badges=mission_ui.process_run(ID, evaluate(r)))
         st.rerun()
-    kidtools.mission_checklist("Wave Interference")
+    mission_ui.mission_checklist("Wave Interference")
 
 
 def compare():
@@ -153,7 +153,7 @@ def compare():
                 seed,
                 "Phase controls reinforcement or cancellation",
                 label,
-                kidtools.process_run(ID, evaluate(r, True)),
+                mission_ui.process_run(ID, evaluate(r, True)),
             )
     animation(b, 20262512)
 
@@ -215,7 +215,7 @@ def model():
 
 def render():
     st.header("🌊 Wave Interference")
-    revealed = kidtools.prediction_quiz(
+    revealed = mission_ui.prediction_quiz(
         key="wave_quiz",
         question="Two identical waves arrive in phase. What happens to their amplitudes?",
         options=["They add", "They cancel", "Frequency doubles"],

@@ -9,10 +9,10 @@ from pathlib import Path
 import pytest
 
 from physics_playground.canvas.player import PLAYER_JS, build_player_document
-from physics_playground.presentation.accessibility import SETTINGS_KEY, VISUAL_SESSION_KEYS
+from physics_playground.presentation.accessibility_ui import SETTINGS_KEY, VISUAL_SESSION_KEYS
 from physics_playground.visual.assets import AssetKind, AssetSpec, AssetStyle
-from physics_playground.visual.canvas import CANVAS_VISUAL_JS
 from physics_playground.visual.experience import PresentationLevel, VisualPreferences, VisualTheme
+from physics_playground.visual.primitives import CANVAS_VISUAL_JS
 from physics_playground.visual.tokens import (
     DARK_THEME,
     LIGHT_THEME,
@@ -150,7 +150,7 @@ def _existing_session_keys() -> set[str]:
     root = Path(__file__).parents[1] / "physics_playground"
     keys = set()
     for path in root.rglob("*.py"):
-        if path.name == "accessibility.py" and path.parent.name == "presentation":
+        if path.name == "accessibility_ui.py" and path.parent.name == "presentation":
             continue
         tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):

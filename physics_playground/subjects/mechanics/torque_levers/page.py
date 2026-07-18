@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 from physics_playground.contracts import ModelAssumption
-from physics_playground.missions import legacy as kidtools
-from physics_playground.presentation.accessibility import render_chart
+from physics_playground.missions import ui as mission_ui
+from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.chart_system import series_figure
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
@@ -82,13 +82,13 @@ def explore():
             st.session_state.get("lever_quiz_guess"),
             r.outcome,
             values(r),
-            kidtools.process_run(ID, evaluate(r)),
+            mission_ui.process_run(ID, evaluate(r)),
             20262101,
             VERSION,
             obs,
         )
         st.rerun()
-    kidtools.mission_checklist("Torque and Levers")
+    mission_ui.mission_checklist("Torque and Levers")
 
 
 def compare():
@@ -110,7 +110,7 @@ def compare():
                 "Longer arm creates more torque",
                 r.outcome,
                 values(r),
-                kidtools.process_run(ID, evaluate(r)),
+                mission_ui.process_run(ID, evaluate(r)),
                 seed,
                 VERSION,
                 None,
@@ -151,7 +151,7 @@ def model():
 
 def render():
     st.header("⚖️ Torque and Levers")
-    revealed = kidtools.prediction_quiz(
+    revealed = mission_ui.prediction_quiz(
         key="lever_quiz",
         question="With the same force, where should you push to create more turning effect?",
         options=["Near the pivot", "Far from the pivot", "Distance does not matter"],

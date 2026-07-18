@@ -21,7 +21,7 @@ physics_playground/
 ├── visual/
 │   ├── tokens.py           # Colors, type, spacing, strokes, motion, breakpoints
 │   ├── css.py              # Generated application and iframe CSS
-│   ├── canvas.py           # Low-level themed Canvas helpers
+│   ├── primitives.py       # Low-level themed Canvas helpers
 │   ├── assets.py           # Typed AssetSpec and PhysicsAssets library
 │   ├── vectors.py          # Vector semantics and PhysicsAnnotations
 │   ├── animation.py        # Presentation-only camera and effect helpers
@@ -32,7 +32,7 @@ physics_playground/
 │   └── *.py                # Small scene adapters for simulation families
 └── presentation/
     ├── chart_system.py     # Shared Matplotlib styling
-    └── accessibility.py    # Display preferences and chart descriptions
+    └── accessibility_ui.py # Display preferences and chart descriptions
 ```
 
 Do not put physics integration, unit conversion, mission evaluation, or notebook mutation in a scene adapter. Scene code consumes recorded results; it does not revise them.
@@ -307,7 +307,7 @@ Completion guarantees and audit decisions:
 - Responsive behavior is owned by the shared player at representative mobile (360 px), tablet (768 px), and desktop (1100 px) widths. Scenes may suppress redundant labels but not scientific identifiers or units.
 - Reduced motion disables autoplay and decorative effects while retaining scrub and frame-step controls. High contrast, large text, explicit light/dark themes, and automatic theme selection are serialized into every player.
 - Context is drawn before scientific assets and annotations. Diagram mode therefore remains complete, while Contextual scenery cannot cover the scientific overlay.
-- `canvas/legacy.py` remains solely as the public Streamlit `show()` compatibility wrapper. Its unused standalone document generator and JavaScript utilities were removed after repository-wide consumer search.
+- `canvas/embed.py` is the canonical Streamlit `show()` adapter. `canvas/legacy.py` is a compatibility re-export only.
 
 The few remaining hexadecimal values inside scene sources are defensive fallbacks passed to semantic token lookups, plus deterministic decorative particle-burst colors. They are not independent scene palettes and do not encode quantitative meaning. Specialized target rings and field glyphs remain scene compositions because they are not repeated asset concepts.
 

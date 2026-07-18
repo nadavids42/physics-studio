@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 import streamlit as st
 
-from physics_playground.canvas import legacy
+from physics_playground.canvas import embed
 from physics_playground.canvas.gas_container import build_gas_document
 from physics_playground.contracts import ModelAssumption
-from physics_playground.missions import legacy as kidtools
-from physics_playground.presentation.accessibility import render_chart
+from physics_playground.missions import ui as mission_ui
+from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.chart_system import series_figure
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
@@ -58,7 +58,7 @@ def record(r, seed, obs, label=None, badges=()):
 
 
 def diagram(r, seed):
-    legacy.show(
+    embed.show(
         build_gas_document(
             pressure_a_kpa=r.state_a.pressure_pa / 1000,
             pressure_b_kpa=r.state_b.pressure_pa / 1000,
@@ -143,9 +143,9 @@ def explore():
     diagram(r, 20263301)
     obs = st.text_input("Optional notebook observation", key="gas_obs")
     if st.button("🎈 Run gas experiment", type="primary", use_container_width=True):
-        record(r, 20263301, obs, badges=kidtools.process_run(ID, evaluate(r)))
+        record(r, 20263301, obs, badges=mission_ui.process_run(ID, evaluate(r)))
         st.rerun()
-    kidtools.mission_checklist("Gas Laws")
+    mission_ui.mission_checklist("Gas Laws")
 
 
 def compare():
@@ -165,7 +165,7 @@ def compare():
                 seed,
                 "Different constraints produce different state paths",
                 label,
-                kidtools.process_run(ID, evaluate(r, True)),
+                mission_ui.process_run(ID, evaluate(r, True)),
             )
     diagram(b, 20263312)
 
@@ -240,7 +240,7 @@ def model():
 
 def render():
     st.header("🎈 Gas Laws")
-    revealed = kidtools.prediction_quiz(
+    revealed = mission_ui.prediction_quiz(
         key="gas_quiz",
         question="At constant temperature, what happens to ideal-gas pressure when volume is cut in half?",
         options=["It doubles", "It halves", "It stays fixed"],

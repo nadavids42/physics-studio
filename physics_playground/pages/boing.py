@@ -5,16 +5,16 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import streamlit as st
 
-from physics_playground.canvas import legacy as canvas_kit
+from physics_playground.canvas import embed as canvas_embed
 from physics_playground.canvas.boing import (
     PLAYER_HEIGHT,
     build_boing_canvas,
     build_boing_comparison_canvas,
 )
-from physics_playground.missions import legacy as kidtools
+from physics_playground.missions import ui as mission_ui
 from physics_playground.missions.boing import evaluate_boing_missions
 from physics_playground.models.spring import SpringParameters, SpringResult
-from physics_playground.presentation.accessibility import render_chart
+from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
     LearningMode,
@@ -26,7 +26,7 @@ from physics_playground.presentation.learning_modes import (
 )
 from physics_playground.presentation.notebook_ui import REUSE_REQUEST_KEY, add_trial
 from physics_playground.presentation.spring_charts import plot_figure, resonance_figure
-from physics_playground.simulation_cache import cached_spring as simulate_spring
+from physics_playground.simulation_cache import cached_spring
 from physics_playground.validation import PhysicsValidationError
 
 MODEL_VERSION = "spring-2.0"
@@ -78,7 +78,7 @@ def _record(r, seed, observation, label=None, badges=()):
 
 
 def _award(r):
-    return kidtools.process_run("boing", evaluate_boing_missions(r))
+    return mission_ui.process_run("boing", evaluate_boing_missions(r))
 
 
 def _reuse():
@@ -109,10 +109,10 @@ def render_explore():
     drive = 0.0 if preset == "No driving" else st.slider("Driving force (N)", 0.5, 10.0, 4.0, 0.5)
     ratio = 1.0 if preset == "No driving" else PRESETS[preset]
     damping = 0.0 if preset == "No driving" else st.slider("Damping (N·s/m)", 0.0, 3.0, 0.3, 0.1)
-    r = simulate_spring(SpringParameters(mass, k, amp, damping, drive, ratio, 20, 600))
+    r = cached_spring(SpringParameters(mass, k, amp, damping, drive, ratio, 20, 600))
     _summary(r)
     autoplay = st.session_state.spring_launched == r.parameters.to_dict()
-    canvas_kit.show(
+    canvas_embed.show(
         build_boing_canvas(r, seed=20261100 + st.session_state.spring_nonce, autoplay=autoplay),
         height=PLAYER_HEIGHT,
     )
@@ -123,35 +123,35 @@ def render_explore():
         badges = _award(r)
         _record(r, 20261100 + st.session_state.spring_nonce, observation, badges=badges)
         st.rerun()
-    kidtools.mission_checklist("Boing Machine")
+    mission_ui.mission_checklist("Boing Machine")
 
 
 def _compare(kind):
     base = SpringParameters(2, 20, 1, duration_s=20, samples=600)
     if kind == "Light versus heavy mass":
         return (
-            simulate_spring(SpringParameters(0.7, 20, 1, duration_s=20, samples=600)),
-            simulate_spring(SpringParameters(5, 20, 1, duration_s=20, samples=600)),
+            cached_spring(SpringParameters(0.7, 20, 1, duration_s=20, samples=600)),
+            cached_spring(SpringParameters(5, 20, 1, duration_s=20, samples=600)),
             ("Light", "Heavy"),
             ChangedVariable("Mass", "0.7 kg", "5.0 kg"),
         )
     if kind == "Soft versus stiff spring":
         return (
-            simulate_spring(SpringParameters(2, 6, 1, duration_s=20, samples=600)),
-            simulate_spring(SpringParameters(2, 60, 1, duration_s=20, samples=600)),
+            cached_spring(SpringParameters(2, 6, 1, duration_s=20, samples=600)),
+            cached_spring(SpringParameters(2, 60, 1, duration_s=20, samples=600)),
             ("Soft", "Stiff"),
             ChangedVariable("Stiffness", "6 N/m", "60 N/m"),
         )
     if kind == "Damped versus undamped":
         return (
-            simulate_spring(base),
-            simulate_spring(SpringParameters(2, 20, 1, 1.2, duration_s=20, samples=600)),
+            cached_spring(base),
+            cached_spring(SpringParameters(2, 20, 1, 1.2, duration_s=20, samples=600)),
             ("Undamped", "Damped"),
             ChangedVariable("Damping", "0", "1.2 N·s/m"),
         )
     return (
-        simulate_spring(SpringParameters(2, 20, 0.1, 0.3, 4, 0.5, 30, 900)),
-        simulate_spring(SpringParameters(2, 20, 0.1, 0.3, 4, 1, 30, 900)),
+        cached_spring(SpringParameters(2, 20, 0.1, 0.3, 4, 0.5, 30, 900)),
+        cached_spring(SpringParameters(2, 20, 0.1, 0.3, 4, 1, 30, 900)),
         ("Half-frequency", "Resonant"),
         ChangedVariable("Drive frequency", "0.5× natural", "1.0× natural"),
     )
@@ -178,7 +178,7 @@ def render_compare():
         n = st.session_state.spring_compare_nonce
         _record(a, 20261200 + n, obs, "Run A")
         _record(b, 20261300 + n, obs, "Run B")
-    canvas_kit.show(
+    canvas_embed.show(
         build_boing_comparison_canvas(
             a,
             b,
@@ -203,7 +203,7 @@ def _latest():
 
 def render_analyze():
     mode_heading(LearningMode.ANALYZE, "Measure motion, energy, and resonance")
-    r = simulate_spring(_latest())
+    r = cached_spring(_latest())
     _summary(r)
     for plot in r.plots:
         fig = plot_figure(plot)
@@ -228,7 +228,7 @@ def render_model():
     st.markdown(
         "Ideal undamped motion is analytical. Damped and driven motion uses fixed-step RK4. The resonance sweep is cached by its physical parameters."
     )
-    assumptions = simulate_spring(SpringParameters(2, 20, 1)).assumptions
+    assumptions = cached_spring(SpringParameters(2, 20, 1)).assumptions
     assumptions_panel(
         assumptions,
         (
@@ -249,7 +249,7 @@ def render_model():
         with c3:
             preset = st.selectbox("Drive frequency preset", list(PRESETS))
             ratio = PRESETS[preset]
-        r = simulate_spring(SpringParameters(m, k, 0.1, d, f, ratio, 30, 900))
+        r = cached_spring(SpringParameters(m, k, 0.1, d, f, ratio, 30, 900))
         _summary(r)
         st.metric("Late response amplitude", f"{r.late_response_amplitude_m:.2f} m")
 
@@ -259,7 +259,7 @@ def render():
     _reuse()
     st.header("🌀 The Boing Machine")
     st.markdown("Explore ideal oscillation, damping, driving, and resonance.")
-    revealed = kidtools.prediction_quiz(
+    revealed = mission_ui.prediction_quiz(
         key="spring_quiz",
         question="If you pull an ideal spring farther, one full boing takes...",
         options=["More time", "Less time", "Almost exactly the same time"],

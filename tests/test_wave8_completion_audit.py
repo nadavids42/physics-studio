@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from physics_playground.canvas import legacy
+from physics_playground.canvas import embed
 from physics_playground.canvas.player import PLAYER_CSS, PLAYER_JS, build_player_document
 from physics_playground.registry import SIMULATION_REGISTRY
 from physics_playground.visual.contrast import contrast_ratio
@@ -57,7 +57,7 @@ def test_simulation_pages_have_no_isolated_native_chart_renderers():
         for page in folder.rglob("page.py"):
             source = page.read_text(encoding="utf-8")
             assert not any(token in source for token in forbidden), page
-    accessibility = (ROOT / "presentation/accessibility.py").read_text()
+    accessibility = (ROOT / "presentation/accessibility_ui.py").read_text()
     assert accessibility.count("st.pyplot") == 1 and "def render_chart" in accessibility
 
 
@@ -148,8 +148,8 @@ def test_context_is_a_background_layer_before_scientific_overlays():
         assert 0 <= context < first_overlay, name
 
 
-def test_legacy_module_retains_only_compatibility_embedding_surface():
-    source = (ROOT / "canvas/legacy.py").read_text(encoding="utf-8")
-    assert callable(legacy.show)
+def test_embed_module_owns_only_the_embedding_surface():
+    source = (ROOT / "canvas/embed.py").read_text(encoding="utf-8")
+    assert callable(embed.show)
     assert "def build_doc" not in source and "CANVAS_JS_UTILS" not in source
     assert "def show" in source

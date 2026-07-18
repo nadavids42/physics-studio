@@ -1,13 +1,8 @@
-"""Compatibility wrapper for embedding shared-player documents in Streamlit.
+"""Compatibility import for the shared-player embedding adapter.
 
-All document generation now lives in :mod:`physics_playground.canvas.player` and
-the family scene adapters.  ``show`` remains public because simulation pages
-and downstream imports still use it.
+New code should import from :mod:`physics_playground.canvas.embed`.
 """
 
-import streamlit as st
+from physics_playground.canvas.embed import show
 
-
-def show(html_doc: str, height: int = 420):
-    """Embed an already-built shared-player document."""
-    st.iframe(html_doc, height=height)
+__all__ = ["show"]

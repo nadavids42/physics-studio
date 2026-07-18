@@ -5,6 +5,13 @@ from dataclasses import replace
 
 import pytest
 
+from physics_playground.binding_catalog import (
+    PROJECTILE_BINDING,
+    PROJECTILE_WORKED_EXAMPLE_PRESET,
+    binding_for,
+    preset_for,
+)
+from physics_playground.binding_models import ExpectedMetric, SimulationPreset
 from physics_playground.model_metadata import MODEL_METADATA, PROJECTILE_MODEL_METADATA
 from physics_playground.models.simulations import InteractiveMode, SimulationMode
 from physics_playground.presentation.learning_modes import LearningMode
@@ -14,13 +21,6 @@ from physics_playground.setup_handoff import (
     SETUP_REQUEST_KEY,
     consume_setup_request,
     queue_preset,
-)
-from physics_playground.simulation_binding import ExpectedMetric, SimulationPreset
-from physics_playground.simulation_bindings import (
-    PROJECTILE_BINDING,
-    PROJECTILE_WORKED_EXAMPLE_PRESET,
-    binding_for,
-    preset_for,
 )
 from physics_playground.validation import PhysicsValidationError
 

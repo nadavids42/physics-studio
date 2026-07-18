@@ -5,19 +5,19 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import streamlit as st
 
-from physics_playground.canvas import legacy as canvas_kit
+from physics_playground.canvas import embed as canvas_embed
 from physics_playground.canvas.bumper_cars import (
     PLAYER_HEIGHT,
     build_bumper_canvas,
     build_bumper_comparison_canvas,
 )
-from physics_playground.missions import legacy as kidtools
+from physics_playground.missions import ui as mission_ui
 from physics_playground.missions.bumper_cars import evaluate_bumper_missions
 from physics_playground.models.collision import (
     CollisionParameters,
     CollisionResult,
 )
-from physics_playground.presentation.accessibility import render_chart
+from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.bumper_cars import energy_retention_figure, position_figure
 from physics_playground.presentation.bumper_learning import comparison_measurements
 from physics_playground.presentation.learning_modes import (
@@ -30,7 +30,7 @@ from physics_playground.presentation.learning_modes import (
     mode_navigation,
 )
 from physics_playground.presentation.notebook_ui import REUSE_REQUEST_KEY, add_trial, get_notebook
-from physics_playground.simulation_cache import cached_collision as simulate_collision
+from physics_playground.simulation_cache import cached_collision
 from physics_playground.validation import PhysicsValidationError
 
 LAUNCH_NONCE_KEY = "bumper_launch_nonce"
@@ -48,7 +48,7 @@ def _initialize_state() -> None:
 
 
 def _award_launched_missions(result: CollisionResult) -> tuple[str, ...]:
-    return kidtools.process_run("bumper_cars", evaluate_bumper_missions(result))
+    return mission_ui.process_run("bumper_cars", evaluate_bumper_missions(result))
 
 
 def _outcome_message(result: CollisionResult) -> str:
@@ -162,7 +162,7 @@ def _show_canvas(result: CollisionResult) -> None:
         autoplay=autoplay,
         nonce=st.session_state[LAUNCH_NONCE_KEY],
     )
-    canvas_kit.show(document, height=PLAYER_HEIGHT)
+    canvas_embed.show(document, height=PLAYER_HEIGHT)
 
 
 def _launch(result: CollisionResult, observation: str) -> None:
@@ -184,7 +184,7 @@ def _launch(result: CollisionResult, observation: str) -> None:
 
 def render_explore() -> None:
     mode_heading(LearningMode.EXPLORE, "Predict it, then crash it")
-    revealed = kidtools.prediction_quiz(
+    revealed = mission_ui.prediction_quiz(
         key="collision_quiz",
         question=(
             "Two IDENTICAL bumper cars, bouncy bumpers, no energy lost. One is zooming, "
@@ -222,7 +222,7 @@ def render_explore() -> None:
         horizontal=True,
         key="explore_bumper_kind",
     )
-    result = simulate_collision(
+    result = cached_collision(
         CollisionParameters(
             mass_a, mass_b, speed_a, -speed_b, 0.0 if kind.startswith("Sticky") else 1.0
         )
@@ -237,7 +237,7 @@ def render_explore() -> None:
     )
     _launch(result, observation)
     st.divider()
-    kidtools.mission_checklist("Bumper Cars")
+    mission_ui.mission_checklist("Bumper Cars")
 
 
 def render_compare() -> None:
@@ -290,8 +290,8 @@ def render_compare() -> None:
         else "#### Run A — Baseline\nEqual masses, 4 m/s, perfectly bouncy"
     )
     col_b.markdown(f"#### Run B — Modified\nOnly **{variable}** changed")
-    baseline = simulate_collision(baseline_parameters)
-    modified = simulate_collision(modified_parameters)
+    baseline = cached_collision(baseline_parameters)
+    modified = cached_collision(modified_parameters)
     compare_observation = st.text_input(
         "Optional comparison observation",
         placeholder="What changed between A and B?",
@@ -318,7 +318,7 @@ def render_compare() -> None:
         nonce=st.session_state[COMPARE_NONCE_KEY],
         autoplay=st.session_state[COMPARE_SIGNATURE_KEY] == signature,
     )
-    canvas_kit.show(document, height=PLAYER_HEIGHT)
+    canvas_embed.show(document, height=PLAYER_HEIGHT)
     comparison_metrics(comparison_measurements(baseline), comparison_measurements(modified))
 
 
@@ -331,7 +331,7 @@ def _analysis_parameters() -> CollisionParameters:
 
 def render_analyze() -> None:
     mode_heading(LearningMode.ANALYZE, "Measure what the collision conserved")
-    result = simulate_collision(_analysis_parameters())
+    result = cached_collision(_analysis_parameters())
     st.caption(
         "Using your latest Explore trial."
         if st.session_state.get(LAUNCHED_PARAMETERS_KEY)
@@ -360,7 +360,7 @@ def render_analyze() -> None:
         "Compare latest trial with restitution e", 0.0, 1.0, 0.5, 0.05, key="analyze_e"
     )
     p = result.parameters
-    comparison = simulate_collision(
+    comparison = cached_collision(
         CollisionParameters(
             p.mass_a_kg, p.mass_b_kg, p.velocity_a_m_s, p.velocity_b_m_s, comparison_e
         )
@@ -375,7 +375,7 @@ def render_model() -> None:
     st.latex(r"v'_B-v'_A=e(v_A-v_B)")
     st.latex(r"v'_A=v_A-\frac{(1+e)m_B(v_A-v_B)}{m_A+m_B}")
     st.latex(r"v'_B=v_B+\frac{(1+e)m_A(v_A-v_B)}{m_A+m_B}")
-    assumptions = simulate_collision(CollisionParameters(2, 2, 4, 0, 1)).assumptions
+    assumptions = cached_collision(CollisionParameters(2, 2, 4, 0, 1)).assumptions
     assumptions_panel(
         assumptions,
         (
@@ -395,7 +395,7 @@ def render_model() -> None:
             velocity_b = st.number_input("Model velocity B (m/s)", -15.0, 15.0, 0.0, 0.1)
         with c3:
             restitution = st.slider("Model restitution", 0.0, 1.0, 1.0, 0.05)
-        result = simulate_collision(
+        result = cached_collision(
             CollisionParameters(mass_a, mass_b, velocity_a, velocity_b, restitution)
         )
         if result.collided:

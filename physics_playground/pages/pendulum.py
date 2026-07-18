@@ -5,19 +5,19 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import streamlit as st
 
-from physics_playground.canvas import legacy as canvas_kit
+from physics_playground.canvas import embed as canvas_embed
 from physics_playground.canvas.pendulum import (
     PLAYER_HEIGHT,
     build_pendulum_canvas,
     build_pendulum_comparison_canvas,
 )
-from physics_playground.missions import legacy as kidtools
+from physics_playground.missions import ui as mission_ui
 from physics_playground.missions.pendulum import evaluate_pendulum_missions
 from physics_playground.models.pendulum import (
     PendulumModel,
     PendulumParameters,
 )
-from physics_playground.presentation.accessibility import render_chart
+from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
     LearningMode,
@@ -29,7 +29,7 @@ from physics_playground.presentation.learning_modes import (
 )
 from physics_playground.presentation.notebook_ui import REUSE_REQUEST_KEY, add_trial
 from physics_playground.presentation.pendulum_charts import error_figure, plot_figure
-from physics_playground.simulation_cache import cached_pendulum as simulate_pendulum
+from physics_playground.simulation_cache import cached_pendulum
 from physics_playground.validation import PhysicsValidationError
 
 WORLDS = {"Earth 🌍": 9.81, "The Moon 🌕": 1.62, "Jupiter 🟠": 24.8}
@@ -80,7 +80,7 @@ def _record(r, seed, obs, label=None, badges=()):
 
 
 def _award(r):
-    return kidtools.process_run("pendulum", evaluate_pendulum_missions(r))
+    return mission_ui.process_run("pendulum", evaluate_pendulum_missions(r))
 
 
 def _reuse():
@@ -109,10 +109,10 @@ def render_explore():
         model = PendulumModel(
             st.radio("Physics model", [m.value for m in PendulumModel], key="pend_model")
         )
-    r = simulate_pendulum(PendulumParameters(length, WORLDS[world], angle, model))
+    r = cached_pendulum(PendulumParameters(length, WORLDS[world], angle, model))
     _summary(r)
     autoplay = st.session_state.pend_launched == r.parameters.to_dict()
-    canvas_kit.show(
+    canvas_embed.show(
         build_pendulum_canvas(r, seed=20261500 + st.session_state.pend_nonce, autoplay=autoplay),
         height=PLAYER_HEIGHT,
     )
@@ -123,7 +123,7 @@ def render_explore():
         badges = _award(r)
         _record(r, 20261500 + st.session_state.pend_nonce, obs, badges=badges)
         st.rerun()
-    kidtools.mission_checklist("The Swing Machine")
+    mission_ui.mission_checklist("The Swing Machine")
 
 
 def _pair(kind):
@@ -147,7 +147,7 @@ def _pair(kind):
         b = PendulumParameters(2, 9.81, 70, PendulumModel.NONLINEAR)
         change = ChangedVariable("Model", "Small-angle", "Nonlinear")
         labels = ("Approximation", "Nonlinear")
-    return simulate_pendulum(a), simulate_pendulum(b), labels, change
+    return cached_pendulum(a), cached_pendulum(b), labels, change
 
 
 def render_compare():
@@ -171,7 +171,7 @@ def render_compare():
         n = st.session_state.pend_compare_nonce
         _record(a, 20261600 + n, obs, "Run A")
         _record(b, 20261700 + n, obs, "Run B")
-    canvas_kit.show(
+    canvas_embed.show(
         build_pendulum_comparison_canvas(
             a,
             b,
@@ -197,7 +197,7 @@ def _latest():
 def render_analyze():
     mode_heading(LearningMode.ANALYZE, "Inspect angle, energy, and phase space")
     p = _latest()
-    r = simulate_pendulum(p)
+    r = cached_pendulum(p)
     _summary(r)
     for plot in r.plots:
         fig = plot_figure(plot)
@@ -215,7 +215,7 @@ def render_model():
     st.markdown(
         "The small-angle model is analytical. The nonlinear equation is integrated with RK4; its period grows with release angle."
     )
-    assumptions = simulate_pendulum(PendulumParameters(2, 9.81, 30)).assumptions
+    assumptions = cached_pendulum(PendulumParameters(2, 9.81, 30)).assumptions
     assumptions_panel(
         assumptions,
         (
@@ -230,7 +230,7 @@ def render_model():
         gravity = st.number_input("Advanced gravity", 0.1, 30.0, 9.81)
         angle = st.number_input("Advanced angle", 1.0, 170.0, 60.0)
         model = PendulumModel(st.selectbox("Advanced model", [m.value for m in PendulumModel]))
-        _summary(simulate_pendulum(PendulumParameters(length, gravity, angle, model)))
+        _summary(cached_pendulum(PendulumParameters(length, gravity, angle, model)))
 
 
 def render():
@@ -238,7 +238,7 @@ def render():
     _reuse()
     st.header("🎢 The Swing Machine")
     st.markdown("Explore how length, gravity, angle, and model choice change a pendulum.")
-    revealed = kidtools.prediction_quiz(
+    revealed = mission_ui.prediction_quiz(
         key="pend_quiz",
         question="If you pull a small-angle swing farther, one full swing takes...",
         options=["More time", "Less time", "Almost exactly the same time"],

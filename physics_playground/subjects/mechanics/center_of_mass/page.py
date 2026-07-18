@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 from physics_playground.contracts import ModelAssumption
-from physics_playground.missions import legacy as kidtools
-from physics_playground.presentation.accessibility import render_chart
+from physics_playground.missions import ui as mission_ui
+from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.chart_system import series_figure
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
@@ -98,13 +98,13 @@ def explore():
             st.session_state.get("com_quiz_guess"),
             r.outcome,
             values(r),
-            kidtools.process_run(ID, evaluate(r)),
+            mission_ui.process_run(ID, evaluate(r)),
             20262201,
             VERSION,
             obs,
         )
         st.rerun()
-    kidtools.mission_checklist("Center of Mass")
+    mission_ui.mission_checklist("Center of Mass")
 
 
 def compare():
@@ -126,7 +126,7 @@ def compare():
                 "The center shifts toward the heavier mass",
                 r.outcome,
                 values(r),
-                kidtools.process_run(ID, evaluate(r)),
+                mission_ui.process_run(ID, evaluate(r)),
                 seed,
                 VERSION,
                 None,
@@ -171,7 +171,7 @@ def model():
 
 def render():
     st.header("🎯 Center of Mass")
-    revealed = kidtools.prediction_quiz(
+    revealed = mission_ui.prediction_quiz(
         key="com_quiz",
         question="If the mass on the right becomes heavier, where does the balance point move?",
         options=["Left", "Right", "It stays fixed"],

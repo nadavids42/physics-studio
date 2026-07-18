@@ -6,10 +6,10 @@ import json
 
 import streamlit as st
 
-from physics_playground.accessibility import AccessibilitySettings
+from physics_playground.accessibility_settings import AccessibilitySettings
 from physics_playground.missions.service import MissionProgress
 from physics_playground.notebook import ExperimentNotebook
-from physics_playground.presentation.accessibility import SETTINGS_KEY
+from physics_playground.presentation.accessibility_ui import SETTINGS_KEY
 from physics_playground.presentation.notebook_ui import NOTEBOOK_STATE_KEY, get_notebook
 from physics_playground.profiles import LocalProfile, PersistenceUnavailable, ProfileStore
 from physics_playground.registry import SIMULATION_REGISTRY, SIMULATIONS_BY_ID
