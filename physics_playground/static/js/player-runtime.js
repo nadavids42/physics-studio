@@ -1689,9 +1689,7 @@
       };
       document.addEventListener("visibilitychange", this.onVisibility);
       this.onKeydown = (event) => {
-        if (["INPUT", "SELECT", "BUTTON"].includes(
-          document.activeElement.tagName
-        ) && event.key !== " ")
+        if (["INPUT", "SELECT", "BUTTON"].includes(document.activeElement.tagName))
           return;
         if (event.key === " ") {
           event.preventDefault();
@@ -1782,12 +1780,17 @@
       this.lastTrailFraction = null;
       this.message.classList.remove("show");
       this.scrubber.value = "0";
+      this.scrubber.setAttribute("aria-valuetext", "0 percent");
       this.state = "paused";
       this.play();
     }
     seek(fraction) {
       this.playback.seek(fraction);
       this.scrubber.value = String(Math.round(this.fraction * 1e3));
+      this.scrubber.setAttribute(
+        "aria-valuetext",
+        `${Math.round(this.fraction * 100)} percent`
+      );
       this.fired.clear();
       for (const event of this.config.events || []) {
         if (event.fraction <= this.fraction) this.fired.add(event.id);
@@ -1833,6 +1836,10 @@
         this.playback.advance(stableElapsed);
         this.fireEvents();
         this.scrubber.value = String(Math.round(this.fraction * 1e3));
+        this.scrubber.setAttribute(
+          "aria-valuetext",
+          `${Math.round(this.fraction * 100)} percent`
+        );
         if (previous < 1 && this.fraction >= 1) this.complete();
       }
       this.camera.update(stableElapsed);

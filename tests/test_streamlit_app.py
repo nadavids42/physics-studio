@@ -3,7 +3,8 @@
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from physics_playground.state_keys import simulation_key
+from physics_playground.accessibility_settings import AccessibilitySettings
+from physics_playground.state_keys import SHARED_STATE_KEYS, simulation_key
 
 LESSON_ID = "projectile-motion-from-components"
 
@@ -111,3 +112,39 @@ def test_cannonball_interactive_chart_examples_render_in_page(
 
     assert not app.exception
     assert any(chart_title in iframe.proto.srcdoc for iframe in app.get("iframe"))
+
+
+def test_accessibility_preferences_apply_without_hiding_controls(monkeypatch, tmp_path) -> None:
+    app = _app(monkeypatch, tmp_path).run(timeout=30)
+    for label in (
+        "Reduce animation and disable autoplay",
+        "High-contrast display",
+        "Larger interface text",
+    ):
+        next(item for item in app.checkbox if item.label == label).set_value(True)
+    app.run(timeout=30)
+
+    assert not app.exception
+    assert app.session_state[SHARED_STATE_KEYS.accessibility_settings] == AccessibilitySettings(
+        reduced_motion=True,
+        high_contrast=True,
+        large_text=True,
+    )
+    assert any(button.label == "Home and discovery" for button in app.button)
+
+
+def test_model_limit_error_has_actionable_message(monkeypatch, tmp_path) -> None:
+    app = _app(monkeypatch, tmp_path)
+    app.query_params["simulation"] = "cannonball"
+    app.session_state[simulation_key("cannonball", "quiz_revealed")] = True
+    app.session_state[simulation_key("cannonball", "quiz_guess")] = "45°"
+    app.session_state[simulation_key("cannonball", "learning_mode")] = "Model"
+    app.run(timeout=30)
+    next(item for item in app.number_input if item.label == "Model speed").set_value(100.0)
+    next(item for item in app.number_input if item.label == "Model angle").set_value(89.0)
+    next(item for item in app.number_input if item.label == "Maximum time (s)").set_value(1.0)
+    app.run(timeout=30)
+
+    assert not app.exception
+    assert any("did not land" in error.value for error in app.error)
+    assert any("Increase the limit" in error.value for error in app.error)

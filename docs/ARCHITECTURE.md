@@ -162,6 +162,9 @@ python -m build
 MyPy currently checks a documented ratchet of typed foundation modules. See
 `docs/DEVELOPMENT.md` for how to expand that boundary.
 
+Real-browser accessibility evidence, known Streamlit limitations, and the manual assistive-
+technology release checklist are maintained in `docs/ACCESSIBILITY_VERIFICATION.md`.
+
 ## Shared physical constants
 
 `physics_playground.units` is the canonical home for shared physical assumptions. Names include

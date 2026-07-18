@@ -21,6 +21,7 @@ class FakeTarget {
     this.value = "0";
     this.hidden = false;
     this.textContent = "";
+    this.attributes = new Map();
   }
   addEventListener(type, listener) {
     const values = this.listeners.get(type) || new Set();
@@ -30,7 +31,9 @@ class FakeTarget {
   removeEventListener(type, listener) {
     this.listeners.get(type)?.delete(listener);
   }
-  setAttribute() {}
+  setAttribute(name, value) {
+    this.attributes.set(name, String(value));
+  }
   getBoundingClientRect() {
     return { width: 640, height: 360 };
   }
@@ -137,4 +140,27 @@ it("teardown cancels animation and removes lifecycle listeners", () => {
   expect(documentTarget.listeners.get("keydown").size).toBe(0);
   expect(documentTarget.listeners.get("visibilitychange").size).toBe(0);
   expect(ids["play-pause"].listeners.get("click").size).toBe(0);
+});
+
+it("keeps native keyboard behavior inside player controls", () => {
+  const { documentTarget, environment, ids } = installFakeBrowser();
+  const player = new AnimationPlayer(validConfig(), { draw() {} }, environment);
+  globalThis.document.activeElement = ids.scrubber;
+  ids.scrubber.tagName = "INPUT";
+  let prevented = false;
+  const keydown = [...documentTarget.listeners.get("keydown")][0];
+  keydown({ key: " ", preventDefault: () => (prevented = true) });
+  expect(player.state).toBe("idle");
+  expect(prevented).toBe(false);
+  player.destroy();
+});
+
+it("exposes meaningful scrubber percentages", () => {
+  const { environment, ids } = installFakeBrowser();
+  const player = new AnimationPlayer(validConfig(), { draw() {} }, environment);
+  player.seek(0.375);
+  expect(ids.scrubber.attributes.get("aria-valuetext")).toBe("38 percent");
+  player.stepFrames(1);
+  expect(ids.scrubber.attributes.get("aria-valuetext")).toBe("100 percent");
+  player.destroy();
 });

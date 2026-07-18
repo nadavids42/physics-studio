@@ -216,8 +216,8 @@ def apply_global_accessibility(settings):
         f"""<style>{streamlit_css()}
     html,body,.stApp {{ max-width:100%; overflow-x:hidden; font-size:{text_size}; }}
     [data-testid="stHorizontalBlock"] {{ flex-wrap:wrap; }}
-    button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[role="radio"]:focus-visible {{ outline:3px solid #0072B2 !important; outline-offset:3px !important; }}
-    iframe {{ max-width:100% !important; }}
+    .stApp :where(button,a,input,select,[role="radio"]):focus-visible {{ outline:3px solid #0072B2; outline-offset:3px; }}
+    iframe {{ max-width:100%; }}
     {contrast}
     </style>""",
         unsafe_allow_html=True,

@@ -141,12 +141,12 @@ def _cached_player_document(
 <body><div class="animation-shell" role="group" aria-label={json.dumps(accessible_label)}>
   <div class="canvas-wrap" id="canvas-wrap"><canvas id="animation-canvas" role="img" aria-label={json.dumps(accessible_label)}></canvas>
     <div class="hint" id="hint">{idle_hint}</div><div class="message" id="message" aria-live="polite"></div></div>
-  <div class="controls" aria-label="Animation controls">
+  <div class="controls" role="group" aria-label="Animation controls">
     <button id="play-pause" type="button" aria-label="Play animation" title="Play or pause (Space)">▶</button>
     <button id="replay" type="button" aria-label="Replay animation" title="Replay (R)">↺</button>
     <button id="step-back" type="button" aria-label="Step backward one frame" title="Previous frame (,)">‹</button>
     <button id="step-forward" type="button" aria-label="Step forward one frame" title="Next frame (.)">›</button>
-    <label class="sr-only" for="scrubber">Animation position</label><input id="scrubber" type="range" min="0" max="1000" value="0">
+    <label class="sr-only" for="scrubber">Animation position</label><input id="scrubber" type="range" min="0" max="1000" value="0" aria-valuetext="0 percent">
     <label class="speed-label" for="speed">Speed <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
   </div><div id="status" class="sr-only" aria-live="polite">Animation ready</div></div>
 <script>{PLAYER_JS}\nconst playerConfig={payload};\n{scene_javascript}\nwindow.animationPlayer=mountPhysicsPlayer(playerConfig,scene);</script>
