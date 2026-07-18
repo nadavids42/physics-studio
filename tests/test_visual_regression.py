@@ -135,7 +135,8 @@ def test_visual_preferences_round_trip_and_invalid_values_fall_back():
 def test_responsive_layout_contract_has_ordered_breakpoints_and_canvas_helper():
     assert 0 < RESPONSIVE.mobile_max_px < RESPONSIVE.tablet_max_px < RESPONSIVE.content_max_px
     assert RESPONSIVE.control_target_px >= 44
-    assert "return w<=(r.mobile_max_px||480)?'mobile'" in CANVAS_VISUAL_JS
+    assert "responsiveTokens.mobile_max_px || 480" in CANVAS_VISUAL_JS
+    assert "responsiveTokens.tablet_max_px || 820" in CANVAS_VISUAL_JS
     assert "img,svg,canvas,iframe {max-width:100%;}" in build_player_document(
         config={"durationMs": 1, "tracks": [], "events": []},
         scene_javascript="const scene={draw(){}};",

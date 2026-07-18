@@ -70,3 +70,17 @@ to make the check green.
 - Use `simulation_key("simulation_id", "control_name")` for new simulation-local Streamlit state
   and `feature_key(...)` for new cross-cutting controls.
 - Do not add raw globally scoped shared keys or a simulation-specific state manager.
+
+## Frontend checks
+
+The browser code uses a small Node-based toolchain without an application framework:
+
+```bash
+cd frontend
+npm ci
+npm run check
+```
+
+Edit JavaScript in `frontend/src`, not the built files under `physics_playground/static/js`. Run
+`npm run build` after source changes and commit the updated artifact. See
+`docs/FRONTEND_EXTRACTION.md` for the staged extraction plan.

@@ -60,5 +60,5 @@ def test_player_embeds_both_themes_and_shared_canvas_primitives():
     assert '"visualThemes":{"light"' in document
     assert "prefers-color-scheme: dark" in document
     assert "resolveVisualTheme" in document
-    assert "const PhysicsVisuals" in document
+    assert "globalThis.PhysicsVisuals" in document
     assert "function arrow" in document and "function grid" in document
