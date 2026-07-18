@@ -1,14 +1,18 @@
 import streamlit as st
+import matplotlib.pyplot as plt
 from physics_playground.missions import legacy as kidtools
 from physics_playground.presentation.learning_modes import LearningMode,mode_navigation,mode_heading,changed_variable_banner,ChangedVariable,assumptions_panel
 from physics_playground.contracts import ModelAssumption
 from physics_playground.subjects.mechanics.canvas import document
 from physics_playground.subjects.mechanics.ui import show,record,metric_table
+from physics_playground.presentation.chart_system import series_figure
+from physics_playground.presentation.accessibility import render_chart
 from .physics import LeverParameters,simulate
 from .missions import evaluate
 ID="torque_levers";VERSION="lever-1.0"
 def values(r):return {"load_torque_n_m":r.load_torque_n_m,"effort_torque_n_m":r.effort_torque_n_m,"net_torque_n_m":r.net_torque_n_m,"required_balance_force_n":r.required_balance_force_n,"mechanical_advantage":r.mechanical_advantage}
-def animation(r,seed):show(document("lever",[{"id":"beam","label":"Lever","x":[0,max(-12,min(12,r.net_torque_n_m/10))]}],message=r.outcome,seed=seed,autoplay=False))
+def animation(r,seed):
+    p=r.parameters;show(document("lever",[{"id":"beam","label":"Lever","x":[0,max(-12,min(12,r.net_torque_n_m/10))]}],message=r.outcome,seed=seed,autoplay=False,scene_config={"loadArmM":p.load_arm_m,"effortArmM":p.effort_arm_m,"loadForceN":p.load_force_n,"effortForceN":p.effort_force_n,"loadTorqueNm":r.load_torque_n_m,"effortTorqueNm":r.effort_torque_n_m,"netTorqueNm":r.net_torque_n_m}))
 def explore():
     mode_heading(LearningMode.EXPLORE,"Balance the beam");c1,c2=st.columns(2)
     with c1:load=st.slider("Load force (N)",0.,500.,200.,10.);la=st.slider("Load arm (m)",.1,3.,.5,.1)
@@ -22,7 +26,7 @@ def compare():
         for label,r,seed in (("Run A",a,20262111),("Run B",b,20262112)):record(ID,r.parameters.to_dict(),"Longer arm creates more torque",r.outcome,values(r),kidtools.process_run(ID,evaluate(r)),seed,VERSION,None,label)
     animation(b,20262112)
 def analyze():
-    mode_heading(LearningMode.ANALYZE,"Torque versus lever arm");arms=[x/10 for x in range(1,31)];st.line_chart({"arm_m":arms,"torque_n_m":[80*x for x in arms]},x="arm_m",y="torque_n_m");st.caption("Accessible chart description: at fixed force, torque increases linearly with distance from the pivot.")
+    mode_heading(LearningMode.ANALYZE,"Torque versus lever arm");arms=[x/10 for x in range(1,31)];figure=series_figure(x=arms,series={"Torque at 80 N":[80*x for x in arms]},x_label="Lever arm (m)",y_label="Torque (N·m)",title="Torque versus lever arm");render_chart(figure,"At fixed force, torque increases linearly with distance from the pivot.");plt.close(figure)
 def model():
     mode_heading(LearningMode.MODEL,"Moments about a pivot");st.latex(r"\tau=rF_\perp\qquad \sum\tau=0\text{ at balance}");assumptions_panel((ModelAssumption("rigid","The beam is rigid and massless"),ModelAssumption("perpendicular","Forces act perpendicular to the beam")),("Pivot friction is omitted.","The beam's own weight is omitted.","Dynamic angular acceleration is illustrative only."))
 def render():

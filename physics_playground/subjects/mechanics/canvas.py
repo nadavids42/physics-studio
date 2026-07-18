@@ -1,13 +1,91 @@
 """Shared browser-player scene adapter for mechanics diagrams."""
+from __future__ import annotations
+
+from typing import Any
+
 from physics_playground.canvas.player import build_player_document
 
-SCENE=r"""
-const scene={draw(ctx,s){const {width:w,height:h}=s.transform;PhysicsExperience.context(ctx,s,s.config.scene==='coaster'?'rollerCoaster':'laboratory');ctx.strokeStyle=PhysicsVisuals.token(s,'colors','text','#152536');ctx.lineWidth=4;
-if(s.config.scene==='ramp'){ctx.beginPath();ctx.moveTo(35,h-35);ctx.lineTo(w-35,h-35);ctx.lineTo(35,40);ctx.closePath();ctx.stroke();const b=s.tracks.block;ctx.fillStyle='#FB8C00';ctx.fillRect(35+b.x*(w-100),35+b.x*(h-95),34,34);}
-else if(s.config.scene==='lever'){ctx.translate(w/2,h/2);ctx.rotate((s.tracks.beam.x||0)*Math.PI/180);ctx.strokeStyle='#1565C0';ctx.lineWidth=12;ctx.beginPath();ctx.moveTo(-w*.4,0);ctx.lineTo(w*.4,0);ctx.stroke();ctx.fillStyle='#455A64';ctx.beginPath();ctx.moveTo(-18,28);ctx.lineTo(18,28);ctx.lineTo(0,0);ctx.fill();ctx.fillStyle='#D32F2F';ctx.fillRect(-w*.34,-35,42,34);ctx.fillStyle='#2E7D32';ctx.fillRect(w*.28,-35,42,34);}
-else if(s.config.scene==='coaster'){const car=s.tracks.car;ctx.strokeStyle='#37474F';ctx.beginPath();for(let i=0;i<80;i++){const x=30+i*(w-60)/79,y=h*.72-Math.sin(i/79*Math.PI*2)*h*.25;if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y)}ctx.stroke();ctx.fillStyle='#E53935';ctx.fillRect(22+car.x*(w-70),h*.68-Math.sin(car.x*Math.PI*2)*h*.25,36,22);}
-else if(s.config.scene==='rotation'){ctx.translate(w/2,h/2);ctx.rotate(s.tracks.body.x||0);ctx.fillStyle='#5E35B1';ctx.beginPath();ctx.arc(0,0,75,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#FFF';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(70,0);ctx.stroke();}
-else{ctx.strokeStyle='#546E7A';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(35,h/2);ctx.lineTo(w-35,h/2);ctx.stroke();for(const t of Object.values(s.tracks)){const x=55+(t.x+5)/10*(w-110);ctx.fillStyle=t.style.color||'#1976D2';ctx.beginPath();ctx.arc(x,h/2,Math.max(8,t.style.radius||12),0,Math.PI*2);ctx.fill();ctx.fillStyle='#111';ctx.fillText(t.label,x-18,h/2+35);}}}};
+
+SCENE = r"""
+const scene={draw(ctx,s){
+  const {width:w,height:h}=s.transform,c=s.config.mechanics||{},kind=s.config.scene;
+  PhysicsExperience.context(ctx,s,kind==='coaster'?'rollerCoaster':'laboratory');
+  const text=PhysicsVisuals.token(s,'colors','text','#152536');
+  if(kind==='ramp'){
+    const theta=(c.angleDeg||0)*Math.PI/180,maxRun=w-140,run=Math.min(maxRun,(h-150)/Math.max(Math.tan(theta),.001)),x0=(w-run)/2,y0=70,x1=x0+run,y1=y0+Math.tan(theta)*run;
+    const rampHeight=Math.max(4,y1-y0),progress=s.tracks.block?.x||0,bx=x0+(x1-x0)*progress,by=y0+(y1-y0)*progress-23;
+    PhysicsAssets.ramp(ctx,s,{x:(x0+x1)/2,y:y0+rampHeight/2,width:x1-x0,height:rampHeight,descending:true,fill:PhysicsVisuals.token(s,'colors','surface_muted','#EAF0F6')});
+    PhysicsAnnotations.pathGuide(ctx,s,{points:[{x:x0,y:y0-28},{x:x1,y:y1-28}],opacity:.45});
+    PhysicsAnnotations.normalLine(ctx,s,{x:bx,y:by,length:92,surface_angle:theta,label:'normal'});
+    PhysicsAssets.block(ctx,s,{x:bx,y:by,rotation:theta,width:52,height:38,label:c.motionState||'block',highlight:true,selected:c.moving});
+    PhysicsAnnotations.angleArc(ctx,s,{x:x0,y:y0,radius:34,startAngle:0,endAngle:theta,label:`${(c.angleDeg||0).toFixed(0)}°`});
+    const vectors=(c.vectors||[]).map(v=>({...v,x:bx,y:by}));
+    PhysicsAnnotations.vectorSet(ctx,s,vectors,s.progress,{x:12,y:12});
+    if(c.moving)PhysicsAnnotations.motionDirection(ctx,s,{x:bx+24*Math.cos(theta),y:by+24*Math.sin(theta),end:{x:bx+66*Math.cos(theta),y:by+66*Math.sin(theta)},label:'motion'});
+    PhysicsAssets.callout(ctx,s,{x:w-245,y:24,width:220,height:62,text:`${c.motionState||''}\nSlip threshold: ${(c.criticalAngleDeg||0).toFixed(1)}°`,target:{x:bx,y:by}});
+  } else if(kind==='lever'){
+    const cx=w/2,cy=h*.55,turn=(s.tracks.beam?.x||0)*Math.PI/180,half=Math.min(w*.37,260),maxArm=Math.max(c.loadArmM||1,c.effortArmM||1),scale=half/maxArm;
+    ctx.save();ctx.translate(cx,cy);ctx.rotate(turn);
+    PhysicsAssets.rod(ctx,s,{x:-half,y:0,end:{x:half*2,y:0},lineWidth:12,label:''});
+    const lx=-(c.loadArmM||0)*scale,ex=(c.effortArmM||0)*scale;
+    PhysicsAssets.block(ctx,s,{x:lx,y:-29,width:44,height:36,label:'load'});PhysicsAssets.block(ctx,s,{x:ex,y:-29,width:44,height:36,label:'effort',fill:PhysicsVisuals.token(s,'colors','selected','#7C3AED')});
+    PhysicsAnnotations.dimensionLine(ctx,s,{x:lx,y:32,end:{x:0,y:32},label:`${(c.loadArmM||0).toFixed(1)} m`});
+    PhysicsAnnotations.dimensionLine(ctx,s,{x:0,y:50,end:{x:ex,y:50},label:`${(c.effortArmM||0).toFixed(1)} m`});ctx.restore();
+    PhysicsAssets.pivot(ctx,s,{x:cx,y:cy+18,label:'pivot'});PhysicsAnnotations.centerOfMass(ctx,s,{x:cx,y:cy,label:'beam COM',radius:7});
+    PhysicsAnnotations.vectorSet(ctx,s,[{x:cx-(c.loadArmM||0)*scale,y:cy-48,dx:0,dy:-1,role:'gravity',label:`load ${(c.loadForceN||0).toFixed(0)} N`,scale_mode:'normalized',fixed_length_px:48},{x:cx+(c.effortArmM||0)*scale,y:cy-48,dx:0,dy:-1,role:'net_force',label:`effort ${(c.effortForceN||0).toFixed(0)} N`,scale_mode:'normalized',fixed_length_px:48}],s.progress);
+    if((c.loadTorqueNm||0)>0)PhysicsAssets.torqueArc(ctx,s,{x:cx,y:cy,radius:62,startAngle:3.6,endAngle:1.7,counterclockwise:true,label:'load torque'});
+    if((c.effortTorqueNm||0)>0)PhysicsAssets.torqueArc(ctx,s,{x:cx,y:cy,radius:82,startAngle:-.5,endAngle:1.35,label:'effort torque',fill:PhysicsVisuals.token(s,'colors','selected','#7C3AED')});
+    if(Math.abs(c.netTorqueNm||0)>1e-9)PhysicsAssets.torqueArc(ctx,s,{x:cx,y:cy,radius:105,startAngle:-.4,endAngle:1.1,counterclockwise:(c.netTorqueNm||0)<0,label:'net torque'});
+  } else if(kind==='coaster'){
+    const car=s.tracks.car;ctx.strokeStyle='#37474F';ctx.beginPath();for(let i=0;i<80;i++){const x=30+i*(w-60)/79,y=h*.72-Math.sin(i/79*Math.PI*2)*h*.25;if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y)}ctx.stroke();ctx.fillStyle='#E53935';ctx.fillRect(22+car.x*(w-70),h*.68-Math.sin(car.x*Math.PI*2)*h*.25,36,22);
+  } else if(kind==='rotation'){
+    const cx=w/2,cy=h*.52,total=s.tracks.body?.x||0,angle=((total%(Math.PI*2))+Math.PI*2)%(Math.PI*2),radius=Math.min(82,w*.16);
+    PhysicsAnnotations.pathGuide(ctx,s,{points:[{x:cx-radius-18,y:cy},{x:cx+radius+18,y:cy}],opacity:.35});
+    if(c.shape==='Rod about center')PhysicsAssets.rod(ctx,s,{x:cx-radius,y:cy,rotation:angle,end:{x:radius*2,y:0},lineWidth:11});
+    else if(c.shape==='Solid sphere')PhysicsAssets.sphere(ctx,s,{x:cx,y:cy,radius,rotation:angle,label:''});
+    else if(c.shape==='Point mass'){PhysicsAssets.rod(ctx,s,{x:cx,y:cy,rotation:angle,end:{x:radius,y:0},lineWidth:4});PhysicsAssets.mass(ctx,s,{x:cx+Math.cos(angle)*radius,y:cy+Math.sin(angle)*radius,radius:18,label:'point mass'});}
+    else PhysicsAssets.wheel(ctx,s,{x:cx,y:cy,radius,rotation:angle,fill:c.shape==='Hoop'?PhysicsVisuals.token(s,'colors','surface_muted','#EAF0F6'):PhysicsVisuals.token(s,'colors','uncertainty','#6B7280')});
+    PhysicsAssets.pivot(ctx,s,{x:cx,y:cy+5,width:24,height:22,label:'axis'});
+    PhysicsAnnotations.angleArc(ctx,s,{x:cx,y:cy,radius:radius+18,startAngle:0,endAngle:Math.min(angle,Math.PI*1.8),label:'θ'});
+    if(Math.abs(c.torqueNm||0)>1e-9)PhysicsAssets.torqueArc(ctx,s,{x:cx,y:cy,radius:radius+38,counterclockwise:(c.torqueNm||0)<0,label:'τ'});
+    if(Math.abs(c.omegaRadS||0)>1e-9)PhysicsAssets.torqueArc(ctx,s,{x:cx,y:cy,radius:radius+58,startAngle:-.5,endAngle:.9,counterclockwise:(c.omegaRadS||0)<0,label:'ω (schematic)',fill:PhysicsVisuals.token(s,'colors','velocity','#087EA4')});
+    PhysicsAnnotations.disclosure(ctx,s,'schematic','Angular indicators are schematic; orientation uses recorded θ',12,12);
+    PhysicsAssets.callout(ctx,s,{x:w-226,y:24,width:202,height:62,text:`Total θ: ${total.toFixed(2)} rad\n${(Math.abs(total)/(Math.PI*2)).toFixed(2)} turns`});
+  } else {
+    const left=62,right=w-62,y=h*.52,X=x=>left+(x+5)/10*(right-left),items=c.objects||[];
+    PhysicsAnnotations.pathGuide(ctx,s,{points:[{x:left,y},{x:right,y}],dashes:[1,0],opacity:.8});PhysicsAssets.ruler(ctx,s,{x:left,y:y+44,width:right-left,divisions:10,maximum:10,showValues:PhysicsVisuals.responsive(s)!=='mobile'});
+    for(const o of items){const x=X(o.position),radius=Math.max(11,Math.min(24,10+Math.sqrt(Math.max(0,o.mass))*4));PhysicsAssets.mass(ctx,s,{x,y:y-24,radius,label:`${o.label}: ${o.mass.toFixed(1)} kg`,fill:PhysicsVisuals.token(s,'colors',o.role,'#1769AA'),selected:o.selected});PhysicsAnnotations.dimensionLine(ctx,s,{x:X(0),y:y+18,end:{x,y:y+18},label:`${o.position.toFixed(1)} m`});}
+    PhysicsAnnotations.centerOfMass(ctx,s,{x:X(c.centerM||0),y:y-24,label:`center ${(c.centerM||0).toFixed(2)} m`});PhysicsAnnotations.disclosure(ctx,s,'schematic','Mass radii are bounded illustrations; positions and dimensions use the ruler scale',12,12);
+  }
+}};
 """
-def document(scene:str,tracks:list[dict],*,message:str,seed:int,autoplay:bool=True)->str:
-    return build_player_document(config={"durationMs":2200,"autoplay":autoplay,"seed":seed,"scene":scene,"tracks":tracks,"events":[],"completionMessage":message,"view":{"minimum":0,"maximum":1}},scene_javascript=SCENE,logical_width=760,logical_height=360,accessible_label=f"{scene.title()} mechanics animation. {message}",idle_hint="Press Play to run the experiment")
+
+
+def document(
+    scene: str,
+    tracks: list[dict[str, Any]],
+    *,
+    message: str,
+    seed: int,
+    autoplay: bool = True,
+    scene_config: dict[str, Any] | None = None,
+) -> str:
+    """Build a mechanics scene while retaining the legacy call signature."""
+    return build_player_document(
+        config={
+            "durationMs": 2200,
+            "autoplay": autoplay,
+            "seed": seed,
+            "scene": scene,
+            "mechanics": scene_config or {},
+            "tracks": tracks,
+            "events": [],
+            "completionMessage": message,
+            "view": {"minimum": 0, "maximum": 1},
+        },
+        scene_javascript=SCENE,
+        logical_width=760,
+        logical_height=360,
+        accessible_label=f"{scene.title()} mechanics animation. {message}",
+        idle_hint="Press Play to run the experiment",
+    )

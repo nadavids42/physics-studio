@@ -1,10 +1,13 @@
 import math
+import matplotlib.pyplot as plt
 import streamlit as st
 from physics_playground.missions import legacy as kidtools
 from physics_playground.presentation.learning_modes import LearningMode,mode_navigation,mode_heading,changed_variable_banner,ChangedVariable,assumptions_panel
 from physics_playground.contracts import ModelAssumption
 from physics_playground.subjects.mechanics.canvas import document
 from physics_playground.subjects.mechanics.ui import show,record,metric_table
+from physics_playground.presentation.chart_system import series_figure
+from physics_playground.presentation.accessibility import render_chart
 from .physics import InclinedPlaneParameters,simulate
 from .missions import evaluate
 ID="inclined_plane";VERSION="inclined-plane-1.0"
@@ -16,7 +19,16 @@ def params(prefix="incline"):
 def metrics(r):return {"Acceleration":f"{r.acceleration_m_s2:.2f} m/s²","Normal force":f"{r.normal_force_n:.2f} N","Final speed":f"{r.final_speed_m_s:.2f} m/s"}
 def numeric(r):return {"acceleration_m_s2":r.acceleration_m_s2,"normal_force_n":r.normal_force_n,"friction_force_n":r.friction_force_n,"final_speed_m_s":r.final_speed_m_s,"critical_angle_deg":r.critical_angle_deg}
 def animate(r,seed,autoplay=True):
-    end=1 if r.moving else 0;show(document("ramp",[{"id":"block","label":"Block","x":[0,end],"style":{"color":"#FB8C00"}}],message=r.outcome,seed=seed,autoplay=autoplay))
+    p=r.parameters;end=1 if r.moving else 0;largest=max(r.normal_force_n,r.down_slope_force_n,r.friction_force_n,abs(r.net_force_n),1)
+    length=lambda value:28+40*abs(value)/largest
+    theta=math.radians(p.angle_deg);down=(math.cos(theta),-math.sin(theta));normal=(-math.sin(theta),math.cos(theta))
+    vectors=[
+        {"dx":0,"dy":-1,"role":"gravity","label":f"weight {p.mass_kg*9.81:.1f} N","scale_mode":"normalized","fixed_length_px":length(p.mass_kg*9.81)},
+        {"dx":normal[0],"dy":normal[1],"role":"normal_force","label":f"normal {r.normal_force_n:.1f} N","scale_mode":"normalized","fixed_length_px":length(r.normal_force_n)},
+    ]
+    if r.friction_force_n:vectors.append({"dx":-down[0],"dy":-down[1],"role":"friction","label":f"friction {r.friction_force_n:.1f} N","scale_mode":"normalized","fixed_length_px":length(r.friction_force_n)})
+    if abs(r.net_force_n)>1e-9:vectors.append({"dx":down[0],"dy":down[1],"role":"net_force","label":f"net {r.net_force_n:.1f} N","scale_mode":"normalized","fixed_length_px":length(r.net_force_n)})
+    show(document("ramp",[{"id":"block","label":"Block","x":[0,end]}],message=r.outcome,seed=seed,autoplay=autoplay,scene_config={"angleDeg":p.angle_deg,"criticalAngleDeg":r.critical_angle_deg,"moving":r.moving,"motionState":"sliding" if r.moving else "static equilibrium","vectors":vectors}))
 def explore():
     mode_heading(LearningMode.EXPLORE,"Will it slide?");r=simulate(params());metric_table(metrics(r));st.caption("Text outcome: "+r.outcome);animate(r,20262001,False);obs=st.text_input("Optional notebook observation",key="incline_obs")
     if st.button("▶ Run ramp",type="primary",use_container_width=True):
@@ -28,7 +40,7 @@ def compare():
         for label,r,seed in (("Run A",a,20262011),("Run B",b,20262012)):record(ID,r.parameters.to_dict(),"Lower friction slides faster",r.outcome,numeric(r),kidtools.process_run(ID,evaluate(r)),seed,VERSION,None,label)
     animate(b,20262012,False)
 def analyze():
-    mode_heading(LearningMode.ANALYZE,"Forces and slipping threshold");mu=st.slider("Static friction for scan",0.,1.2,.3,.05);angles=list(range(0,76,5));values=[simulate(InclinedPlaneParameters(angle_deg=a,static_friction=mu,kinetic_friction=min(.2,mu))).acceleration_m_s2 for a in angles];st.line_chart({"angle_deg":angles,"acceleration_m_s2":values},x="angle_deg",y="acceleration_m_s2");st.caption("Accessible chart description: acceleration remains zero below the slipping threshold, then rises with ramp angle.")
+    mode_heading(LearningMode.ANALYZE,"Forces and slipping threshold");mu=st.slider("Static friction for scan",0.,1.2,.3,.05);angles=list(range(0,76,5));values=[simulate(InclinedPlaneParameters(angle_deg=a,static_friction=mu,kinetic_friction=min(.2,mu))).acceleration_m_s2 for a in angles];figure=series_figure(x=angles,series={"Acceleration":values},x_label="Ramp angle (degrees)",y_label="Acceleration (m/s²)",title="Acceleration versus ramp angle");render_chart(figure,"Acceleration remains zero below the slipping threshold, then rises with ramp angle.");plt.close(figure)
 def model():
     mode_heading(LearningMode.MODEL,"Resolve gravity along the ramp");st.latex(r"N=mg\cos\theta\quad F_\parallel=mg\sin\theta");st.latex(r"F_{s,max}=\mu_sN\quad a=g(\sin\theta-\mu_k\cos\theta)");assumptions_panel((ModelAssumption("point","Rigid block and ramp"),ModelAssumption("constant","Constant friction coefficients")),("No air resistance.","The ramp does not deform.","Friction changes instantly from static to kinetic."))
 def render():

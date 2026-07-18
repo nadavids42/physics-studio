@@ -80,7 +80,7 @@ const PhysicsAssets=(()=>{
   function spring(ctx,s,o={}){const end=o.end||point(o.width||100,0),turns=o.turns||12,amp=o.amplitude||9,c=colors(s,o,'acceleration');setup(ctx,s,o);ctx.strokeStyle=c.fill;ctx.lineWidth=o.lineWidth||2.5;
     ctx.beginPath();ctx.moveTo(0,0);for(let i=1;i<turns*2;i++){const t=i/(turns*2),x=end.x*t,y=end.y*t+(i%2?amp:-amp);ctx.lineTo(x,y)}ctx.lineTo(end.x,end.y);ctx.stroke();finish(ctx,s,o)}
   function ramp(ctx,s,o={}){const w=o.width||150,h=o.height||80,c=colors(s,o,'uncertainty');setup(ctx,s,o);ctx.fillStyle=o.fill||V.token(s,'colors','surface_muted','#EAF0F6');ctx.strokeStyle=c.outline;
-    ctx.beginPath();ctx.moveTo(-w/2,h/2);ctx.lineTo(w/2,h/2);ctx.lineTo(w/2,-h/2);ctx.closePath();ctx.fill();ctx.stroke();finish(ctx,s,o)}
+    ctx.beginPath();if(o.descending){ctx.moveTo(-w/2,-h/2);ctx.lineTo(-w/2,h/2);ctx.lineTo(w/2,h/2)}else{ctx.moveTo(-w/2,h/2);ctx.lineTo(w/2,h/2);ctx.lineTo(w/2,-h/2)}ctx.closePath();ctx.fill();ctx.stroke();finish(ctx,s,o)}
   function pulley(ctx,s,o={}){wheel(ctx,s,{...o,width:o.width||48,height:o.height||48,fill:o.fill||V.token(s,'colors','surface_muted','#EAF0F6')})}
   function lever(ctx,s,o={}){rod(ctx,s,{...o,x:o.x-(o.width||160)/2,y:o.y,end:point(o.width||160,0),lineWidth:o.height||9,label:''});pivot(ctx,s,{...o,width:32,height:28,label:'',shadow:false});if(o.label)finish(ctx,s,{...o,shadow:false})}
   function planet(ctx,s,o={}){body(ctx,s,{...o,radius:o.radius||Math.min(o.width||72,o.height||72)/2},'electric_field')}
