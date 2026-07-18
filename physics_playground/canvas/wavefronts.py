@@ -1,8 +1,40 @@
-"""Reusable shared-player adapter for expanding one-dimensional wavefronts."""
+"""Reusable shared-player adapter for physically positioned sound wavefronts."""
+from __future__ import annotations
+
 from physics_playground.canvas.player import build_player_document
-SCENE=r"""
-const scene={draw(ctx,s){const w=s.transform.width,h=s.transform.height,frames=s.config.wavefrontFrames||[];ctx.clearRect(0,0,w,h);ctx.fillStyle='#F8FAFC';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#64748B';ctx.beginPath();ctx.moveTo(25,h/2);ctx.lineTo(w-25,h/2);ctx.stroke();if(!frames.length)return;const f=frames[Math.min(frames.length-1,Math.round(s.fraction*(frames.length-1)))],min=s.config.worldMin,max=s.config.worldMax,map=x=>25+(x-min)/(max-min)*(w-50);ctx.strokeStyle='#42A5F5';ctx.lineWidth=2;for(let i=0;i<f.centers.length;i++){for(const sign of [-1,1]){const x=map(f.centers[i]+sign*f.radii[i]);if(x>=20&&x<=w-20){ctx.beginPath();ctx.moveTo(x,h*.2);ctx.lineTo(x,h*.8);ctx.stroke()}}}ctx.fillStyle='#D32F2F';ctx.beginPath();ctx.arc(map(f.source),h/2,13,0,Math.PI*2);ctx.fill();ctx.fillStyle='#2E7D32';ctx.fillRect(map(f.observer)-8,h/2-20,16,40);ctx.fillStyle='#111';ctx.fillText('Source',map(f.source)-22,h/2+36);ctx.fillText('Observer',map(f.observer)-28,h/2+36);}};
+
+SCENE = r"""
+const scene={draw(ctx,s){
+  const w=s.transform.width,h=s.transform.height,c=s.config,frames=c.wavefrontFrames||[],pad=52,axisY=h*.58,min=c.worldMin,max=c.worldMax,map=x=>pad+(x-min)/(max-min)*(w-pad*2),metersToPixels=r=>Math.abs(map(r)-map(0));
+  PhysicsExperience.context(ctx,s,'laboratory');PhysicsAssets.ruler(ctx,s,{x:pad,y:axisY+48,width:w-pad*2,divisions:10,maximum:max-min,showValues:PhysicsVisuals.responsive(s)!=='mobile'});
+  ctx.save();ctx.strokeStyle=PhysicsVisuals.token(s,'colors','text','#152536');ctx.beginPath();ctx.moveTo(pad,axisY);ctx.lineTo(w-pad,axisY);ctx.stroke();PhysicsVisuals.applyText(ctx,s,'annotation');ctx.fillStyle=PhysicsVisuals.token(s,'colors','text','#152536');ctx.fillText('+x → right; medium stationary',pad,axisY+72);ctx.restore();if(!frames.length)return;
+  const frame=frames[Math.min(frames.length-1,Math.round(s.fraction*(frames.length-1)))];
+  for(let i=0;i<frame.centers.length;i++){const center=map(frame.centers[i]),radius=metersToPixels(frame.radii[i]);PhysicsAssets.wavefront(ctx,s,{x:center,y:axisY,radius,count:1,startAngle:0,endAngle:Math.PI*2,lineWidth:1.6,opacity:.48});ctx.save();ctx.fillStyle=PhysicsVisuals.token(s,'colors','trajectory','#1769AA');ctx.beginPath();ctx.arc(center,axisY,2.5,0,Math.PI*2);ctx.fill();ctx.restore();if(i===frame.centers.length-1){ctx.save();PhysicsVisuals.applyText(ctx,s,'annotation');ctx.fillStyle=PhysicsVisuals.token(s,'colors','text_muted','#526577');ctx.fillText(`r=${frame.radii[i].toFixed(1)} m`,Math.min(w-92,center+radius+4),axisY-8);ctx.restore();}}
+  const sx=map(frame.source),ox=map(frame.observer);PhysicsAssets.source(ctx,s,{x:sx,y:axisY,radius:16,label:'sound source'});PhysicsAssets.observer(ctx,s,{x:ox,y:axisY,radius:15,label:'observer'});
+  if(Math.abs(c.sourceVelocityMps)>1e-9)PhysicsAnnotations.vector(ctx,s,{x:sx,y:axisY-34,dx:c.sourceVelocityMps,dy:0,role:'velocity',label:`source ${c.sourceVelocityMps.toFixed(0)} m/s`,scale_mode:'normalized',fixed_length_px:48,scale_disclosure:'Motion-arrow direction is physical; length is normalized'},s.progress,true);
+  if(Math.abs(c.observerVelocityMps)>1e-9)PhysicsAnnotations.vector(ctx,s,{x:ox,y:axisY-34,dx:c.observerVelocityMps,dy:0,role:'displacement',label:`observer ${c.observerVelocityMps.toFixed(0)} m/s`,scale_mode:'normalized',fixed_length_px:48,scale_disclosure:'Motion-arrow direction is physical; length is normalized'},s.progress,false);
+  const ahead=c.sourceVelocityMps>0?'compressed ahead':(c.sourceVelocityMps<0?'expanded ahead':'equal spacing ahead'),behind=c.sourceVelocityMps>0?'expanded behind':(c.sourceVelocityMps<0?'compressed behind':'equal spacing behind');PhysicsAssets.callout(ctx,s,{x:Math.max(10,sx-215),y:30,width:190,height:50,text:`${behind}\nλ = ${c.wavelengthBehindM.toFixed(2)} m`});PhysicsAssets.callout(ctx,s,{x:Math.min(w-200,sx+25),y:30,width:190,height:50,text:`${ahead}\nλ = ${c.wavelengthAheadM.toFixed(2)} m`});
+  ctx.save();PhysicsVisuals.applyText(ctx,s,'label');ctx.fillStyle=PhysicsVisuals.token(s,'colors','text','#152536');ctx.fillText(`${c.motionLabel} · positions and radii physical`,pad,25);ctx.restore();PhysicsAnnotations.disclosure(ctx,s,'schematic','Wavefront position and radius are physical; line thickness is decorative',12,h-34);
+}};
 """
-def build_wavefront_document(*,frames:list[dict],world_min:float,world_max:float,duration_s:float,message:str,seed:int,autoplay:bool=False)->str:
-    config={"durationMs":max(1200,int(duration_s*2200)),"autoplay":autoplay,"seed":seed,"tracks":[{"id":"clock","label":"Wavefront time","x":[0,1]}],"events":[],"completionMessage":message,"wavefrontFrames":frames,"worldMin":world_min,"worldMax":world_max,"view":{"minimum":0,"maximum":1}}
-    return build_player_document(config=config,scene_javascript=SCENE,logical_width=820,logical_height=350,accessible_label="Animated sound wavefronts with moving source and observer. "+message,idle_hint="Press Play to animate the sound wavefronts")
+
+
+def build_wavefront_document(*, frames: list[dict], world_min: float, world_max: float,
+        duration_s: float, message: str, seed: int, autoplay: bool = False,
+        source_velocity_m_s: float = 0, observer_velocity_m_s: float = 0,
+        wavelength_ahead_m: float = 0, wavelength_behind_m: float = 0,
+        motion_label: str = "Constant separation") -> str:
+    config = {"durationMs": max(1200, int(duration_s*2200)), "autoplay": autoplay,
+              "seed": seed, "frameCount": len(frames),
+              "tracks": [{"id": "clock", "label": "Wavefront time", "x": [0, 1]}],
+              "events": [], "completionMessage": message, "wavefrontFrames": frames,
+              "worldMin": world_min, "worldMax": world_max,
+              "sourceVelocityMps": source_velocity_m_s,
+              "observerVelocityMps": observer_velocity_m_s,
+              "wavelengthAheadM": wavelength_ahead_m,
+              "wavelengthBehindM": wavelength_behind_m, "motionLabel": motion_label,
+              "view": {"minimum": 0, "maximum": 1}}
+    return build_player_document(config=config, scene_javascript=SCENE, logical_width=820,
+        logical_height=390,
+        accessible_label="Animated sound wavefronts with physically positioned source, observer, emitted centers, and radii. "+message,
+        idle_hint="Press Play or use frame-step controls to inspect the sound wavefronts")

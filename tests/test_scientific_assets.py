@@ -8,7 +8,7 @@ from physics_playground.visual.assets import AssetKind, AssetSpec, AssetStyle, C
 
 REQUIRED_ASSETS = {
     "sphere", "mass", "block", "cart", "pendulumBob", "pivot", "cable", "rod", "spring", "ramp",
-    "pulley", "lever", "track", "wheel", "planet", "moon", "star", "satellite", "projectile", "cannon",
+    "pulley", "lever", "track", "wheel", "planet", "moon", "star", "satellite", "projectile", "cannon", "source", "observer",
     "fluidContainer", "fluidSurface", "lens", "mirror", "ray", "wavefront", "charge", "fieldLine",
     "forceArrow", "velocityArrow", "accelerationArrow", "torqueArc", "angleMarker", "ruler", "grid",
     "trail", "collisionFlash", "callout",

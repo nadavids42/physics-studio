@@ -14,7 +14,7 @@ class AssetKind(StrEnum):
     SPHERE="sphere"; MASS="mass"; BLOCK="block"; CART="cart"; PENDULUM_BOB="pendulumBob"
     PIVOT="pivot"; CABLE="cable"; ROD="rod"; SPRING="spring"; RAMP="ramp"; PULLEY="pulley"
     LEVER="lever"; TRACK="track"; WHEEL="wheel"; PLANET="planet"; MOON="moon"; STAR="star"; SATELLITE="satellite"
-    PROJECTILE="projectile"; CANNON="cannon"; FLUID_CONTAINER="fluidContainer"; FLUID_SURFACE="fluidSurface"
+    PROJECTILE="projectile"; CANNON="cannon"; SOURCE="source"; OBSERVER="observer"; FLUID_CONTAINER="fluidContainer"; FLUID_SURFACE="fluidSurface"
     LENS="lens"; MIRROR="mirror"; RAY="ray"; WAVEFRONT="wavefront"; CHARGE="charge"
     FIELD_LINE="fieldLine"; FORCE_ARROW="forceArrow"; VELOCITY_ARROW="velocityArrow"
     ACCELERATION_ARROW="accelerationArrow"; TORQUE_ARC="torqueArc"; ANGLE_MARKER="angleMarker"
@@ -93,6 +93,8 @@ const PhysicsAssets=(()=>{
     ctx.fillStyle=V.token(s,'colors','electric_field','#006D77');for(const x of [-37,17]){ctx.fillRect(x,-10,20,20);ctx.strokeRect(x,-10,20,20)}ctx.beginPath();ctx.moveTo(0,-11);ctx.lineTo(0,-25);ctx.stroke();finish(ctx,s,o)}
   function projectile(ctx,s,o={}){body(ctx,s,{...o,radius:o.radius||9,shadow:o.shadow!==false},'trajectory')}
   function cannon(ctx,s,o={}){const c=colors(s,o,'uncertainty');setup(ctx,s,o);ctx.fillStyle=c.fill;ctx.strokeStyle=c.outline;ctx.beginPath();ctx.roundRect(-8,-9,o.width||58,18,6);ctx.fill();ctx.stroke();ctx.beginPath();ctx.arc(-8,8,14,0,Math.PI*2);ctx.fill();ctx.stroke();finish(ctx,s,o)}
+  function source(ctx,s,o={}){const r=o.radius||17;body(ctx,s,{...o,radius:r,label:''},'energy');ctx.save();ctx.strokeStyle=o.outline||V.token(s,'colors','energy','#B45309');ctx.lineWidth=2;for(let i=1;i<=2;i++){ctx.beginPath();ctx.arc(o.x+r*.45,o.y,r+i*7,-.7,.7);ctx.stroke()}ctx.restore();if(o.label)finish(ctx,s,{...o,height:r*2,shadow:false})}
+  function observer(ctx,s,o={}){const r=o.radius||15,c=colors(s,o,'accent');setup(ctx,s,o);ctx.fillStyle=c.fill;ctx.strokeStyle=c.outline;ctx.beginPath();ctx.arc(0,-r*.55,r*.42,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.beginPath();ctx.roundRect(-r*.6,-r*.05,r*1.2,r*1.25,r*.35);ctx.fill();ctx.stroke();finish(ctx,s,o)}
   function fluidContainer(ctx,s,o={}){const w=o.width||130,h=o.height||150,c=colors(s,o,'text');setup(ctx,s,o);ctx.strokeStyle=c.outline;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-w/2,-h/2);ctx.lineTo(-w/2,h/2);ctx.lineTo(w/2,h/2);ctx.lineTo(w/2,-h/2);ctx.stroke();finish(ctx,s,o)}
   function fluidSurface(ctx,s,o={}){const w=o.width||130,h=o.height||70,c=o.fill||V.token(s,'colors','electric_field','#006D77');setup(ctx,s,o);ctx.fillStyle=c;ctx.globalAlpha*=o.fluidOpacity??.26;ctx.fillRect(-w/2,0,w,h);
     ctx.globalAlpha=(o.opacity??1)*(o.disabled ? .45 : 1);ctx.strokeStyle=c;ctx.lineWidth=2;ctx.beginPath();for(let x=-w/2;x<=w/2;x+=8)ctx.lineTo(x,Math.sin(x*.16)*2);ctx.stroke();finish(ctx,s,o)}
@@ -102,7 +104,7 @@ const PhysicsAssets=(()=>{
     ctx.lineWidth=1;for(let y=-h/2;y<h/2;y+=10){ctx.beginPath();ctx.moveTo(3,y);ctx.lineTo(11,y+8);ctx.stroke()}finish(ctx,s,o)}
   function ray(ctx,s,o={}){V.arrow(ctx,s,point(o.x,o.y),o.end||point(o.x+(o.width||100),o.y),{...o,color:o.fill||V.token(s,'colors','energy','#B45309'),width:o.lineWidth||2,head:o.head||9})}
   function wavefront(ctx,s,o={}){setup(ctx,s,o);ctx.strokeStyle=o.outline||V.token(s,'colors','trajectory','#1769AA');ctx.lineWidth=o.lineWidth||2;ctx.globalAlpha*=o.opacity??.7;
-    const count=o.count||3,spacing=o.spacing||18;for(let i=1;i<=count;i++){ctx.beginPath();ctx.arc(0,0,(o.radius||20)+i*spacing,o.startAngle??-.8,o.endAngle??.8);ctx.stroke()}finish(ctx,s,o)}
+    const count=o.count??3,spacing=o.spacing??18;for(let i=0;i<count;i++){ctx.beginPath();ctx.arc(0,0,(o.radius||20)+i*spacing,o.startAngle??-.8,o.endAngle??.8);ctx.stroke()}finish(ctx,s,o)}
   function charge(ctx,s,o={}){const positive=(o.sign??1)>=0;body(ctx,s,{...o,fill:o.fill||V.token(s,'colors',positive?'net_force':'accent',positive?'#C2410C':'#1769AA'),label:''},positive?'net_force':'accent');
     ctx.save();V.applyText(ctx,s,'heading');ctx.fillStyle=V.token(s,'colors','text_inverse','#FFF');ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(positive?'+':'−',o.x,o.y);ctx.restore();if(o.label)finish(ctx,s,{...o,shadow:false})}
   function fieldLine(ctx,s,o={}){const pts=o.points||[point(o.x,o.y),o.end||point(o.x+(o.width||100),o.y)];ctx.save();ctx.strokeStyle=o.outline||V.token(s,'colors','electric_field','#006D77');ctx.lineWidth=o.lineWidth||1.5;ctx.globalAlpha=o.opacity??.75;
@@ -124,7 +126,7 @@ const PhysicsAssets=(()=>{
     ctx.fillStyle=o.fill||V.token(s,'colors','surface_raised','#FFF');ctx.strokeStyle=o.outline||V.token(s,'colors','border','#B8C5D1');ctx.lineWidth=1.5;ctx.beginPath();ctx.roundRect(x,y,w,h,12);ctx.fill();ctx.stroke();ctx.shadowColor='transparent';
     if(o.target){ctx.beginPath();ctx.moveTo(x+w*.2,y+h);ctx.lineTo(o.target.x,o.target.y);ctx.stroke()}V.applyText(ctx,s,'annotation');ctx.fillStyle=V.token(s,'colors','text','#152536');
     const lines=String(o.text||o.label||'').split('\n');lines.slice(0,3).forEach((line,i)=>ctx.fillText(line,x+12,y+22+i*17));ctx.restore()}
-  const library={sphere,mass,block,cart,pendulumBob,pivot,cable,rod,spring,ramp,pulley,lever,track,wheel,planet,moon,star,satellite,projectile,cannon,
+  const library={sphere,mass,block,cart,pendulumBob,pivot,cable,rod,spring,ramp,pulley,lever,track,wheel,planet,moon,star,satellite,projectile,cannon,source,observer,
     fluidContainer,fluidSurface,lens,mirror,ray,wavefront,charge,fieldLine,forceArrow,velocityArrow,accelerationArrow,torqueArc,angleMarker,ruler,grid,trail,collisionFlash,callout};
   function draw(ctx,s,spec){const fn=library[spec.kind];if(!fn)throw new Error(`Unknown Physics Studio asset: ${spec.kind}`);fn(ctx,s,{...spec,...(spec.style||{}),...(spec.options||{})})}
   function drawAll(ctx,s,specs){for(const spec of specs||[])draw(ctx,s,spec)}
