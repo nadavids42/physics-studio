@@ -4,6 +4,7 @@ import math
 from dataclasses import dataclass
 
 from physics_playground.subjects.mechanics.common import require_finite
+from physics_playground.units import EARTH_GRAVITY_M_S2
 from physics_playground.validation import PhysicsValidationError
 
 
@@ -16,7 +17,7 @@ class RollerCoasterParameters:
     final_height_m: float = 2.0
     track_length_m: float = 80.0
     loss_per_meter_j: float = 0.0
-    gravity_m_s2: float = 9.81
+    gravity_m_s2: float = EARTH_GRAVITY_M_S2
     samples: int = 161
 
     def validate(self):

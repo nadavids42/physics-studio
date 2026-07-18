@@ -30,9 +30,18 @@ from physics_playground.presentation.learning_modes import (
 from physics_playground.presentation.notebook_ui import REUSE_REQUEST_KEY, add_trial
 from physics_playground.presentation.pendulum_charts import error_figure, plot_figure
 from physics_playground.simulation_cache import cached_pendulum
+from physics_playground.units import (
+    EARTH_GRAVITY_M_S2,
+    JUPITER_GRAVITY_M_S2,
+    MOON_GRAVITY_M_S2,
+)
 from physics_playground.validation import PhysicsValidationError
 
-WORLDS = {"Earth 🌍": 9.81, "The Moon 🌕": 1.62, "Jupiter 🟠": 24.8}
+WORLDS = {
+    "Earth 🌍": EARTH_GRAVITY_M_S2,
+    "The Moon 🌕": MOON_GRAVITY_M_S2,
+    "Jupiter 🟠": JUPITER_GRAVITY_M_S2,
+}
 VERSION = "pendulum-2.0"
 
 
@@ -128,23 +137,23 @@ def render_explore():
 
 def _pair(kind):
     if kind == "Short versus long pendulum":
-        a = PendulumParameters(1, 9.81, 30)
-        b = PendulumParameters(5, 9.81, 30)
+        a = PendulumParameters(1, EARTH_GRAVITY_M_S2, 30)
+        b = PendulumParameters(5, EARTH_GRAVITY_M_S2, 30)
         change = ChangedVariable("Length", "1 m", "5 m")
         labels = ("Short", "Long")
     elif kind == "Earth versus Moon":
-        a = PendulumParameters(2, 9.81, 30)
-        b = PendulumParameters(2, 1.62, 30)
+        a = PendulumParameters(2, EARTH_GRAVITY_M_S2, 30)
+        b = PendulumParameters(2, MOON_GRAVITY_M_S2, 30)
         change = ChangedVariable("Gravity", "Earth", "Moon")
         labels = ("Earth", "Moon")
     elif kind == "Small versus large release angle":
-        a = PendulumParameters(2, 9.81, 10, PendulumModel.NONLINEAR)
-        b = PendulumParameters(2, 9.81, 75, PendulumModel.NONLINEAR)
+        a = PendulumParameters(2, EARTH_GRAVITY_M_S2, 10, PendulumModel.NONLINEAR)
+        b = PendulumParameters(2, EARTH_GRAVITY_M_S2, 75, PendulumModel.NONLINEAR)
         change = ChangedVariable("Release angle", "10°", "75°")
         labels = ("Small angle", "Large angle")
     else:
-        a = PendulumParameters(2, 9.81, 70, PendulumModel.SMALL_ANGLE)
-        b = PendulumParameters(2, 9.81, 70, PendulumModel.NONLINEAR)
+        a = PendulumParameters(2, EARTH_GRAVITY_M_S2, 70, PendulumModel.SMALL_ANGLE)
+        b = PendulumParameters(2, EARTH_GRAVITY_M_S2, 70, PendulumModel.NONLINEAR)
         change = ChangedVariable("Model", "Small-angle", "Nonlinear")
         labels = ("Approximation", "Nonlinear")
     return cached_pendulum(a), cached_pendulum(b), labels, change
@@ -188,7 +197,7 @@ def render_compare():
 
 def _latest():
     if not st.session_state.pend_launched:
-        return PendulumParameters(2, 9.81, 30, PendulumModel.NONLINEAR)
+        return PendulumParameters(2, EARTH_GRAVITY_M_S2, 30, PendulumModel.NONLINEAR)
     d = dict(st.session_state.pend_launched)
     d["model"] = PendulumModel(d["model"])
     return PendulumParameters(**d)
@@ -215,7 +224,7 @@ def render_model():
     st.markdown(
         "The small-angle model is analytical. The nonlinear equation is integrated with RK4; its period grows with release angle."
     )
-    assumptions = cached_pendulum(PendulumParameters(2, 9.81, 30)).assumptions
+    assumptions = cached_pendulum(PendulumParameters(2, EARTH_GRAVITY_M_S2, 30)).assumptions
     assumptions_panel(
         assumptions,
         (
@@ -227,7 +236,7 @@ def render_model():
     )
     with st.expander("🔧 Optional advanced controls"):
         length = st.number_input("Advanced length", 0.1, 20.0, 2.0)
-        gravity = st.number_input("Advanced gravity", 0.1, 30.0, 9.81)
+        gravity = st.number_input("Advanced gravity", 0.1, 30.0, EARTH_GRAVITY_M_S2)
         angle = st.number_input("Advanced angle", 1.0, 170.0, 60.0)
         model = PendulumModel(st.selectbox("Advanced model", [m.value for m in PendulumModel]))
         _summary(cached_pendulum(PendulumParameters(length, gravity, angle, model)))

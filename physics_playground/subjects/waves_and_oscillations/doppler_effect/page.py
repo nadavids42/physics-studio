@@ -16,6 +16,7 @@ from physics_playground.presentation.learning_modes import (
     mode_navigation,
 )
 from physics_playground.presentation.notebook_ui import add_trial
+from physics_playground.units import ROOM_TEMPERATURE_SOUND_SPEED_M_S
 
 from .missions import evaluate
 from .physics import DopplerParameters, simulate
@@ -86,7 +87,14 @@ def controls(prefix="doppler"):
     c1, c2 = st.columns(2)
     with c1:
         f = st.slider("Source frequency (Hz)", 50.0, 1200.0, 440.0, 10.0, key=f"{prefix}_f")
-        c = st.slider("Speed of sound (m/s)", 250.0, 400.0, 343.0, 1.0, key=f"{prefix}_c")
+        c = st.slider(
+            "Speed of sound (m/s)",
+            250.0,
+            400.0,
+            ROOM_TEMPERATURE_SOUND_SPEED_M_S,
+            1.0,
+            key=f"{prefix}_c",
+        )
     with c2:
         vs = st.slider(
             "Source velocity (m/s; right is positive)", -200.0, 200.0, 30.0, 5.0, key=f"{prefix}_vs"
@@ -145,7 +153,13 @@ def compare():
 def analyze():
     mode_heading(LearningMode.ANALYZE, "Frequency versus motion")
     f = st.slider("Analysis source frequency (Hz)", 100.0, 1000.0, 440.0, 10.0)
-    c = st.slider("Analysis sound speed (m/s)", 250.0, 400.0, 343.0, 1.0)
+    c = st.slider(
+        "Analysis sound speed (m/s)",
+        250.0,
+        400.0,
+        ROOM_TEMPERATURE_SOUND_SPEED_M_S,
+        1.0,
+    )
     velocities = list(range(-200, 201, 10))
     source = [simulate(DopplerParameters(f, c, v, 0)).observed_frequency_hz for v in velocities]
     observer = [simulate(DopplerParameters(f, c, 0, v)).observed_frequency_hz for v in velocities]

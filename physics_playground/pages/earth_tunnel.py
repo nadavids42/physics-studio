@@ -30,12 +30,20 @@ from physics_playground.presentation.learning_modes import (
 from physics_playground.presentation.notebook_ui import REUSE_REQUEST_KEY, add_trial
 from physics_playground.presentation.tunnel_charts import plot_figure
 from physics_playground.simulation_cache import cached_tunnel
+from physics_playground.units import (
+    EARTH_GRAVITY_M_S2,
+    EARTH_RADIUS_M,
+    MARS_GRAVITY_M_S2,
+    MARS_RADIUS_M,
+    MOON_GRAVITY_M_S2,
+    MOON_RADIUS_M,
+)
 from physics_playground.validation import PhysicsValidationError
 
 PLANETS = {
-    "Earth 🌍": (6_371_000, 9.81),
-    "The Moon 🌕": (1_737_000, 1.62),
-    "Mars 🔴": (3_390_000, 3.71),
+    "Earth 🌍": (EARTH_RADIUS_M, EARTH_GRAVITY_M_S2),
+    "The Moon 🌕": (MOON_RADIUS_M, MOON_GRAVITY_M_S2),
+    "Mars 🔴": (MARS_RADIUS_M, MARS_GRAVITY_M_S2),
 }
 VERSION = "tunnel-2.0"
 
@@ -116,7 +124,9 @@ def render_explore():
                 "Custom radius (km)", 500, 8000, 3000, 100, key="tunnel_custom_radius"
             )
         with c2:
-            g = st.slider("Custom surface gravity", 1.0, 20.0, 9.81, 0.01, key="tunnel_custom_g")
+            g = st.slider(
+                "Custom surface gravity", 1.0, 20.0, EARTH_GRAVITY_M_S2, 0.01, key="tunnel_custom_g"
+            )
         radius = radius_km * 1000
     else:
         radius, g = PLANETS[planet]
@@ -150,14 +160,26 @@ def render_explore():
 def _pair(kind):
     if kind == "Surface versus halfway start":
         items = [
-            ("Surface", cached_tunnel(TunnelParameters(6371000, 9.81, 1)), "#42A5F5"),
-            ("Halfway", cached_tunnel(TunnelParameters(6371000, 9.81, 0.5)), "#FF8A65"),
+            (
+                "Surface",
+                cached_tunnel(TunnelParameters(EARTH_RADIUS_M, EARTH_GRAVITY_M_S2, 1)),
+                "#42A5F5",
+            ),
+            (
+                "Halfway",
+                cached_tunnel(TunnelParameters(EARTH_RADIUS_M, EARTH_GRAVITY_M_S2, 0.5)),
+                "#FF8A65",
+            ),
         ]
         change = ChangedVariable("Starting amplitude", "Surface", "Halfway")
     elif kind == "Earth versus Moon versus custom planet":
         items = [
-            ("Earth", cached_tunnel(TunnelParameters(6371000, 9.81)), "#42A5F5"),
-            ("Moon", cached_tunnel(TunnelParameters(1737000, 1.62)), "#B0BEC5"),
+            (
+                "Earth",
+                cached_tunnel(TunnelParameters(EARTH_RADIUS_M, EARTH_GRAVITY_M_S2)),
+                "#42A5F5",
+            ),
+            ("Moon", cached_tunnel(TunnelParameters(MOON_RADIUS_M, MOON_GRAVITY_M_S2)), "#B0BEC5"),
             ("Custom", cached_tunnel(TunnelParameters(3000000, 12)), "#AB47BC"),
         ]
         change = ChangedVariable("Planet", "Earth", "Moon and custom")
@@ -165,12 +187,16 @@ def _pair(kind):
         items = [
             (
                 "Uniform",
-                cached_tunnel(TunnelParameters(6371000, 9.81, model=TunnelModel.UNIFORM)),
+                cached_tunnel(
+                    TunnelParameters(EARTH_RADIUS_M, EARTH_GRAVITY_M_S2, model=TunnelModel.UNIFORM)
+                ),
                 "#42A5F5",
             ),
             (
                 "Radial",
-                cached_tunnel(TunnelParameters(6371000, 9.81, model=TunnelModel.RADIAL)),
+                cached_tunnel(
+                    TunnelParameters(EARTH_RADIUS_M, EARTH_GRAVITY_M_S2, model=TunnelModel.RADIAL)
+                ),
                 "#FF8A65",
             ),
         ]
@@ -215,7 +241,7 @@ def render_compare():
 
 def _latest():
     if not st.session_state.tunnel_launched:
-        return TunnelParameters(6371000, 9.81)
+        return TunnelParameters(EARTH_RADIUS_M, EARTH_GRAVITY_M_S2)
     d = dict(st.session_state.tunnel_launched)
     d["model"] = TunnelModel(d["model"])
     return TunnelParameters(**d)
@@ -239,7 +265,7 @@ def render_model():
     st.markdown(
         "Uniform density makes enclosed mass grow as r³, so gravitational acceleration becomes proportional to −r: exactly the defining equation of simple harmonic motion. The radial-density model instead integrates the enclosed mass of a center-heavy profile with RK4."
     )
-    assumptions = cached_tunnel(TunnelParameters(6371000, 9.81)).assumptions
+    assumptions = cached_tunnel(TunnelParameters(EARTH_RADIUS_M, EARTH_GRAVITY_M_S2)).assumptions
     assumptions_panel(
         assumptions,
         (

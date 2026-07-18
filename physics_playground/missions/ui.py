@@ -17,6 +17,7 @@ from physics_playground.missions.service import (
     summary,
 )
 from physics_playground.registry import SIMULATION_REGISTRY
+from physics_playground.state_keys import SHARED_STATE_KEYS, migrate_legacy_keys
 
 MISSION_LABELS = {mid: item.title for mid, item in MISSION_DEFINITIONS.items()}
 MISSION_GROUPS = {
@@ -27,15 +28,18 @@ GROUP_TO_SIMULATION = {item.mission_group: item.id for item in SIMULATION_REGIST
 
 
 def init_missions():
-    if "missions" not in st.session_state:
-        st.session_state.missions = set()
-    if "mission_progress" not in st.session_state:
-        st.session_state.mission_progress = MissionProgress(
-            completed=set(st.session_state.missions)
+    migrate_legacy_keys(st.session_state)
+    completed_key = SHARED_STATE_KEYS.missions_completed
+    progress_key = SHARED_STATE_KEYS.missions_progress
+    if completed_key not in st.session_state:
+        st.session_state[completed_key] = set()
+    if progress_key not in st.session_state:
+        st.session_state[progress_key] = MissionProgress(
+            completed=set(st.session_state[completed_key])
         )
     else:
-        st.session_state.mission_progress.completed.update(st.session_state.missions)
-    st.session_state.missions = st.session_state.mission_progress.completed
+        st.session_state[progress_key].completed.update(st.session_state[completed_key])
+    st.session_state[completed_key] = st.session_state[progress_key].completed
 
 
 def _celebrate(mission_id, celebrate=True):
@@ -53,12 +57,12 @@ def complete(mission_id: str, celebrate: bool = True, experiment_ran: bool = Fal
     if not experiment_ran:
         return False
     if any(
-        required not in st.session_state.mission_progress.completed
+        required not in st.session_state[SHARED_STATE_KEYS.missions_progress].completed
         for required in mission.prerequisites
     ):
         return False
-    if mission_id not in st.session_state.mission_progress.completed:
-        st.session_state.mission_progress.completed.add(mission_id)
+    if mission_id not in st.session_state[SHARED_STATE_KEYS.missions_progress].completed:
+        st.session_state[SHARED_STATE_KEYS.missions_progress].completed.add(mission_id)
         _celebrate(mission_id, celebrate)
         return True
     return False
@@ -66,7 +70,9 @@ def complete(mission_id: str, celebrate: bool = True, experiment_ran: bool = Fal
 
 def process_run(simulation_id: str, evaluations: tuple[MissionEvaluation, ...]) -> tuple[str, ...]:
     init_missions()
-    earned = evaluate_run(st.session_state.mission_progress, simulation_id, evaluations)
+    earned = evaluate_run(
+        st.session_state[SHARED_STATE_KEYS.missions_progress], simulation_id, evaluations
+    )
     for mission_id in earned:
         _celebrate(mission_id)
     try:
@@ -80,16 +86,16 @@ def process_run(simulation_id: str, evaluations: tuple[MissionEvaluation, ...]) 
 
 def is_done(mission_id: str) -> bool:
     init_missions()
-    return mission_id in st.session_state.mission_progress.completed
+    return mission_id in st.session_state[SHARED_STATE_KEYS.missions_progress].completed
 
 
 def mission_checklist(group: str):
     init_missions()
     simulation_id = GROUP_TO_SIMULATION[group]
-    status = summary(st.session_state.mission_progress, simulation_id)
+    status = summary(st.session_state[SHARED_STATE_KEYS.missions_progress], simulation_id)
     st.markdown(f"#### 🏅 Missions — {status.earned}/{status.total} ({status.percentage:.0%})")
     for mission in MISSIONS_BY_SIMULATION[simulation_id]:
-        done = mission.id in st.session_state.mission_progress.completed
+        done = mission.id in st.session_state[SHARED_STATE_KEYS.missions_progress].completed
         if mission.hidden and not done:
             continue
         title = mission.title if not mission.hidden else f"🤫 {mission.title}"
@@ -98,19 +104,19 @@ def mission_checklist(group: str):
             blocked = [
                 MISSION_DEFINITIONS[item].title
                 for item in mission.prerequisites
-                if item not in st.session_state.mission_progress.completed
+                if item not in st.session_state[SHARED_STATE_KEYS.missions_progress].completed
             ]
             if blocked:
                 st.caption(f"🔒 First complete: {', '.join(blocked)}")
             else:
-                hint = hint_for(st.session_state.mission_progress, mission.id)
+                hint = hint_for(st.session_state[SHARED_STATE_KEYS.missions_progress], mission.id)
                 if hint:
                     st.caption(f"💡 Hint: {hint}")
 
 
 def sidebar_badges():
     init_missions()
-    progress = st.session_state.mission_progress
+    progress = st.session_state[SHARED_STATE_KEYS.missions_progress]
     percentage = overall_percentage(progress)
     st.progress(
         percentage,
@@ -135,18 +141,26 @@ def prediction_quiz(key, question, options, correct_index, reveal_text, mission_
         ):
             st.session_state[revealed_key] = True
             if mission_id:
-                st.session_state.mission_progress.pending_explanations.add(mission_id)
+                st.session_state[SHARED_STATE_KEYS.missions_progress].pending_explanations.add(
+                    mission_id
+                )
             st.rerun()
         if guess is None:
             st.caption("Pick an answer to lock it in. No peeking!")
         return False
-    if mission_id and mission_id not in st.session_state.mission_progress.completed:
-        st.session_state.mission_progress.pending_explanations.add(mission_id)
+    if (
+        mission_id
+        and mission_id not in st.session_state[SHARED_STATE_KEYS.missions_progress].completed
+    ):
+        st.session_state[SHARED_STATE_KEYS.missions_progress].pending_explanations.add(mission_id)
     if guess == options[correct_index]:
         st.success(f"🎉 **You got it!** {reveal_text}")
     else:
         st.warning(f"**Good guess — but surprise!** {reveal_text}")
-    if mission_id and mission_id not in st.session_state.mission_progress.completed:
+    if (
+        mission_id
+        and mission_id not in st.session_state[SHARED_STATE_KEYS.missions_progress].completed
+    ):
         st.caption("Run the experiment to earn the explanation badge.")
     return True
 

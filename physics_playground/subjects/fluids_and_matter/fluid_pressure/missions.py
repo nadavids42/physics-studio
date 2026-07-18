@@ -1,4 +1,5 @@
 from physics_playground.contracts import MissionEvaluation
+from physics_playground.units import STANDARD_ATMOSPHERE_PA
 
 
 def evaluate(r, comparison=False):
@@ -9,7 +10,9 @@ def evaluate(r, comparison=False):
             "Measured near bottom",
         ),
         MissionEvaluation(
-            "pressure_double", r.gauge_pressure_pa >= 2 * 101325, "Reached two atmospheres gauge"
+            "pressure_double",
+            r.gauge_pressure_pa >= 2 * STANDARD_ATMOSPHERE_PA,
+            "Reached two atmospheres gauge",
         ),
         MissionEvaluation("pressure_compare", comparison, "Compared depths"),
     )

@@ -27,6 +27,7 @@ from physics_playground.performance import (
     validate_finite_parameters,
 )
 from physics_playground.serialization import to_jsonable
+from physics_playground.units import EARTH_GRAVITY_M_S2
 from physics_playground.validation import PhysicsValidationError, require_finite, require_positive
 
 PROJECTILE_MODEL_VERSION = "projectile-2.0"
@@ -36,7 +37,7 @@ PROJECTILE_MODEL_VERSION = "projectile-2.0"
 class ProjectileParameters:
     launch_speed_m_s: float
     launch_angle_deg: float
-    gravity_m_s2: float = 9.81
+    gravity_m_s2: float = EARTH_GRAVITY_M_S2
     initial_height_m: float = 0.0
     mass_kg: float = 5.0
     drag_coefficient_kg_m: float = 0.0

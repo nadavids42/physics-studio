@@ -27,13 +27,14 @@ from physics_playground.contracts import (
 )
 from physics_playground.models.simulations import SimulationDefinition, SimulationMode
 from physics_playground.serialization import to_jsonable
+from physics_playground.units import EARTH_GRAVITY_M_S2
 from physics_playground.validation import require_positive
 
 
 @dataclass(frozen=True, slots=True)
 class FreeFallParameters:
     height_m: float = 20.0
-    gravity_m_s2: float = 9.81
+    gravity_m_s2: float = EARTH_GRAVITY_M_S2
     samples: int = 120
 
     def validate(self) -> None:

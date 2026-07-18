@@ -3,6 +3,7 @@
 import math
 from dataclasses import dataclass
 
+from physics_playground.units import EARTH_GRAVITY_M_S2, STANDARD_ATMOSPHERE_PA
 from physics_playground.validation import PhysicsValidationError
 
 
@@ -10,8 +11,8 @@ from physics_playground.validation import PhysicsValidationError
 class FluidPressureParameters:
     fluid_density_kg_m3: float = 1000.0
     depth_m: float = 5.0
-    gravity_m_s2: float = 9.81
-    surface_pressure_pa: float = 101325.0
+    gravity_m_s2: float = EARTH_GRAVITY_M_S2
+    surface_pressure_pa: float = STANDARD_ATMOSPHERE_PA
     maximum_depth_m: float = 10.0
     samples: int = 21
 

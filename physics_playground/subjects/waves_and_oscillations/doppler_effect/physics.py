@@ -4,6 +4,7 @@ import math
 from dataclasses import dataclass
 from enum import StrEnum
 
+from physics_playground.units import ROOM_TEMPERATURE_SOUND_SPEED_M_S
 from physics_playground.validation import PhysicsValidationError
 
 
@@ -16,7 +17,7 @@ class MotionOutcome(StrEnum):
 @dataclass(frozen=True, slots=True)
 class DopplerParameters:
     source_frequency_hz: float = 440.0
-    speed_of_sound_m_s: float = 343.0
+    speed_of_sound_m_s: float = ROOM_TEMPERATURE_SOUND_SPEED_M_S
     source_velocity_m_s: float = 0.0
     observer_velocity_m_s: float = 0.0
     initial_source_position_m: float = 0.0

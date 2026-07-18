@@ -8,8 +8,9 @@ from typing import Any
 
 from physics_playground.binding_models import SimulationPreset
 from physics_playground.contracts import JsonValue
+from physics_playground.state_keys import SHARED_STATE_KEYS, migrate_legacy_keys
 
-SETUP_REQUEST_KEY = "notebook_reuse_request"
+SETUP_REQUEST_KEY = SHARED_STATE_KEYS.notebook_setup_request
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,6 +35,7 @@ def queue_setup_request(
     state: MutableMapping[str, Any],
     request: SimulationSetupRequest,
 ) -> None:
+    migrate_legacy_keys(state)
     state[SETUP_REQUEST_KEY] = request.to_dict()
 
 
@@ -53,6 +55,7 @@ def consume_setup_request(
     state: MutableMapping[str, Any],
     simulation_id: str,
 ) -> SimulationSetupRequest | None:
+    migrate_legacy_keys(state)
     payload = state.get(SETUP_REQUEST_KEY)
     if not payload or payload.get("simulation_id") != simulation_id:
         return None

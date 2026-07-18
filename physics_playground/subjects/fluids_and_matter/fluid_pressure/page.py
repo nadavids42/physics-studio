@@ -16,6 +16,7 @@ from physics_playground.presentation.learning_modes import (
     mode_navigation,
 )
 from physics_playground.presentation.notebook_ui import add_trial
+from physics_playground.units import EARTH_GRAVITY_M_S2, STANDARD_ATMOSPHERE_PA
 
 from .missions import evaluate
 from .physics import FluidPressureParameters, simulate
@@ -82,12 +83,14 @@ def controls(prefix="pressure"):
         0.1,
         key=f"{prefix}_depth",
     )
-    gravity = st.slider("Gravity (m/s²)", 1.0, 25.0, 9.81, 0.01, key=f"{prefix}_gravity")
+    gravity = st.slider(
+        "Gravity (m/s²)", 1.0, 25.0, EARTH_GRAVITY_M_S2, 0.01, key=f"{prefix}_gravity"
+    )
     surface = st.number_input(
         "Surface pressure (Pa)",
         min_value=0.0,
         max_value=200000.0,
-        value=101325.0,
+        value=STANDARD_ATMOSPHERE_PA,
         step=100.0,
         key=f"{prefix}_surface",
     )

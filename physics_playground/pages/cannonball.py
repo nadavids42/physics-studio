@@ -38,9 +38,18 @@ from physics_playground.simulation_cache import (
     cached_projectile,
     cached_projectile_no_drag,
 )
+from physics_playground.units import (
+    EARTH_GRAVITY_M_S2,
+    JUPITER_GRAVITY_M_S2,
+    MOON_GRAVITY_M_S2,
+)
 from physics_playground.validation import PhysicsValidationError
 
-WORLDS = {"Earth 🌍": 9.81, "The Moon 🌕": 1.62, "Jupiter 🟠": 24.8}
+WORLDS = {
+    "Earth 🌍": EARTH_GRAVITY_M_S2,
+    "The Moon 🌕": MOON_GRAVITY_M_S2,
+    "Jupiter 🟠": JUPITER_GRAVITY_M_S2,
+}
 MODEL_VERSION = PROJECTILE_MODEL_VERSION
 
 
@@ -181,21 +190,28 @@ def _comparison_results(
     kind: str,
 ) -> tuple[ProjectileResult, ProjectileResult, tuple[str, str], ChangedVariable]:
     if kind == "30° versus 60°":
-        a = cached_projectile_no_drag(ProjectileParameters(25, 30, 9.81))
-        b = cached_projectile_no_drag(ProjectileParameters(25, 60, 9.81))
+        a = cached_projectile_no_drag(ProjectileParameters(25, 30, EARTH_GRAVITY_M_S2))
+        b = cached_projectile_no_drag(ProjectileParameters(25, 60, EARTH_GRAVITY_M_S2))
         return a, b, ("30°", "60°"), ChangedVariable("Launch angle", "30°", "60°")
     if kind == "With drag versus without drag":
-        a = cached_projectile_no_drag(ProjectileParameters(25, 40, 9.81))
-        b = cached_projectile(ProjectileParameters(25, 40, 9.81, drag_coefficient_kg_m=0.05))
+        a = cached_projectile_no_drag(ProjectileParameters(25, 40, EARTH_GRAVITY_M_S2))
+        b = cached_projectile(
+            ProjectileParameters(25, 40, EARTH_GRAVITY_M_S2, drag_coefficient_kg_m=0.05)
+        )
         return (
             a,
             b,
             ("No drag", "Quadratic drag"),
             ChangedVariable("Air resistance", "None", "Quadratic drag"),
         )
-    a = cached_projectile_no_drag(ProjectileParameters(25, 45, 9.81))
-    b = cached_projectile_no_drag(ProjectileParameters(25, 45, 1.62))
-    return a, b, ("Earth", "Moon"), ChangedVariable("Gravity", "9.81 m/s²", "1.62 m/s²")
+    a = cached_projectile_no_drag(ProjectileParameters(25, 45, EARTH_GRAVITY_M_S2))
+    b = cached_projectile_no_drag(ProjectileParameters(25, 45, MOON_GRAVITY_M_S2))
+    return (
+        a,
+        b,
+        ("Earth", "Moon"),
+        ChangedVariable("Gravity", f"{EARTH_GRAVITY_M_S2} m/s²", f"{MOON_GRAVITY_M_S2} m/s²"),
+    )
 
 
 def render_compare() -> None:
@@ -230,7 +246,9 @@ def render_compare() -> None:
 
 def _latest() -> ProjectileParameters:
     saved = st.session_state.get("cannon_launched_parameters")
-    return ProjectileParameters(**saved) if saved else ProjectileParameters(25, 40, 9.81)
+    return (
+        ProjectileParameters(**saved) if saved else ProjectileParameters(25, 40, EARTH_GRAVITY_M_S2)
+    )
 
 
 def render_analyze() -> None:
@@ -289,7 +307,7 @@ def render_model() -> None:
             ProjectileParameters(
                 speed,
                 angle,
-                9.81,
+                EARTH_GRAVITY_M_S2,
                 mass_kg=mass,
                 drag_coefficient_kg_m=drag,
                 time_step_s=dt,

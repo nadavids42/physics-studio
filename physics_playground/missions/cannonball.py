@@ -2,6 +2,7 @@
 
 from physics_playground.contracts import MissionEvaluation
 from physics_playground.models.projectile import ProjectileResult
+from physics_playground.units import MOON_GRAVITY_M_S2
 
 
 def evaluate_cannonball_missions(
@@ -23,6 +24,8 @@ def evaluate_cannonball_missions(
             {"miss_distance_m": abs(result.range_m - target_m)},
         ),
         MissionEvaluation(
-            "cannon_moon", abs(p.gravity_m_s2 - 1.62) < 0.01, "Launch a cannonball on the Moon."
+            "cannon_moon",
+            abs(p.gravity_m_s2 - MOON_GRAVITY_M_S2) < 0.01,
+            "Launch a cannonball on the Moon.",
         ),
     )

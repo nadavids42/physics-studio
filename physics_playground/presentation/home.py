@@ -7,13 +7,15 @@ import streamlit as st
 from physics_playground.missions.definitions import MISSION_DEFINITIONS
 from physics_playground.models.simulations import Difficulty, SimulationDefinition
 from physics_playground.registry import SIMULATION_REGISTRY
+from physics_playground.state_keys import SHARED_STATE_KEYS
 
 
 def _progress(definition: SimulationDefinition) -> tuple[int, int, float]:
     earned = sum(
         1
         for mission in MISSION_DEFINITIONS.values()
-        if mission.group == definition.mission_group and mission.id in st.session_state.missions
+        if mission.group == definition.mission_group
+        and mission.id in st.session_state[SHARED_STATE_KEYS.missions_completed]
     )
     total = definition.badge_count
     return earned, total, (earned / total if total else 0)
@@ -65,8 +67,8 @@ def _card(item: SimulationDefinition) -> None:
         label = "Continue" if earned else "Start"
 
         def open_simulation() -> None:
-            st.session_state.active_simulation_id = item.id
-            st.session_state.registry_navigation = item.id
+            st.session_state[SHARED_STATE_KEYS.navigation_active] = item.id
+            st.session_state[SHARED_STATE_KEYS.navigation_selector] = item.id
 
         st.button(
             f"{label} {item.title}",

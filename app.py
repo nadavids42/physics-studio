@@ -19,11 +19,13 @@ from physics_playground.presentation.profile_ui import (
     render_profile_sidebar,
 )
 from physics_playground.registry import SIMULATION_REGISTRY, SIMULATIONS_BY_ID
+from physics_playground.state_keys import SHARED_STATE_KEYS, migrate_legacy_keys
 from physics_playground.validation import PhysicsValidationError
 
 st.set_page_config(page_title="Physics Mission Control", page_icon="🚀", layout="wide")
+migrate_legacy_keys(st.session_state)
 mission_ui.init_missions()
-st.session_state.setdefault("active_simulation_id", None)
+st.session_state.setdefault(SHARED_STATE_KEYS.navigation_active, None)
 with st.sidebar:
     render_profile_sidebar()
     st.divider()
@@ -31,9 +33,11 @@ with st.sidebar:
     st.divider()
     st.header("🎮 Mission navigation")
     navigation = ["home", *[item.id for item in SIMULATION_REGISTRY]]
-    current = st.session_state.active_simulation_id or "home"
-    if "registry_navigation" not in st.session_state:
-        st.session_state.registry_navigation = current if current in navigation else "home"
+    current = st.session_state[SHARED_STATE_KEYS.navigation_active] or "home"
+    if SHARED_STATE_KEYS.navigation_selector not in st.session_state:
+        st.session_state[SHARED_STATE_KEYS.navigation_selector] = (
+            current if current in navigation else "home"
+        )
     selected = st.radio(
         "Destination",
         navigation,
@@ -41,14 +45,14 @@ with st.sidebar:
             "🏠 Mission Control" if value == "home" else SIMULATIONS_BY_ID[value].navigation_label
         ),
         label_visibility="collapsed",
-        key="registry_navigation",
+        key=SHARED_STATE_KEYS.navigation_selector,
     )
-    st.session_state.active_simulation_id = None if selected == "home" else selected
+    st.session_state[SHARED_STATE_KEYS.navigation_active] = None if selected == "home" else selected
     st.divider()
     st.subheader("🏅 Badge collection")
     mission_ui.sidebar_badges()
     total = len(mission_ui.MISSION_LABELS)
-    if len(st.session_state.missions) == total:
+    if len(st.session_state[SHARED_STATE_KEYS.missions_completed]) == total:
         st.success("🏆 ALL BADGES EARNED! You are officially a Physics Champion!")
     st.divider()
     render_notebook_sidebar()
@@ -56,7 +60,7 @@ with st.sidebar:
 
 apply_global_accessibility(accessibility_settings)
 
-active = st.session_state.active_simulation_id
+active = st.session_state[SHARED_STATE_KEYS.navigation_active]
 if active is None:
     render_home()
 else:

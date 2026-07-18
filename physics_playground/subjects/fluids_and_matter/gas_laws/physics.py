@@ -4,9 +4,14 @@ import math
 from dataclasses import dataclass
 from enum import StrEnum
 
+from physics_playground.units import (
+    CELSIUS_ZERO_K,
+    MOLAR_GAS_CONSTANT_J_MOL_K,
+    STANDARD_ATMOSPHERE_PA,
+)
 from physics_playground.validation import PhysicsValidationError
 
-GAS_CONSTANT_J_MOL_K = 8.31446261815324
+GAS_CONSTANT_J_MOL_K = MOLAR_GAS_CONSTANT_J_MOL_K
 
 
 class GasLawScenario(StrEnum):
@@ -19,7 +24,7 @@ class GasLawScenario(StrEnum):
 def celsius_to_kelvin(celsius: float) -> float:
     if not math.isfinite(celsius):
         raise PhysicsValidationError("Temperature must be finite.")
-    kelvin = celsius + 273.15
+    kelvin = celsius + CELSIUS_ZERO_K
     if kelvin <= 0:
         raise PhysicsValidationError("Temperature must be above absolute zero (−273.15 °C).")
     return kelvin
@@ -29,7 +34,7 @@ def celsius_to_kelvin(celsius: float) -> float:
 class GasLawParameters:
     scenario: GasLawScenario = GasLawScenario.IDEAL
     amount_mol: float = 1.0
-    pressure_pa: float = 101325.0
+    pressure_pa: float = STANDARD_ATMOSPHERE_PA
     volume_m3: float = 0.024
     temperature_k: float = 293.15
     target_volume_m3: float = 0.012

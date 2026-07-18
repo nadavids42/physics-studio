@@ -4,6 +4,7 @@ import math
 from dataclasses import dataclass
 
 from physics_playground.subjects.mechanics.common import require_finite, weight
+from physics_playground.units import EARTH_GRAVITY_M_S2
 from physics_playground.validation import PhysicsValidationError
 
 
@@ -13,7 +14,7 @@ class InclinedPlaneParameters:
     angle_deg: float = 30.0
     static_friction: float = 0.3
     kinetic_friction: float = 0.2
-    gravity_m_s2: float = 9.81
+    gravity_m_s2: float = EARTH_GRAVITY_M_S2
     distance_m: float = 5.0
 
     def validate(self):

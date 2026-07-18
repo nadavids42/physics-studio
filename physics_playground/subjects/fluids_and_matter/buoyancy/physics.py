@@ -4,6 +4,7 @@ import math
 from dataclasses import dataclass
 from enum import StrEnum
 
+from physics_playground.units import EARTH_GRAVITY_M_S2
 from physics_playground.validation import PhysicsValidationError
 
 
@@ -25,7 +26,7 @@ class BuoyancyParameters:
     object_mass_kg: float = 6.0
     object_volume_m3: float = 0.01
     fluid_density_kg_m3: float = 1000.0
-    gravity_m_s2: float = 9.81
+    gravity_m_s2: float = EARTH_GRAVITY_M_S2
 
     def validate(self):
         try:

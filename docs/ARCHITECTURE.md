@@ -141,3 +141,19 @@ python -m build
 
 MyPy currently checks a documented ratchet of typed foundation modules. See
 `docs/DEVELOPMENT.md` for how to expand that boundary.
+
+## Shared physical constants
+
+`physics_playground.units` is the canonical home for shared physical assumptions. Names include
+units (`EARTH_GRAVITY_M_S2`, `STANDARD_ATMOSPHERE_PA`) and values are documented in SI units.
+Import a constant when multiple simulations mean the same assumption; retain a model parameter
+when learners can configure it. Similar numbers are not automatically the same physical concept.
+Frontend-only defensive fallbacks may repeat a value when Python cannot supply it.
+
+## Streamlit session state
+
+`physics_playground.state_keys` owns the small set of cross-cutting keys. Navigation,
+accessibility, profiles, missions, and notebook state use `SHARED_STATE_KEYS`. New feature state
+uses `feature_key(feature, name)` and vertical slices use
+`simulation_key(simulation_id, name)`. The `physics_studio.*` namespace avoids collisions without
+introducing a state manager. `migrate_legacy_keys` preserves sessions created before namespacing.

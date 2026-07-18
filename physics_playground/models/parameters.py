@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass
 
+from physics_playground.units import EARTH_GRAVITY_M_S2
+
 
 @dataclass(frozen=True, slots=True)
 class TunnelParameters:
@@ -53,7 +55,7 @@ class DoublePendulumParameters:
     length_2_m: float
     angle_1_deg: float
     angle_2_deg: float
-    gravity_m_s2: float = 9.81
+    gravity_m_s2: float = EARTH_GRAVITY_M_S2
 
 
 @dataclass(frozen=True, slots=True)

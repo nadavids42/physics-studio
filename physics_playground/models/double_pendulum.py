@@ -28,6 +28,7 @@ from physics_playground.performance import (
     validate_finite_parameters,
 )
 from physics_playground.serialization import to_jsonable
+from physics_playground.units import EARTH_GRAVITY_M_S2
 from physics_playground.validation import PhysicsValidationError, require_positive
 
 
@@ -40,7 +41,7 @@ class DoublePendulumParameters:
     angle_1_deg: float = 110.0
     angle_2_deg: float = -20.0
     perturbation_deg: float = 0.1
-    gravity_m_s2: float = 9.81
+    gravity_m_s2: float = EARTH_GRAVITY_M_S2
     duration_s: float = 15.0
     time_step_s: float = 0.005
 

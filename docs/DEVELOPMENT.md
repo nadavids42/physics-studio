@@ -60,3 +60,13 @@ When a module's public functions and data boundaries have complete annotations:
 Prioritize pure physics, serialization, persistence, mission evaluation, and rendering-payload
 builders. Do not add global `ignore_errors`, blanket `# type: ignore`, or broad package exclusions
 to make the check green.
+
+## Constants and session-state conventions
+
+- Put reusable physical assumptions in `physics_playground/units.py`, include units in names, and
+  test that replacing a literal leaves established defaults unchanged.
+- Do not turn intentionally configurable quantities into constants.
+- Use `SHARED_STATE_KEYS` for established application features.
+- Use `simulation_key("simulation_id", "control_name")` for new simulation-local Streamlit state
+  and `feature_key(...)` for new cross-cutting controls.
+- Do not add raw globally scoped shared keys or a simulation-specific state manager.

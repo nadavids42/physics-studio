@@ -8,6 +8,7 @@ from cycler import cycler
 
 from physics_playground.accessibility_settings import AccessibilitySettings
 from physics_playground.presentation.chart_system import style_figure
+from physics_playground.state_keys import SHARED_STATE_KEYS, feature_key, migrate_legacy_keys
 from physics_playground.visual.css import streamlit_css
 from physics_playground.visual.experience import (
     DEFAULT_PRESENTATION_LEVEL,
@@ -17,11 +18,11 @@ from physics_playground.visual.experience import (
 )
 from physics_playground.visual.tokens import LIGHT_THEME
 
-SETTINGS_KEY = "accessibility_settings"
-PRESENTATION_LEVEL_KEY = "presentation_level"
-VISUAL_PREFERENCES_KEY = "visual_preferences"
-VISUAL_THEME_WIDGET_KEY = "access_visual_theme"
-VISUAL_LEVEL_WIDGET_KEY = "access_presentation_level"
+SETTINGS_KEY = SHARED_STATE_KEYS.accessibility_settings
+PRESENTATION_LEVEL_KEY = SHARED_STATE_KEYS.accessibility_presentation_level
+VISUAL_PREFERENCES_KEY = SHARED_STATE_KEYS.accessibility_visual_preferences
+VISUAL_THEME_WIDGET_KEY = feature_key("accessibility", "visual_theme_widget")
+VISUAL_LEVEL_WIDGET_KEY = feature_key("accessibility", "presentation_level_widget")
 VISUAL_SESSION_KEYS = frozenset(
     {
         PRESENTATION_LEVEL_KEY,
@@ -36,6 +37,7 @@ MARKERS = ("o", "s", "^", "D", "v", "P", "X")
 
 
 def get_accessibility_settings():
+    migrate_legacy_keys(st.session_state)
     value = st.session_state.get(SETTINGS_KEY)
     if isinstance(value, AccessibilitySettings):
         return value
@@ -68,12 +70,20 @@ def render_accessibility_panel():
     current = get_accessibility_settings()
     with st.expander("♿ Accessibility settings"):
         reduced = st.checkbox(
-            "Reduce animation and disable autoplay", current.reduced_motion, key="access_reduce"
+            "Reduce animation and disable autoplay",
+            current.reduced_motion,
+            key=feature_key("accessibility", "reduce_motion_widget"),
         )
         contrast = st.checkbox(
-            "High-contrast display", current.high_contrast, key="access_contrast"
+            "High-contrast display",
+            current.high_contrast,
+            key=feature_key("accessibility", "high_contrast_widget"),
         )
-        large = st.checkbox("Larger interface text", current.large_text, key="access_large_text")
+        large = st.checkbox(
+            "Larger interface text",
+            current.large_text,
+            key=feature_key("accessibility", "large_text_widget"),
+        )
         st.caption("Animation controls remain available in reduced-motion mode.")
         preferences = get_visual_preferences()
         current_level = preferences.presentation_level

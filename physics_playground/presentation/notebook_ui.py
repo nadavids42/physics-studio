@@ -10,13 +10,15 @@ from physics_playground.setup_handoff import (
     SimulationSetupRequest,
     queue_setup_request,
 )
+from physics_playground.state_keys import SHARED_STATE_KEYS, migrate_legacy_keys
 
-NOTEBOOK_STATE_KEY = "experiment_notebook"
+NOTEBOOK_STATE_KEY = SHARED_STATE_KEYS.notebook
 # Compatibility export retained for existing simulation pages.
 REUSE_REQUEST_KEY = SETUP_REQUEST_KEY
 
 
 def get_notebook() -> ExperimentNotebook:
+    migrate_legacy_keys(st.session_state)
     if NOTEBOOK_STATE_KEY not in st.session_state:
         st.session_state[NOTEBOOK_STATE_KEY] = ExperimentNotebook()
     return st.session_state[NOTEBOOK_STATE_KEY]

@@ -78,9 +78,9 @@ def animate(r, seed, autoplay=True):
             "dx": 0,
             "dy": -1,
             "role": "gravity",
-            "label": f"weight {p.mass_kg * 9.81:.1f} N",
+            "label": f"weight {p.mass_kg * p.gravity_m_s2:.1f} N",
             "scale_mode": "normalized",
-            "fixed_length_px": length(p.mass_kg * 9.81),
+            "fixed_length_px": length(p.mass_kg * p.gravity_m_s2),
         },
         {
             "dx": normal[0],
