@@ -20,11 +20,27 @@ from physics_playground.application_callbacks import (
 from physics_playground.canvas.player import build_player_document
 from physics_playground.canvas.ray_diagram import SCENE as RAY_SCENE
 from physics_playground.subjects.mechanics.cannonball.scene import SCENE as CANNON_SCENE
+from physics_playground.subjects.mechanics.canvas import SCENE as MECHANICS_SCENE
+from physics_playground.subjects.mechanics.inclined_plane.physics import (
+    InclinedPlaneParameters,
+    simulate,
+)
+from physics_playground.subjects.mechanics.inclined_plane.visuals import force_vectors
 from physics_playground.subjects.waves_and_oscillations.pendulum.scene import (
     SCENE as PENDULUM_SCENE,
 )
 
 BASELINES = Path(__file__).with_name("visual_baselines.json")
+
+INCLINED_RESULT = simulate(
+    InclinedPlaneParameters(
+        mass_kg=2,
+        angle_deg=35,
+        static_friction=0.4,
+        kinetic_friction=0.25,
+    )
+)
+INCLINED_VECTORS, INCLINED_SCALE = force_vectors(INCLINED_RESULT)
 
 
 @dataclass(frozen=True)
@@ -45,6 +61,28 @@ def _base_config(**extra):
 
 
 CASES = {
+    "inclined-force-scale-light": (
+        MECHANICS_SCENE,
+        _base_config(
+            theme="light",
+            scene="ramp",
+            mechanics={
+                "angleDeg": 35,
+                "criticalAngleDeg": INCLINED_RESULT.critical_angle_deg,
+                "moving": INCLINED_RESULT.moving,
+                "motionState": "sliding",
+                "frictionState": "kinetic friction",
+                "staticFrictionLimitN": (
+                    INCLINED_RESULT.parameters.static_friction * INCLINED_RESULT.normal_force_n
+                ),
+                "forceScalePxPerN": INCLINED_SCALE,
+                "vectors": INCLINED_VECTORS,
+            },
+            tracks=[{"id": "block", "label": "Block", "x": [0.35]}],
+        ),
+        PlayerPreferences(theme="light"),
+        (900, 560),
+    ),
     "mechanics-light": (
         CANNON_SCENE,
         _base_config(

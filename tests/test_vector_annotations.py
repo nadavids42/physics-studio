@@ -7,6 +7,7 @@ from physics_playground.visual.vectors import (
     ForceDiagramSpec,
     VectorScaleMode,
     VectorSpec,
+    linear_vector_scale,
 )
 
 
@@ -18,6 +19,22 @@ def test_physical_vectors_require_a_quantitative_scale_and_units():
     vector = VectorSpec(0, 0, 3, 4, "velocity", pixels_per_unit=10, units="m/s")
     assert vector.magnitude == 5
     assert vector.scale_disclosure == ""
+
+
+def test_linear_vector_scale_has_zero_intercept_and_preserves_force_ratios():
+    scale = linear_vector_scale(20, 80)
+    small = VectorSpec(0, 0, 3, 4, "net_force", pixels_per_unit=scale, units="N")
+    large = VectorSpec(0, 0, 6, 8, "net_force", pixels_per_unit=scale, units="N")
+    assert scale == 4
+    assert small.display_length_px == 20
+    assert large.display_length_px == 40
+    assert large.display_length_px / small.display_length_px == 2
+
+
+@pytest.mark.parametrize("magnitude,length", [(0, 40), (-1, 40), (10, 0)])
+def test_linear_vector_scale_rejects_nonphysical_domains(magnitude, length):
+    with pytest.raises(ValueError):
+        linear_vector_scale(magnitude, length)
 
 
 @pytest.mark.parametrize("mode", [VectorScaleMode.NORMALIZED, VectorScaleMode.SCHEMATIC])

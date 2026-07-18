@@ -17,6 +17,7 @@ from physics_playground.missions.service import (
     overall_percentage,
     summary,
 )
+from physics_playground.presentation.formatting import friendly_minutes, friendly_speed
 from physics_playground.registry import SIMULATION_REGISTRY
 from physics_playground.state_keys import SHARED_STATE_KEYS, migrate_legacy_keys
 
@@ -171,37 +172,17 @@ def prediction_quiz(key, question, options, correct_index, reveal_text, mission_
     return True
 
 
-SPEED_THINGS = [
-    ("a rocket going to space", 7800.0),
-    ("a jet plane", 250.0),
-    ("a race car", 90.0),
-    ("a cheetah at full sprint", 30.0),
-    ("a runner", 7.0),
-    ("a grown-up walking", 1.4),
-]
+# Deprecated compatibility export. Unverified real-world analogy values were removed.
+SPEED_THINGS: tuple[()] = ()
 
 
 def fun_speed(mps):
-    for name, v in SPEED_THINGS:
-        ratio = mps / v
-        if ratio >= 1:
-            return (
-                f"about {ratio:.0f}× faster than {name}"
-                if ratio >= 1.8
-                else f"about as fast as {name}"
-            )
-    return "slower than a grown-up walking"
+    """Compatibility name for verified speed-unit formatting."""
+
+    return friendly_speed(mps)
 
 
 def fun_time_minutes(minutes):
-    if minutes < 2:
-        return "shorter than brushing your teeth"
-    if minutes < 12:
-        return "about ten minutes"
-    if minutes < 35:
-        return "about half an hour"
-    if minutes < 70:
-        return "about one hour"
-    if minutes < 150:
-        return "about one whole movie"
-    return "longer than a movie — bring a book"
+    """Compatibility name for verified elapsed-time formatting."""
+
+    return friendly_minutes(minutes)

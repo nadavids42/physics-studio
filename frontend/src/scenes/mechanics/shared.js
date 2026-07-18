@@ -78,13 +78,14 @@ const scene = {
           y: by + 24 * Math.sin(theta),
           end: { x: bx + 66 * Math.cos(theta), y: by + 66 * Math.sin(theta) },
           label: "motion",
+          disclosure_y: 68,
         });
       PhysicsAssets.callout(ctx, s, {
         x: w - 245,
         y: 24,
         width: 220,
-        height: 62,
-        text: `${c.motionState || ""}\nSlip threshold: ${(c.criticalAngleDeg || 0).toFixed(1)}°`,
+        height: 76,
+        text: `${c.motionState || ""} · ${c.frictionState || ""}\nSlip threshold: ${(c.criticalAngleDeg || 0).toFixed(1)}°\nMax static friction: ${(c.staticFrictionLimitN || 0).toFixed(1)} N`,
         target: { x: bx, y: by },
       });
     } else if (kind === "lever") {

@@ -21,6 +21,16 @@ DEFAULT_DISCLOSURES = {
 }
 
 
+def linear_vector_scale(maximum_magnitude: float, maximum_length_px: float) -> float:
+    """Return a zero-intercept pixel-per-unit scale for quantitative vectors."""
+
+    if not math.isfinite(maximum_magnitude) or maximum_magnitude <= 0:
+        raise ValueError("Maximum vector magnitude must be positive and finite.")
+    if not math.isfinite(maximum_length_px) or maximum_length_px <= 0:
+        raise ValueError("Maximum display length must be positive and finite.")
+    return maximum_length_px / maximum_magnitude
+
+
 @dataclass(frozen=True, slots=True)
 class VectorSpec:
     x: float
@@ -68,6 +78,7 @@ class VectorSpec:
         value = asdict(self)
         value["scale_mode"] = self.scale_mode.value
         value["scale_disclosure"] = self.scale_disclosure
+        value["display_length_px"] = self.display_length_px
         return value
 
 

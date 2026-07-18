@@ -1052,6 +1052,42 @@
       ctx.fillText(value, x + pad, y + 17);
       ctx.restore();
     }
+    function scaleLegend(ctx, s, specs, x = 12, y = 12) {
+      const physical = (specs || []).filter(
+        (spec) => spec.scale_mode === "physical" && Number.isFinite(spec.pixels_per_unit) && spec.pixels_per_unit > 0 && spec.units
+      );
+      if (!physical.length) return;
+      const scale = physical[0].pixels_per_unit, units = physical[0].units;
+      if (physical.some(
+        (spec) => spec.pixels_per_unit !== scale || spec.units !== units
+      ))
+        return;
+      const target = 40 / scale, power = 10 ** Math.floor(Math.log10(target)), reference = [1, 2, 5, 10].map((value) => value * power).reduce(
+        (best, value) => Math.abs(value - target) < Math.abs(best - target) ? value : best
+      ), length = reference * scale, quantity = units === "N" ? "Force" : "Vector", text = `${quantity} scale (linear): ${reference} ${units}`;
+      ctx.save();
+      V.applyText(ctx, s, "helper");
+      const pad = 8, boxWidth = Math.min(
+        s.transform.width - 24,
+        Math.max(ctx.measureText(text).width + pad * 2, length + pad * 2)
+      ), boxHeight = 48;
+      ctx.fillStyle = V.token(s, "colors", "surface_raised", "#FFF");
+      ctx.strokeStyle = V.token(s, "colors", "border", "#B8C5D1");
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(x, y, boxWidth, boxHeight, 8);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = V.token(s, "colors", "net_force", "#B3261E");
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x + pad, y + 18);
+      ctx.lineTo(x + pad + length, y + 18);
+      ctx.stroke();
+      ctx.fillStyle = V.token(s, "colors", "text_muted", "#526577");
+      ctx.fillText(text, x + pad, y + 39);
+      ctx.restore();
+    }
     function vector(ctx, s, spec, progress = 1, showDisclosure = true) {
       const end = endpoint(spec, progress), role = spec.role || "net_force";
       V.arrow(ctx, s, p(spec.x, spec.y), end, {
@@ -1062,7 +1098,14 @@
         width: spec.line_width
       });
       if (showDisclosure)
-        disclosure(ctx, s, spec.scale_mode, spec.scale_disclosure);
+        disclosure(
+          ctx,
+          s,
+          spec.scale_mode,
+          spec.scale_disclosure,
+          spec.disclosure_x || 12,
+          spec.disclosure_y || 12
+        );
     }
     function vectorSet(ctx, s, specs, progress = 1, originDisclosure = p(12, 12)) {
       const modes = /* @__PURE__ */ new Set();
@@ -1070,9 +1113,20 @@
         vector(ctx, s, spec, progress, false);
         if (spec.scale_mode !== "physical") modes.add(spec.scale_mode);
       }
+      scaleLegend(ctx, s, specs, originDisclosure.x, originDisclosure.y);
       if (modes.size) {
         const mode = modes.has("schematic") ? "schematic" : "normalized";
-        disclosure(ctx, s, mode, "", originDisclosure.x, originDisclosure.y);
+        const hasPhysical = (specs || []).some(
+          (spec) => spec.scale_mode === "physical"
+        );
+        disclosure(
+          ctx,
+          s,
+          mode,
+          "",
+          originDisclosure.x,
+          originDisclosure.y + (hasPhysical ? 54 : 0)
+        );
       }
     }
     function forceDiagram(ctx, s, diagram, progress = 1) {
@@ -1232,6 +1286,7 @@
     return {
       endpoint,
       disclosure,
+      scaleLegend,
       vector,
       vectorSet,
       forceDiagram,

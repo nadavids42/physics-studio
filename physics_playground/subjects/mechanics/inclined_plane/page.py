@@ -1,5 +1,3 @@
-import math
-
 import matplotlib.pyplot as plt
 import streamlit as st
 
@@ -21,6 +19,7 @@ from physics_playground.subjects.mechanics.ui import metric_table, record, show
 
 from .missions import evaluate
 from .physics import InclinedPlaneParameters, simulate
+from .visuals import force_vectors
 
 ID = "inclined_plane"
 
@@ -77,54 +76,7 @@ def numeric(r):
 def animate(r, seed, autoplay=True):
     p = r.parameters
     end = 1 if r.moving else 0
-    largest = max(r.normal_force_n, r.down_slope_force_n, r.friction_force_n, abs(r.net_force_n), 1)
-
-    def length(value):
-        return 28 + 40 * abs(value) / largest
-
-    theta = math.radians(p.angle_deg)
-    down = (math.cos(theta), -math.sin(theta))
-    normal = (-math.sin(theta), math.cos(theta))
-    vectors = [
-        {
-            "dx": 0,
-            "dy": -1,
-            "role": "gravity",
-            "label": f"weight {p.mass_kg * p.gravity_m_s2:.1f} N",
-            "scale_mode": "normalized",
-            "fixed_length_px": length(p.mass_kg * p.gravity_m_s2),
-        },
-        {
-            "dx": normal[0],
-            "dy": normal[1],
-            "role": "normal_force",
-            "label": f"normal {r.normal_force_n:.1f} N",
-            "scale_mode": "normalized",
-            "fixed_length_px": length(r.normal_force_n),
-        },
-    ]
-    if r.friction_force_n:
-        vectors.append(
-            {
-                "dx": -down[0],
-                "dy": -down[1],
-                "role": "friction",
-                "label": f"friction {r.friction_force_n:.1f} N",
-                "scale_mode": "normalized",
-                "fixed_length_px": length(r.friction_force_n),
-            }
-        )
-    if abs(r.net_force_n) > 1e-9:
-        vectors.append(
-            {
-                "dx": down[0],
-                "dy": down[1],
-                "role": "net_force",
-                "label": f"net {r.net_force_n:.1f} N",
-                "scale_mode": "normalized",
-                "fixed_length_px": length(r.net_force_n),
-            }
-        )
+    vectors, pixels_per_newton = force_vectors(r)
     show(
         document(
             "ramp",
@@ -137,6 +89,9 @@ def animate(r, seed, autoplay=True):
                 "criticalAngleDeg": r.critical_angle_deg,
                 "moving": r.moving,
                 "motionState": "sliding" if r.moving else "static equilibrium",
+                "frictionState": "kinetic friction" if r.moving else "static friction",
+                "staticFrictionLimitN": p.static_friction * r.normal_force_n,
+                "forceScalePxPerN": pixels_per_newton,
                 "vectors": vectors,
             },
         )
@@ -148,6 +103,10 @@ def explore():
     r = simulate(params())
     metric_table(metrics(r))
     st.caption("Text outcome: " + r.outcome)
+    st.info(
+        "Force arrows share the linear scale shown on the canvas. The dashed resultant is "
+        "calculated from the solid force arrows, not an additional force."
+    )
     animate(r, 20262001, False)
     obs = st.text_input("Optional notebook observation", key=state_key("incline_obs"))
     if st.button("▶ Run ramp", type="primary", use_container_width=True):

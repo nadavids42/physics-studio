@@ -1,36 +1,16 @@
-"""Kid-friendly comparisons retained independently of Streamlit."""
-
-SPEED_REFERENCES = (
-    ("a rocket going to space", 7_800.0),
-    ("a jet plane", 250.0),
-    ("a race car", 90.0),
-    ("a cheetah at full sprint", 30.0),
-    ("a runner", 7.0),
-    ("a grown-up walking", 1.4),
-)
+"""Verified unit-based formatting retained independently of Streamlit."""
 
 
 def friendly_speed(meters_per_second: float) -> str:
-    for name, reference_speed in SPEED_REFERENCES:
-        ratio = meters_per_second / reference_speed
-        if ratio >= 1.0:
-            return (
-                f"about {ratio:.0f}× faster than {name}"
-                if ratio >= 1.8
-                else f"about as fast as {name}"
-            )
-    return "slower than a grown-up walking"
+    """State speed in SI and converted road-speed units without analogies."""
+
+    return f"{meters_per_second:.2f} m/s ({meters_per_second * 3.6:.1f} km/h)"
 
 
 def friendly_minutes(minutes: float) -> str:
-    if minutes < 2:
-        return "shorter than brushing your teeth"
-    if minutes < 12:
-        return "about ten minutes"
-    if minutes < 35:
-        return "about half an hour"
-    if minutes < 70:
-        return "about one soccer game half... plus snacks"
-    if minutes < 150:
-        return "about one whole movie"
-    return "longer than a movie — bring a book"
+    """State elapsed time without unverifiable activity comparisons."""
+
+    if minutes < 60:
+        return f"{minutes:.1f} min"
+    hours, remaining = divmod(minutes, 60)
+    return f"{int(hours)} h {remaining:.0f} min"

@@ -30,6 +30,7 @@ from physics_playground.subjects.waves_and_oscillations.pendulum.missions import
 from physics_playground.subjects.waves_and_oscillations.pendulum.physics import (
     PendulumModel,
     PendulumParameters,
+    nonlinear_period_series,
 )
 from physics_playground.subjects.waves_and_oscillations.pendulum.scene import (
     PLAYER_HEIGHT,
@@ -151,6 +152,17 @@ def render_explore():
         )
     r = cached_pendulum(PendulumParameters(length, WORLDS[world], angle, model))
     _summary(r)
+    if model is PendulumModel.SMALL_ANGLE:
+        reference_period = nonlinear_period_series(length, WORLDS[world], angle)
+        error_percent = (reference_period / r.period_s - 1) * 100
+        message = (
+            f"Small-angle model: sin(θ) is replaced by θ. At {angle}°, its period is about "
+            f"{error_percent:.1f}% shorter than the nonlinear period estimate."
+        )
+        if angle > 15:
+            st.warning(message + " Use the nonlinear model for quantitative interpretation.")
+        else:
+            st.caption(message)
     autoplay = st.session_state[state_key("launched")] == r.parameters.to_dict()
     canvas_embed.show(
         build_pendulum_canvas(

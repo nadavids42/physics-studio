@@ -69,15 +69,17 @@
             x: bx + 24 * Math.cos(theta),
             y: by + 24 * Math.sin(theta),
             end: { x: bx + 66 * Math.cos(theta), y: by + 66 * Math.sin(theta) },
-            label: "motion"
+            label: "motion",
+            disclosure_y: 68
           });
         PhysicsAssets.callout(ctx, s, {
           x: w - 245,
           y: 24,
           width: 220,
-          height: 62,
-          text: `${c.motionState || ""}
-Slip threshold: ${(c.criticalAngleDeg || 0).toFixed(1)}\xB0`,
+          height: 76,
+          text: `${c.motionState || ""} \xB7 ${c.frictionState || ""}
+Slip threshold: ${(c.criticalAngleDeg || 0).toFixed(1)}\xB0
+Max static friction: ${(c.staticFrictionLimitN || 0).toFixed(1)} N`,
           target: { x: bx, y: by }
         });
       } else if (kind === "lever") {
