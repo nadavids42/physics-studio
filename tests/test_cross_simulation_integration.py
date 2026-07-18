@@ -15,6 +15,8 @@ from physics_playground.registry import SIMULATIONS_BY_ID
 from physics_playground.serialization import dataclass_from_dict, to_jsonable
 
 EXPANSION_IDS = {
+    "orbital_gravity",
+    "boing",
     "cannonball",
     "pendulum",
     "inclined_plane",

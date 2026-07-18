@@ -59,4 +59,26 @@ PENDULUM_MANIFEST = ExpansionDefinition(
     ("No pivot friction or air resistance", "Motion remains planar"),
     tests=TestRequirements(numerical_convergence_test=True),
 )
-WAVES_MANIFESTS = (WAVE_INTERFERENCE_MANIFEST, DOPPLER_EFFECT_MANIFEST, PENDULUM_MANIFEST)
+BOING_MANIFEST = ExpansionDefinition(
+    SIMULATIONS_BY_ID["boing"],
+    SubjectArea.WAVES_AND_OSCILLATIONS,
+    "SpringParameters",
+    "SpringResult",
+    "physics_playground.subjects.waves_and_oscillations.boing.physics.simulate_spring",
+    "physics_playground.subjects.waves_and_oscillations.boing.page.render",
+    "physics_playground.subjects.waves_and_oscillations.boing.scene.build_boing_canvas",
+    REQUIRED_MODE_REQUIREMENTS,
+    MISSIONS_BY_SIMULATION["boing"],
+    (
+        ModelAssumption("hooke", "Linear Hooke-law spring"),
+        ModelAssumption("point_mass", "Point mass with one-dimensional motion"),
+    ),
+    ("No spring mass", "Linear damping and sinusoidal drive only"),
+    tests=TestRequirements(numerical_convergence_test=True),
+)
+WAVES_MANIFESTS = (
+    WAVE_INTERFERENCE_MANIFEST,
+    DOPPLER_EFFECT_MANIFEST,
+    PENDULUM_MANIFEST,
+    BOING_MANIFEST,
+)

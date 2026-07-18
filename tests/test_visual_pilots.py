@@ -1,8 +1,9 @@
 import matplotlib.pyplot as plt
 
-from physics_playground.canvas import bumper_cars, orbit, ray_diagram
+from physics_playground.canvas import bumper_cars, ray_diagram
 from physics_playground.presentation.chart_system import series_figure, style_figure
 from physics_playground.subjects.mechanics.cannonball import scene as cannonball
+from physics_playground.subjects.mechanics.orbital_gravity import scene as orbit
 from physics_playground.subjects.waves_and_oscillations.pendulum import scene as pendulum
 from physics_playground.visual.experience import PresentationLevel
 from physics_playground.visual.tokens import LIGHT_THEME
@@ -89,9 +90,9 @@ def test_shared_chart_style_preserves_data_and_applies_visual_tokens():
 
 def test_pilot_pages_retain_all_four_learning_modes():
     from physics_playground.pages import bumper_cars as bumper_page
-    from physics_playground.pages import orbital_gravity as orbit_page
     from physics_playground.subjects.light_and_electricity.thin_lenses import page as lens_page
     from physics_playground.subjects.mechanics.cannonball import page as cannon_page
+    from physics_playground.subjects.mechanics.orbital_gravity import page as orbit_page
     from physics_playground.subjects.waves_and_oscillations.pendulum import page as pendulum_page
 
     sources = (cannon_page, pendulum_page, orbit_page, bumper_page, lens_page)

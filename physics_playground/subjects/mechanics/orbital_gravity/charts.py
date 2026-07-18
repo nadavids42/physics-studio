@@ -1,3 +1,5 @@
+"""Static analytical charts for orbital results."""
+
 import matplotlib.pyplot as plt
 
 

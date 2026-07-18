@@ -3,7 +3,7 @@ import math
 import numpy as np
 import pytest
 
-from physics_playground.models.spring import (
+from physics_playground.subjects.waves_and_oscillations.boing.physics import (
     SpringParameters,
     simulate_damped_driven,
     simulate_undamped,

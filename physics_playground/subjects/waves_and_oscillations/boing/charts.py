@@ -1,8 +1,10 @@
+"""Static analytical charts for spring results."""
+
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
 from physics_playground.contracts import PlotData
-from physics_playground.models.spring import resonance_sweep
+from physics_playground.subjects.waves_and_oscillations.boing.physics import resonance_sweep
 
 
 def plot_figure(plot: PlotData, overlays: tuple[PlotData, ...] = ()) -> Figure:

@@ -1,6 +1,6 @@
 import math
 
-from physics_playground.models.orbit import (
+from physics_playground.subjects.mechanics.orbital_gravity.physics import (
     OrbitOutcome,
     OrbitParameters,
     simulate_orbit,

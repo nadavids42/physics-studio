@@ -40,9 +40,9 @@ class OrbitOutcome(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class OrbitParameters:
-    gravitational_parameter: float
-    launch_radius: float
-    tangential_speed: float
+    gravitational_parameter: float = 20.0
+    launch_radius: float = 7.0
+    tangential_speed: float = 1.69
     time_step: float = 0.02
     steps: int = 5000
     collision_radius: float = 0.35

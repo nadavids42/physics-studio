@@ -6,17 +6,7 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 from physics_playground.canvas import embed as canvas_embed
-from physics_playground.canvas.orbit import (
-    PLAYER_HEIGHT,
-    build_orbit_canvas,
-    build_orbit_comparison_canvas,
-)
 from physics_playground.missions import ui as mission_ui
-from physics_playground.missions.orbit import evaluate_orbit_missions
-from physics_playground.models.orbit import (
-    OrbitParameters,
-    timestep_warning,
-)
 from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
@@ -28,19 +18,55 @@ from physics_playground.presentation.learning_modes import (
     mode_navigation,
 )
 from physics_playground.presentation.notebook_ui import REUSE_REQUEST_KEY, add_trial
-from physics_playground.presentation.orbit_charts import plot_figure
 from physics_playground.simulation_cache import cached_orbit
+from physics_playground.state_keys import migrate_simulation_keys, simulation_key
+from physics_playground.subjects.mechanics.orbital_gravity.charts import plot_figure
+from physics_playground.subjects.mechanics.orbital_gravity.missions import evaluate_orbit_missions
+from physics_playground.subjects.mechanics.orbital_gravity.physics import (
+    OrbitParameters,
+    timestep_warning,
+)
+from physics_playground.subjects.mechanics.orbital_gravity.scene import (
+    PLAYER_HEIGHT,
+    build_orbit_canvas,
+    build_orbit_comparison_canvas,
+)
 from physics_playground.validation import PhysicsValidationError
 
 VERSION = "orbit-verlet-1.0"
+ID = "orbital_gravity"
+
+
+def state_key(name: str) -> str:
+    return simulation_key(ID, name)
 
 
 def _init():
+    migrate_simulation_keys(
+        st.session_state,
+        ID,
+        {
+            "orbit_nonce": "nonce",
+            "orbit_launched": "launched",
+            "orbit_compare_nonce": "compare_nonce",
+            "orbit_compare_signature": "compare_signature",
+            "orbit_quiz_guess": "quiz_guess",
+            "orbit_quiz_revealed": "quiz_revealed",
+            "orbit_quiz_lock": "quiz_lock",
+            "orbit_mu": "mu",
+            "orbit_radius": "radius",
+            "orbit_speed": "speed",
+            "orbit_dt": "time_step",
+            "orbit_learning_mode": "learning_mode",
+            "orbit_observation": "observation",
+            "orbit_compare_observation": "compare_observation",
+        },
+    )
     for k, v in (
-        ("orbit_nonce", 0),
-        ("orbit_launched", None),
-        ("orbit_compare_nonce", 0),
-        ("orbit_compare_signature", None),
+        (state_key("nonce"), 0),
+        (state_key("launched"), None),
+        (state_key("compare_nonce"), 0),
+        (state_key("compare_signature"), None),
     ):
         st.session_state.setdefault(k, v)
 
@@ -70,7 +96,7 @@ def _record(r, seed, obs, label=None, badges=()):
     add_trial(
         simulation_id="orbital_gravity",
         parameters=r.parameters.to_dict(),
-        prediction=st.session_state.get("orbit_quiz_guess"),
+        prediction=st.session_state.get(state_key("quiz_guess")),
         result_summary=f"{r.outcome.value}; eccentricity {r.eccentricity:.3f}",
         metrics=_metrics(r),
         earned_badges=badges,
@@ -90,11 +116,11 @@ def _reuse():
     if not q or q.get("simulation_id") != "orbital_gravity":
         return
     p = q["parameters"]
-    st.session_state["orbit_mu"] = float(p["gravitational_parameter"])
-    st.session_state["orbit_radius"] = float(p["launch_radius"])
-    st.session_state["orbit_speed"] = float(p["tangential_speed"])
-    st.session_state["orbit_dt"] = float(p["time_step"])
-    st.session_state["orbit_learning_mode"] = "Explore"
+    st.session_state[state_key("mu")] = float(p["gravitational_parameter"])
+    st.session_state[state_key("radius")] = float(p["launch_radius"])
+    st.session_state[state_key("speed")] = float(p["tangential_speed"])
+    st.session_state[state_key("time_step")] = float(p["time_step"])
+    st.session_state[state_key("learning_mode")] = "Explore"
     del st.session_state[REUSE_REQUEST_KEY]
 
 
@@ -102,15 +128,15 @@ def render_explore():
     mode_heading(LearningMode.EXPLORE, "Choose a launch speed")
     c1, c2 = st.columns(2)
     with c1:
-        mu = st.slider("Central gravity μ", 1.0, 80.0, 20.0, 0.5, key="orbit_mu")
-        radius = st.slider("Launch radius", 1.0, 30.0, 7.0, 0.1, key="orbit_radius")
+        mu = st.slider("Central gravity μ", 1.0, 80.0, 20.0, 0.5, key=state_key("mu"))
+        radius = st.slider("Launch radius", 1.0, 30.0, 7.0, 0.1, key=state_key("radius"))
     circular = (mu / radius) ** 0.5
     escape = (2 * mu / radius) ** 0.5
     with c2:
         speed = st.slider(
-            "Tangential launch speed", 0.0, escape * 1.4, circular, 0.02, key="orbit_speed"
+            "Tangential launch speed", 0.0, escape * 1.4, circular, 0.02, key=state_key("speed")
         )
-        dt = st.number_input("Time step", 0.001, 0.2, 0.02, 0.005, key="orbit_dt")
+        dt = st.number_input("Time step", 0.001, 0.2, 0.02, 0.005, key=state_key("time_step"))
     st.caption(f"Circular-speed marker: **{circular:.3f}** · Escape-speed marker: **{escape:.3f}**")
     p = OrbitParameters(
         mu, radius, speed, dt, 5000, collision_radius=0.35, escape_radius=max(80, radius * 8)
@@ -120,17 +146,19 @@ def render_explore():
         st.warning(warning)
     r = cached_orbit(p)
     _summary(r)
-    autoplay = st.session_state.orbit_launched == p.to_dict()
+    autoplay = st.session_state[state_key("launched")] == p.to_dict()
     canvas_embed.show(
-        build_orbit_canvas(r, seed=20261900 + st.session_state.orbit_nonce, autoplay=autoplay),
+        build_orbit_canvas(
+            r, seed=20261900 + st.session_state[state_key("nonce")], autoplay=autoplay
+        ),
         height=PLAYER_HEIGHT,
     )
-    obs = st.text_input("Optional notebook observation", key="orbit_observation")
+    obs = st.text_input("Optional notebook observation", key=state_key("observation"))
     if st.button("🚀 LAUNCH!", type="primary", use_container_width=True):
-        st.session_state.orbit_nonce += 1
-        st.session_state.orbit_launched = p.to_dict()
+        st.session_state[state_key("nonce")] += 1
+        st.session_state[state_key("launched")] = p.to_dict()
         badges = _award(r)
-        _record(r, 20261900 + st.session_state.orbit_nonce, obs, badges=badges)
+        _record(r, 20261900 + st.session_state[state_key("nonce")], obs, badges=badges)
         st.rerun()
     mission_ui.mission_checklist("Planet Launcher")
 
@@ -173,11 +201,11 @@ def render_compare():
     a, b, labels, change = _pair(kind)
     changed_variable_banner(change)
     sig = {"kind": kind}
-    obs = st.text_input("Optional comparison observation", key="orbit_compare_observation")
+    obs = st.text_input("Optional comparison observation", key=state_key("compare_observation"))
     if st.button("▶ Run comparison", type="primary", use_container_width=True):
-        st.session_state.orbit_compare_nonce += 1
-        st.session_state.orbit_compare_signature = sig
-        n = st.session_state.orbit_compare_nonce
+        st.session_state[state_key("compare_nonce")] += 1
+        st.session_state[state_key("compare_signature")] = sig
+        n = st.session_state[state_key("compare_nonce")]
         _record(a, 20262000 + n, obs, "Run A")
         _record(b, 20262100 + n, obs, "Run B")
     canvas_embed.show(
@@ -185,8 +213,8 @@ def render_compare():
             a,
             b,
             labels=labels,
-            seed=20262200 + st.session_state.orbit_compare_nonce,
-            autoplay=st.session_state.orbit_compare_signature == sig,
+            seed=20262200 + st.session_state[state_key("compare_nonce")],
+            autoplay=st.session_state[state_key("compare_signature")] == sig,
         ),
         height=PLAYER_HEIGHT,
     )
@@ -197,8 +225,8 @@ def render_compare():
 
 def _latest():
     return (
-        OrbitParameters(**st.session_state.orbit_launched)
-        if st.session_state.orbit_launched
+        OrbitParameters(**st.session_state[state_key("launched")])
+        if st.session_state[state_key("launched")]
         else OrbitParameters(20, 7, (20 / 7) ** 0.5)
     )
 
@@ -244,7 +272,7 @@ def render():
         "Launch a planet and discover circular, elliptical, crash, and escape trajectories."
     )
     revealed = mission_ui.prediction_quiz(
-        key="orbit_quiz",
+        key=state_key("quiz"),
         question="What happens when a planet is thrown much too slowly?",
         options=["It escapes", "It crashes inward", "It makes a circular orbit"],
         correct_index=1,
@@ -254,7 +282,7 @@ def render():
     if not revealed:
         st.caption("🔬 Make your prediction before speed markers and results are shown.")
         return
-    mode = mode_navigation(key="orbit_learning_mode")
+    mode = mode_navigation(key=state_key("learning_mode"))
     st.divider()
     try:
         {

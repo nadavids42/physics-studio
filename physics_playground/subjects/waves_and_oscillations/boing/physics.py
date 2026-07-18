@@ -33,9 +33,9 @@ from physics_playground.validation import PhysicsValidationError, require_positi
 
 @dataclass(frozen=True, slots=True)
 class SpringParameters:
-    mass_kg: float
-    stiffness_n_m: float
-    initial_displacement_m: float
+    mass_kg: float = 2.0
+    stiffness_n_m: float = 20.0
+    initial_displacement_m: float = 1.0
     damping_n_s_m: float = 0.0
     drive_force_n: float = 0.0
     drive_frequency_ratio: float = 1.0

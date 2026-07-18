@@ -1,3 +1,5 @@
+"""Planet Launcher scene adapters for the shared player."""
+
 from physics_playground.canvas.player import build_player_document
 from physics_playground.serialization import to_jsonable
 

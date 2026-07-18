@@ -5,12 +5,14 @@ Repository baseline: current working tree at audit time
 
 ## Migration progress
 
-Stage 3 is underway. The first dependency-ordered wave was completed after the audit:
+Stage 3 is underway. Two dependency-ordered waves have been completed after the audit:
 
 - **Completed:** `cannonball` moved to `subjects/mechanics/cannonball/`.
 - **Completed:** `pendulum` moved to `subjects/waves_and_oscillations/pendulum/`.
-- **Remaining horizontal simulations, in planned order:** `orbital_gravity`, `boing`,
-  `earth_tunnel`, `double_pendulum`, and `bumper_cars`.
+- **Completed:** `orbital_gravity` moved to `subjects/mechanics/orbital_gravity/`.
+- **Completed:** `boing` moved to `subjects/waves_and_oscillations/boing/`.
+- **Remaining horizontal simulations, in planned order:** `earth_tunnel`, `double_pendulum`, and
+  `bumper_cars`.
 
 Each completed slice owns `physics.py`, `page.py`, `missions.py`, `charts.py`, and `scene.py`, is
 enrolled in the expansion manifest catalog, is loaded through registry manifest validation, and
@@ -404,8 +406,8 @@ Migrate one simulation at a time in this order:
 
 1. Cannonball — **completed**
 2. Pendulum — **completed**
-3. Orbit — remaining
-4. Boing — remaining
+3. Orbit — **completed**
+4. Boing — **completed**
 5. Earth Tunnel — remaining
 6. Double Pendulum — remaining
 7. Bumper Cars — remaining

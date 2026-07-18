@@ -1,5 +1,7 @@
+"""Pure mission evidence for Planet Launcher."""
+
 from physics_playground.contracts import MissionEvaluation
-from physics_playground.models.orbit import OrbitOutcome, OrbitResult
+from physics_playground.subjects.mechanics.orbital_gravity.physics import OrbitOutcome, OrbitResult
 
 
 def evaluate_orbit_missions(r: OrbitResult):

@@ -2,15 +2,18 @@ from pathlib import Path
 
 import pytest
 
-from physics_playground.canvas.boing import SCENE as BOING_SCENE
-from physics_playground.canvas.boing import build_boing_canvas
-from physics_playground.models.spring import SpringParameters, simulate_spring
 from physics_playground.subjects.mechanics.canvas import SCENE as MECHANICS_SCENE
 from physics_playground.subjects.mechanics.canvas import document
 from physics_playground.subjects.mechanics.roller_coaster.physics import (
     RollerCoasterParameters,
     simulate,
 )
+from physics_playground.subjects.waves_and_oscillations.boing.physics import (
+    SpringParameters,
+    simulate_spring,
+)
+from physics_playground.subjects.waves_and_oscillations.boing.scene import SCENE as BOING_SCENE
+from physics_playground.subjects.waves_and_oscillations.boing.scene import build_boing_canvas
 from physics_playground.visual.assets import AssetKind
 
 
@@ -102,7 +105,7 @@ def test_boing_shared_assets_references_and_vector_semantics():
 def test_wave4_analysis_pages_use_accessible_shared_chart_rendering():
     root = Path(__file__).parents[1] / "physics_playground"
     coaster = (root / "subjects/mechanics/roller_coaster/page.py").read_text(encoding="utf-8")
-    boing = (root / "pages/boing.py").read_text(encoding="utf-8")
+    boing = (root / "subjects/waves_and_oscillations/boing/page.py").read_text(encoding="utf-8")
     assert (
         "series_figure(" in coaster and "render_chart" in coaster and "st.line_chart" not in coaster
     )

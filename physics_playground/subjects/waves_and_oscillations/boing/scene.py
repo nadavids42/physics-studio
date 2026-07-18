@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from physics_playground.canvas.player import build_player_document
-from physics_playground.models.spring import SpringResult
 from physics_playground.serialization import to_jsonable
+from physics_playground.subjects.waves_and_oscillations.boing.physics import SpringResult
 
 CANVAS_W, CANVAS_H, PLAYER_HEIGHT = 680, 300, 360
 

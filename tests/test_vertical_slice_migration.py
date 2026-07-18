@@ -8,6 +8,8 @@ from physics_playground.registry import load_validated_page
 from physics_playground.state_keys import simulation_key
 
 MIGRATED = {
+    "orbital_gravity": "mechanics",
+    "boing": "waves_and_oscillations",
     "cannonball": "mechanics",
     "pendulum": "waves_and_oscillations",
 }
@@ -56,5 +58,15 @@ def test_obsolete_horizontal_files_are_removed() -> None:
         "physics_playground/missions/pendulum.py",
         "physics_playground/canvas/pendulum.py",
         "physics_playground/presentation/pendulum_charts.py",
+        "physics_playground/models/orbit.py",
+        "physics_playground/pages/orbital_gravity.py",
+        "physics_playground/missions/orbit.py",
+        "physics_playground/canvas/orbit.py",
+        "physics_playground/presentation/orbit_charts.py",
+        "physics_playground/models/spring.py",
+        "physics_playground/pages/boing.py",
+        "physics_playground/missions/boing.py",
+        "physics_playground/canvas/boing.py",
+        "physics_playground/presentation/spring_charts.py",
     )
     assert not any(Path(path).exists() for path in old_paths)

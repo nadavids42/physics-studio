@@ -8,13 +8,19 @@ from physics_playground.models.double_pendulum import (
     simulate_double_pendulum,
 )
 from physics_playground.models.earth_tunnel import TunnelParameters, simulate_tunnel
-from physics_playground.models.orbit import OrbitParameters, simulate_orbit
-from physics_playground.models.spring import SpringParameters, simulate_spring
 from physics_playground.performance import timed
 from physics_playground.subjects.mechanics.cannonball.physics import (
     ProjectileParameters,
     simulate_no_drag,
     simulate_projectile,
+)
+from physics_playground.subjects.mechanics.orbital_gravity.physics import (
+    OrbitParameters,
+    simulate_orbit,
+)
+from physics_playground.subjects.waves_and_oscillations.boing.physics import (
+    SpringParameters,
+    simulate_spring,
 )
 from physics_playground.subjects.waves_and_oscillations.pendulum.physics import (
     PendulumParameters,

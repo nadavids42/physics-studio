@@ -231,12 +231,12 @@ The original pilots now serve as completed migration examples for the full visua
 
 - `subjects/mechanics/cannonball/scene.py`: shared cannon/projectile assets, fading trajectory, responsive labels, field context.
 - `subjects/waves_and_oscillations/pendulum/scene.py`: shared pivot/cable/bob assembly, fading trail, laboratory context.
-- `canvas/orbit.py`: shared star/planet assets, bounded orbital trail, space context.
+- `subjects/mechanics/orbital_gravity/scene.py`: shared star/planet assets, bounded orbital trail, space context.
 - `canvas/bumper_cars.py`: shared carts, collision ripple/flash, comparison lanes, collision-track context.
 - `canvas/ray_diagram.py`: shared lens/ray assets, normal annotation, optics-bench context.
 - `subjects/light_and_electricity/thin_lenses/page.py`: analysis routed through the shared chart system.
 - `subjects/mechanics/canvas.py`: shared ramp, lever, center-of-mass, rotation, and model-faithful coaster compositions.
-- `canvas/boing.py`, `canvas/double_pendulum.py`, and `canvas/earth_tunnel.py`: recorded oscillation and gravity tracks with bounded trails and explicit diagnostics.
+- `subjects/waves_and_oscillations/boing/scene.py`, `canvas/double_pendulum.py`, and `canvas/earth_tunnel.py`: recorded oscillation and gravity tracks with bounded trails and explicit diagnostics.
 - `canvas/scalar_field.py` and `canvas/wavefronts.py`: fixed-scale wave graphs and physically positioned Doppler wavefronts.
 - `canvas/diffusion_player.py`: immutable seeded paths with bounded display work and a statistical RMS guide.
 

@@ -1,5 +1,7 @@
+"""Pure mission evidence for Boing Machine."""
+
 from physics_playground.contracts import MissionEvaluation
-from physics_playground.models.spring import SpringResult
+from physics_playground.subjects.waves_and_oscillations.boing.physics import SpringResult
 
 
 def evaluate_boing_missions(result: SpringResult) -> tuple[MissionEvaluation, ...]:

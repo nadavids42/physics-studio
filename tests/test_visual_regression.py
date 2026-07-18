@@ -178,8 +178,9 @@ def test_visual_session_state_keys_are_unique_and_do_not_collide_with_existing_k
 
 
 def test_pilot_scene_semantic_golden_signatures():
-    from physics_playground.canvas import bumper_cars, orbit, ray_diagram
+    from physics_playground.canvas import bumper_cars, ray_diagram
     from physics_playground.subjects.mechanics.cannonball import scene as cannonball
+    from physics_playground.subjects.mechanics.orbital_gravity import scene as orbit
     from physics_playground.subjects.waves_and_oscillations.pendulum import scene as pendulum
 
     signatures = {

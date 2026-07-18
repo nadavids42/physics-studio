@@ -53,9 +53,10 @@ def test_contextual_library_supports_initial_real_world_scenes():
 
 
 def test_representative_scenes_opt_into_context_without_hiding_overlays():
-    from physics_playground.canvas import orbit, ray_diagram
+    from physics_playground.canvas import ray_diagram
     from physics_playground.subjects.mechanics import canvas as mechanics_canvas
     from physics_playground.subjects.mechanics.cannonball import scene as cannonball
+    from physics_playground.subjects.mechanics.orbital_gravity import scene as orbit
     from physics_playground.subjects.waves_and_oscillations.pendulum import scene as pendulum
 
     assert "projectileField" in cannonball.SCENE and "for(const track" in cannonball.SCENE

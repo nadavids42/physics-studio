@@ -28,6 +28,16 @@ def manifest(simulation_id, parameter, result, physics, page, canvas, assumption
 
 MECHANICS_MANIFESTS = (
     manifest(
+        "orbital_gravity",
+        "OrbitParameters",
+        "OrbitResult",
+        "physics_playground.subjects.mechanics.orbital_gravity.physics.simulate_orbit",
+        "physics_playground.subjects.mechanics.orbital_gravity.page.render",
+        "physics_playground.subjects.mechanics.orbital_gravity.scene.build_orbit_canvas",
+        ("Point-mass orbiting body", "Fixed central mass", "Newtonian inverse-square gravity"),
+        ("Two-dimensional motion", "No perturbing bodies or relativistic effects"),
+    ),
+    manifest(
         "cannonball",
         "ProjectileParameters",
         "ProjectileResult",

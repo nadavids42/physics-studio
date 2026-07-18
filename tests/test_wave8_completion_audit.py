@@ -11,7 +11,7 @@ from physics_playground.visual.tokens import DARK_THEME, LIGHT_THEME
 
 ROOT = Path(__file__).parents[1] / "physics_playground"
 SCENE_ADAPTERS = (
-    "boing.py",
+    "subjects/waves_and_oscillations/boing/scene.py",
     "bumper_cars.py",
     "subjects/mechanics/cannonball/scene.py",
     "diffusion_player.py",
@@ -19,7 +19,7 @@ SCENE_ADAPTERS = (
     "earth_tunnel.py",
     "fluid_container.py",
     "gas_container.py",
-    "orbit.py",
+    "subjects/mechanics/orbital_gravity/scene.py",
     "subjects/waves_and_oscillations/pendulum/scene.py",
     "ray_diagram.py",
     "scalar_field.py",
