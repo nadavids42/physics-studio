@@ -20,7 +20,7 @@ const scene={
     const trailA=frame.trails.get('car_a').map(point=>({px:t.x(point.x)}));
     const trailB=frame.trails.get('car_b').map(point=>({px:t.x(point.x)}));
     const impact=frame.config.impactFraction,since=Math.max(0,frame.fraction-impact)*frame.config.durationMs/1000;
-    if(frame.config.sticky&&frame.fraction>=impact&&frame.state!=='idle'){ctx.strokeStyle='#8D6E63';ctx.lineWidth=6;
+    if(frame.config.sticky&&frame.fraction>=impact&&frame.state!=='idle'){ctx.strokeStyle=PhysicsVisuals.token(frame,'colors','uncertainty','#64748B');ctx.lineWidth=6;
       ctx.beginPath();ctx.moveTo(ax,ground-19);ctx.lineTo(bx,ground-19);ctx.stroke();}
     drawCar(ctx,frame,ax,PhysicsVisuals.token(frame,'colors','graph_1','#0072B2'),'A',ground,trailA);
     drawCar(ctx,frame,bx,PhysicsVisuals.token(frame,'colors','graph_2','#D55E00'),'B',ground,trailB);
@@ -79,8 +79,8 @@ def build_bumper_canvas(
 
 COMPARISON_SCENE_JAVASCRIPT = r"""
 function comparisonBackground(ctx,t,frame){PhysicsExperience.context(ctx,frame,'collisionTrack');
-  ctx.strokeStyle='#BCAAA4';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,t.height/2);ctx.lineTo(t.width,t.height/2);ctx.stroke();
-  ctx.fillStyle='#5D4037';ctx.font='bold 13px sans-serif';ctx.fillText('Run A',12,22);ctx.fillText('Run B',12,t.height/2+22);}
+  ctx.strokeStyle=PhysicsVisuals.token(frame,'colors','border','#B8C5D1');ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,t.height/2);ctx.lineTo(t.width,t.height/2);ctx.stroke();
+  ctx.fillStyle=PhysicsVisuals.token(frame,'colors','text','#152536');PhysicsVisuals.applyText(ctx,frame,'label');ctx.fillText('Run A',12,22);ctx.fillText('Run B',12,t.height/2+22);}
 function comparisonCar(ctx,frame,x,y,color,label){PhysicsAssets.cart(ctx,frame,{x,y,width:46,height:25,fill:color,highlight:true,shadow:true,label});}
 const scene={onEvent(event,player){if(event.type==='particle_burst'){const t=player.coordinates();
     const a=sample(player.config.tracks[event.trackA].x,event.fraction),b=sample(player.config.tracks[event.trackB].x,event.fraction);

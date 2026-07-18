@@ -227,16 +227,24 @@ PhysicsExperience.context(ctx, frame, 'laboratory');
 
 ## Pilot examples
 
+The original pilots now serve as completed migration examples for the full visual system.
+
 - `canvas/cannonball.py`: shared cannon/projectile assets, fading trajectory, responsive labels, field context.
 - `canvas/pendulum.py`: shared pivot/cable/bob assembly, fading trail, laboratory context.
 - `canvas/orbit.py`: shared star/planet assets, bounded orbital trail, space context.
 - `canvas/bumper_cars.py`: shared carts, collision ripple/flash, comparison lanes, collision-track context.
 - `canvas/ray_diagram.py`: shared lens/ray assets, normal annotation, optics-bench context.
 - `subjects/light_and_electricity/thin_lenses/page.py`: analysis routed through the shared chart system.
+- `subjects/mechanics/canvas.py`: shared ramp, lever, center-of-mass, rotation, and model-faithful coaster compositions.
+- `canvas/boing.py`, `canvas/double_pendulum.py`, and `canvas/earth_tunnel.py`: recorded oscillation and gravity tracks with bounded trails and explicit diagnostics.
+- `canvas/scalar_field.py` and `canvas/wavefronts.py`: fixed-scale wave graphs and physically positioned Doppler wavefronts.
+- `canvas/diffusion_player.py`: immutable seeded paths with bounded display work and a statistical RMS guide.
 
 These are composition examples, not licenses to copy simulation-specific constants. Move repeated patterns into the shared library.
 
 ## Migration guide for remaining simulations
+
+There are no remaining simulations in the original registry; this guide now applies to future additions and any external compatibility simulation.
 
 Migrate one visual family at a time. A migration should be reviewable and must not combine physics changes with presentation changes.
 
@@ -277,13 +285,31 @@ Confirm all of the following before declaring a migration complete:
 - deterministic inputs produce deterministic documents;
 - focused and full test suites pass.
 
-### Suggested migration order
+The original 22-simulation registry has completed this migration. Apply the same staged process to any future simulation or newly introduced renderer family.
 
-1. Shared-family scenes already close to the new system: reflection/refraction, magnetic forces, electric fields, buoyancy, and fluid pressure.
-2. Remaining mechanics scenes: inclined plane, lever, center of mass, rotation, and roller coaster.
-3. Remaining oscillation/space scenes: spring, double pendulum, earth tunnel.
-4. Dense or specialized scenes: wave interference, Doppler wavefronts, diffusion, and gas laws.
-5. Remove the unused legacy document builder only after repository search and tests prove no compatibility consumer remains.
+## Completion audit
+
+All 22 registered simulations now declare a `shared-*` renderer and compose their figures through the shared player. The completed set is:
+
+| Family | Simulations |
+|---|---|
+| Mechanics and gravity | Cannonball, Pendulum, Planet Launcher, Bumper Cars, Inclined Plane, Torque and Levers, Center of Mass, Roller-Coaster Energy, Rotational Motion, Double Pendulum, Earth Tunnel |
+| Waves and oscillation | Boing Machine, Wave Interference, Doppler Effect |
+| Light and electricity | Reflection and Refraction, Thin Lenses, Electric Fields, Magnetic Forces |
+| Fluids and matter | Buoyancy, Fluid Pressure, Gas Laws, Diffusion |
+
+Completion guarantees and audit decisions:
+
+- Scene adapters consume immutable model arrays and use `build_player_document()`; physics and units remain model-owned.
+- All vector-like Canvas calls route through `PhysicsAnnotations` with physical, normalized, or schematic semantics. Rays and torque arcs use explicit scene disclosures because their visible lengths are not quantitative vectors.
+- Analysis views use `render_chart()`; `st.pyplot()` exists only inside that common renderer. There are no native Streamlit line or bar charts in simulation pages.
+- Light and dark semantic colors meet WCAG 2.1 graphical-object contrast of at least 3:1 against their canvas. Primary and muted text retain at least 4.5:1.
+- Responsive behavior is owned by the shared player at representative mobile (360 px), tablet (768 px), and desktop (1100 px) widths. Scenes may suppress redundant labels but not scientific identifiers or units.
+- Reduced motion disables autoplay and decorative effects while retaining scrub and frame-step controls. High contrast, large text, explicit light/dark themes, and automatic theme selection are serialized into every player.
+- Context is drawn before scientific assets and annotations. Diagram mode therefore remains complete, while Contextual scenery cannot cover the scientific overlay.
+- `canvas/legacy.py` remains solely as the public Streamlit `show()` compatibility wrapper. Its unused standalone document generator and JavaScript utilities were removed after repository-wide consumer search.
+
+The few remaining hexadecimal values inside scene sources are defensive fallbacks passed to semantic token lookups, plus deterministic decorative particle-burst colors. They are not independent scene palettes and do not encode quantitative meaning. Specialized target rings and field glyphs remain scene compositions because they are not repeated asset concepts.
 
 If a migration exposes a physics defect, document it and fix it in a separate change with model-level tests. Do not conceal a numerical change inside visual work.
 

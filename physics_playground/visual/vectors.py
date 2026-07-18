@@ -87,7 +87,7 @@ const PhysicsAnnotations=(()=>{
     if(o.label){ctx.save();V.applyText(ctx,s,'label');ctx.fillStyle=color;ctx.fillText(o.label,o.x+r+5,o.y-r-3);ctx.restore()}}
   function velocityTrail(ctx,s,o={}){const points=o.points||[];V.trail(ctx,s,points,q=>q,{color:o.color||V.token(s,'colors','velocity','#087EA4'),opacity:o.opacity,width:o.line_width||2,dashed:o.dashed});
     if(o.direction!==false&&points.length>1){const b=points.at(-1),a=points[Math.max(0,points.length-3)];V.arrow(ctx,s,a,b,{color:o.color||V.token(s,'colors','velocity','#087EA4'),width:2,head:8})}}
-  function motionDirection(ctx,s,o={}){const end=o.end||p(o.x+(o.length||44),o.y);V.arrow(ctx,s,p(o.x,o.y),end,{role:'velocity',label:o.label||'motion',width:o.line_width||2,head:o.head||8})}
+  function motionDirection(ctx,s,o={}){const end=o.end||p(o.x+(o.length||44),o.y),dx=end.x-o.x,dy=-(end.y-o.y);vector(ctx,s,{...o,dx,dy,role:'velocity',label:o.label||'motion',scale_mode:o.scale_mode||'schematic',fixed_length_px:o.fixed_length_px||Math.max(1,Math.hypot(dx,dy)),scale_disclosure:o.scale_disclosure||'Motion-direction indicator is schematic'},1,o.show_disclosure!==false)}
   return {endpoint,disclosure,vector,vectorSet,forceDiagram,angleArc,dimensionLine,pathGuide,normalLine,centerOfMass,velocityTrail,motionDirection};
 })();
 """

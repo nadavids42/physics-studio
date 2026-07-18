@@ -20,27 +20,27 @@ from physics_playground.visual.vectors import CANVAS_VECTOR_JS
 
 PLAYER_CSS = r"""
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; background: transparent; color: #263238;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+html, body { margin: 0; padding: 0; background: transparent; color: var(--ps-text);
+  font-family: var(--ps-font-ui); }
 .animation-shell { width: 100%; max-width: 900px; margin: 0 auto; }
 .canvas-wrap { position: relative; width: 100%; aspect-ratio: var(--aspect-ratio);
   min-height: 180px; overflow: hidden; border-radius: 18px; }
 canvas { display: block; width: 100%; max-width: 100%; height: 100%; }
 .hint { position: absolute; left: 50%; top: 12px; transform: translateX(-50%);
-  color: #6b7280; font-size: 13px; font-weight: 600; pointer-events: none; }
+  color: var(--ps-text-muted); font-size: 13px; font-weight: 600; pointer-events: none; }
 .message { position: absolute; left: 50%; bottom: 12px; transform: translate(-50%, 6px);
-  max-width: 88%; padding: 9px 16px; border-radius: 14px; background: white;
-  color: #263238; box-shadow: 0 4px 14px rgba(0,0,0,.18); text-align: center;
+  max-width: 88%; padding: 9px 16px; border-radius: var(--ps-radius-lg); background: var(--ps-surface-raised);
+  color: var(--ps-text); box-shadow: var(--ps-shadow-medium); text-align: center;
   font-size: 14px; font-weight: 650; opacity: 0; transition: .25s ease; pointer-events: none; }
 .message.show { opacity: 1; transform: translate(-50%, 0); }
 .controls { display: grid; grid-template-columns: auto auto auto auto minmax(100px,1fr) auto;
   gap: 8px; align-items: center; padding: 8px 2px 0; }
-.controls button, .controls select { min-height: 34px; border: 1px solid #cbd5e1;
-  border-radius: 9px; background: white; color: #263238; font-weight: 650; cursor: pointer; }
+.controls button, .controls select { min-height: 44px; border: 1px solid var(--ps-border);
+  border-radius: var(--ps-radius-md); background: var(--ps-surface); color: var(--ps-text); font-weight: 650; cursor: pointer; }
 .controls button { min-width: 42px; padding: 5px 10px; }
 .controls button:focus-visible, .controls select:focus-visible, .controls input:focus-visible {
-  outline: 3px solid #42A5F5; outline-offset: 2px; }
-.controls input[type=range] { width: 100%; accent-color: #1976D2; }
+  outline: 3px solid var(--ps-focus); outline-offset: 2px; }
+.controls input[type=range] { width: 100%; accent-color: var(--ps-accent); }
 .speed-label { display: flex; align-items: center; gap: 5px; font-size: 12px; white-space: nowrap; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
@@ -52,6 +52,9 @@ canvas { display: block; width: 100%; max-width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) {
   .message { transition: none; }
 }
+body.large-text .hint, body.large-text .speed-label { font-size: 15px; }
+body.large-text .message { font-size: 17px; }
+body.large-text .controls button, body.large-text .controls select { font-size: 17px; min-height: 48px; }
 body.high-contrast .canvas-wrap { outline: 3px solid #fff; background:#000; }
 body.high-contrast .controls button, body.high-contrast .controls select { background:#000; color:#fff; border:2px solid #fff; }
 body.high-contrast .controls input[type=range] { accent-color:#FFD600; }
@@ -119,7 +122,7 @@ class AnimationPlayer {
     this.scrubber=document.getElementById('scrubber'); this.speed=document.getElementById('speed');
     this.message=document.getElementById('message'); this.hint=document.getElementById('hint');
     this.status=document.getElementById('status'); this.reducedMotion=Boolean(config.reducedMotion)||matchMedia('(prefers-reduced-motion: reduce)').matches;
-    document.body.classList.toggle('high-contrast',Boolean(config.highContrast));
+    document.body.classList.toggle('high-contrast',Boolean(config.highContrast));document.body.classList.toggle('large-text',Boolean(config.largeText));
     this.random=seededRandom(config.seed); this.particles=new ParticleSystem(this.random,this.reducedMotion);
     this.trails=new TrailStore(config.trailLength||18); this.fraction=0; this.state='idle'; this.playbackRate=1;
     this.lastTimestamp=null; this.fired=new Set(); this.frameRequest=null; this.cssWidth=1; this.cssHeight=1;this.lastTrailFraction=null;
@@ -219,11 +222,11 @@ def build_player_document(
         from physics_playground.presentation.accessibility import get_accessibility_settings,get_visual_preferences
         settings=get_accessibility_settings()
         preferences=get_visual_preferences()
-        config={**config,"reducedMotion":settings.reduced_motion,"highContrast":settings.high_contrast,
+        config={**config,"reducedMotion":settings.reduced_motion,"highContrast":settings.high_contrast,"largeText":settings.large_text,
                 "presentationLevel":config.get("presentationLevel",preferences.presentation_level.value),
                 "theme":config.get("theme",preferences.theme.value)}
     except Exception:
-        config={**config,"reducedMotion":False,"highContrast":False,
+        config={**config,"reducedMotion":False,"highContrast":False,"largeText":False,
                 "presentationLevel":config.get("presentationLevel",DEFAULT_PRESENTATION_LEVEL.value)}
     payload = json.dumps(config, allow_nan=False, separators=(",", ":"))
     aspect_ratio = logical_width / logical_height
