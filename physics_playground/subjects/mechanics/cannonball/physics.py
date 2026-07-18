@@ -1,4 +1,4 @@
-"""Pure analytic and quadratic-drag projectile models."""
+"""Pure analytic and quadratic-drag projectile models for Cannonball."""
 
 from __future__ import annotations
 
@@ -35,8 +35,8 @@ PROJECTILE_MODEL_VERSION = "projectile-2.0"
 
 @dataclass(frozen=True, slots=True)
 class ProjectileParameters:
-    launch_speed_m_s: float
-    launch_angle_deg: float
+    launch_speed_m_s: float = 20.0
+    launch_angle_deg: float = 45.0
     gravity_m_s2: float = EARTH_GRAVITY_M_S2
     initial_height_m: float = 0.0
     mass_kg: float = 5.0

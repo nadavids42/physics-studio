@@ -73,3 +73,20 @@ def migrate_legacy_keys(
         if canonical_key not in state:
             state[canonical_key] = state[old_key]
         del state[old_key]
+
+
+def migrate_simulation_keys(
+    state: MutableMapping[str, Any],
+    simulation_id: str,
+    aliases: Mapping[str, str],
+) -> None:
+    """Move page-local keys into one simulation namespace.
+
+    ``aliases`` maps an old raw key to the new local name passed to
+    :func:`simulation_key`.
+    """
+
+    migrate_legacy_keys(
+        state,
+        {old_key: simulation_key(simulation_id, name) for old_key, name in aliases.items()},
+    )

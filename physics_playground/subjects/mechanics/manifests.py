@@ -28,6 +28,16 @@ def manifest(simulation_id, parameter, result, physics, page, canvas, assumption
 
 MECHANICS_MANIFESTS = (
     manifest(
+        "cannonball",
+        "ProjectileParameters",
+        "ProjectileResult",
+        "physics_playground.subjects.mechanics.cannonball.physics.simulate_projectile",
+        "physics_playground.subjects.mechanics.cannonball.page.render",
+        "physics_playground.subjects.mechanics.cannonball.scene.build_cannon_canvas",
+        ("Point-mass projectile", "Uniform gravity", "Level launch and landing surface"),
+        ("Two-dimensional motion", "Quadratic drag uses a fixed atmosphere model"),
+    ),
+    manifest(
         "roller_coaster",
         "RollerCoasterParameters",
         "RollerCoasterResult",

@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from physics_playground.models.pendulum import (
+from physics_playground.subjects.waves_and_oscillations.pendulum.physics import (
     PendulumModel,
     PendulumParameters,
     simulate_nonlinear,

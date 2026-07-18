@@ -1,8 +1,8 @@
 """Cannonball scene adapters for the shared animation player."""
 
 from physics_playground.canvas.player import build_player_document
-from physics_playground.models.projectile import ProjectileResult
 from physics_playground.serialization import to_jsonable
+from physics_playground.subjects.mechanics.cannonball.physics import ProjectileResult
 
 CANVAS_W, CANVAS_H, PLAYER_HEIGHT = 680, 360, 440
 

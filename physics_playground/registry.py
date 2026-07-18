@@ -1,5 +1,8 @@
 """Complete simulation registry used by navigation and the home screen."""
 
+from importlib import import_module
+from types import ModuleType
+
 from physics_playground.models.simulations import (
     Difficulty,
     InteractiveMode,
@@ -323,7 +326,7 @@ SIMULATION_REGISTRY = (
         title="The Swing Machine",
         icon="🎢",
         description="Explore how length, gravity, and angle change a swing.",
-        page_module="physics_playground.pages.pendulum",
+        page_module="physics_playground.subjects.waves_and_oscillations.pendulum.page",
         mission_group="The Swing Machine",
         modes=LEARNING_MODES,
         central_question="What controls how long a swing takes?",
@@ -340,7 +343,7 @@ SIMULATION_REGISTRY = (
         title="Cannonball Launcher",
         icon="🎯",
         description="Aim a projectile and compare ideal and drag-filled flight.",
-        page_module="physics_playground.pages.cannonball",
+        page_module="physics_playground.subjects.mechanics.cannonball.page",
         mission_group="Cannonball Launcher",
         modes=LEARNING_MODES,
         central_question="Which launch angle sends a cannonball farthest?",
@@ -407,3 +410,16 @@ SIMULATION_REGISTRY = (
     ),
 )
 SIMULATIONS_BY_ID = {definition.id: definition for definition in SIMULATION_REGISTRY}
+
+
+def load_validated_page(simulation_id: str) -> tuple[ModuleType, str]:
+    """Resolve migrated pages through manifests, with a legacy migration fallback."""
+
+    catalog = import_module("physics_playground.expansion_catalog")
+    validation = import_module("physics_playground.expansion_validation")
+    manifest = catalog.EXPANSION_BY_ID.get(simulation_id)
+    if manifest is None:
+        return import_module(SIMULATIONS_BY_ID[simulation_id].page_module), "render"
+    validation.validate_expansion_definition(manifest)
+    module_name, function_name = manifest.page_entrypoint.rsplit(".", 1)
+    return import_module(module_name), function_name

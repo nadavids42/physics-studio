@@ -1,7 +1,7 @@
-"""Launch-gated Cannonball badge rules."""
+"""Pure launch-gated Cannonball badge rules."""
 
 from physics_playground.contracts import MissionEvaluation
-from physics_playground.models.projectile import ProjectileResult
+from physics_playground.subjects.mechanics.cannonball.physics import ProjectileResult
 from physics_playground.units import MOON_GRAVITY_M_S2
 
 

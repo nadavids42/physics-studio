@@ -229,8 +229,8 @@ PhysicsExperience.context(ctx, frame, 'laboratory');
 
 The original pilots now serve as completed migration examples for the full visual system.
 
-- `canvas/cannonball.py`: shared cannon/projectile assets, fading trajectory, responsive labels, field context.
-- `canvas/pendulum.py`: shared pivot/cable/bob assembly, fading trail, laboratory context.
+- `subjects/mechanics/cannonball/scene.py`: shared cannon/projectile assets, fading trajectory, responsive labels, field context.
+- `subjects/waves_and_oscillations/pendulum/scene.py`: shared pivot/cable/bob assembly, fading trail, laboratory context.
 - `canvas/orbit.py`: shared star/planet assets, bounded orbital trail, space context.
 - `canvas/bumper_cars.py`: shared carts, collision ripple/flash, comparison lanes, collision-track context.
 - `canvas/ray_diagram.py`: shared lens/ray assets, normal annotation, optics-bench context.

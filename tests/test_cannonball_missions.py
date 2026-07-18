@@ -1,5 +1,8 @@
-from physics_playground.missions.cannonball import evaluate_cannonball_missions
-from physics_playground.models.projectile import ProjectileParameters, simulate_no_drag
+from physics_playground.subjects.mechanics.cannonball.missions import evaluate_cannonball_missions
+from physics_playground.subjects.mechanics.cannonball.physics import (
+    ProjectileParameters,
+    simulate_no_drag,
+)
 
 
 def completed(result, target):

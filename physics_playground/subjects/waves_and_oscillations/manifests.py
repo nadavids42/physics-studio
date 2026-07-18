@@ -42,4 +42,21 @@ DOPPLER_EFFECT_MANIFEST = ExpansionDefinition(
     ("No wind or reflections", "One-dimensional geometry"),
     tests=TestRequirements(numerical_convergence_test=False),
 )
-WAVES_MANIFESTS = (WAVE_INTERFERENCE_MANIFEST, DOPPLER_EFFECT_MANIFEST)
+PENDULUM_MANIFEST = ExpansionDefinition(
+    SIMULATIONS_BY_ID["pendulum"],
+    SubjectArea.WAVES_AND_OSCILLATIONS,
+    "PendulumParameters",
+    "PendulumResult",
+    "physics_playground.subjects.waves_and_oscillations.pendulum.physics.simulate_pendulum",
+    "physics_playground.subjects.waves_and_oscillations.pendulum.page.render",
+    "physics_playground.subjects.waves_and_oscillations.pendulum.scene.build_pendulum_canvas",
+    REQUIRED_MODE_REQUIREMENTS,
+    MISSIONS_BY_SIMULATION["pendulum"],
+    (
+        ModelAssumption("point_mass", "Point-mass bob on a massless rigid link"),
+        ModelAssumption("uniform_gravity", "Uniform gravitational field"),
+    ),
+    ("No pivot friction or air resistance", "Motion remains planar"),
+    tests=TestRequirements(numerical_convergence_test=True),
+)
+WAVES_MANIFESTS = (WAVE_INTERFERENCE_MANIFEST, DOPPLER_EFFECT_MANIFEST, PENDULUM_MANIFEST)

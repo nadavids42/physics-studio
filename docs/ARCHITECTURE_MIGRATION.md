@@ -3,6 +3,20 @@
 Date: 2026-07-18
 Repository baseline: current working tree at audit time
 
+## Migration progress
+
+Stage 3 is underway. The first dependency-ordered wave was completed after the audit:
+
+- **Completed:** `cannonball` moved to `subjects/mechanics/cannonball/`.
+- **Completed:** `pendulum` moved to `subjects/waves_and_oscillations/pendulum/`.
+- **Remaining horizontal simulations, in planned order:** `orbital_gravity`, `boing`,
+  `earth_tunnel`, `double_pendulum`, and `bumper_cars`.
+
+Each completed slice owns `physics.py`, `page.py`, `missions.py`, `charts.py`, and `scene.py`, is
+enrolled in the expansion manifest catalog, is loaded through registry manifest validation, and
+uses namespaced simulation state with compatibility migration reads. The inventory and counts
+below describe the original audit baseline and are retained as historical evidence.
+
 ## Scope and evidence
 
 This document is based on a repository-wide inspection of `app.py`, all Python packages under `physics_playground/`, all tests, packaging configuration, current Markdown documentation, and the supplied Principal Architect Review. The review describes an earlier repository state in several places, so every factual claim was checked against the current tree rather than accepted as a premise. Subjective grades and strategic opinions are identified as judgments rather than repository facts.
@@ -386,7 +400,15 @@ Exit condition: every simulation can restore a typed notebook setup without page
 
 ### Stage 3 — migrate the seven horizontal simulations into vertical slices
 
-Migrate one simulation at a time in this order: Cannonball, Pendulum, Orbit, Boing, Earth Tunnel, Double Pendulum, Bumper Cars.
+Migrate one simulation at a time in this order:
+
+1. Cannonball — **completed**
+2. Pendulum — **completed**
+3. Orbit — remaining
+4. Boing — remaining
+5. Earth Tunnel — remaining
+6. Double Pendulum — remaining
+7. Bumper Cars — remaining
 
 For each simulation:
 

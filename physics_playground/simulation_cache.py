@@ -9,14 +9,17 @@ from physics_playground.models.double_pendulum import (
 )
 from physics_playground.models.earth_tunnel import TunnelParameters, simulate_tunnel
 from physics_playground.models.orbit import OrbitParameters, simulate_orbit
-from physics_playground.models.pendulum import PendulumParameters, simulate_pendulum
-from physics_playground.models.projectile import (
+from physics_playground.models.spring import SpringParameters, simulate_spring
+from physics_playground.performance import timed
+from physics_playground.subjects.mechanics.cannonball.physics import (
     ProjectileParameters,
     simulate_no_drag,
     simulate_projectile,
 )
-from physics_playground.models.spring import SpringParameters, simulate_spring
-from physics_playground.performance import timed
+from physics_playground.subjects.waves_and_oscillations.pendulum.physics import (
+    PendulumParameters,
+    simulate_pendulum,
+)
 
 
 def cached(name):

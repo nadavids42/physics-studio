@@ -5,8 +5,6 @@ from physics_playground.models.collision import CollisionParameters
 from physics_playground.models.double_pendulum import DoublePendulumParameters
 from physics_playground.models.earth_tunnel import TunnelParameters
 from physics_playground.models.orbit import OrbitParameters
-from physics_playground.models.pendulum import PendulumParameters
-from physics_playground.models.projectile import ProjectileParameters, projectile_range_scan
 from physics_playground.models.spring import SpringParameters, resonance_sweep
 from physics_playground.notebook import ExperimentNotebook
 from physics_playground.performance import (
@@ -15,6 +13,11 @@ from physics_playground.performance import (
     MAX_TRAJECTORY_SAMPLES,
     recommended_time_step,
 )
+from physics_playground.subjects.mechanics.cannonball.physics import (
+    ProjectileParameters,
+    projectile_range_scan,
+)
+from physics_playground.subjects.waves_and_oscillations.pendulum.physics import PendulumParameters
 from physics_playground.validation import PhysicsValidationError
 
 

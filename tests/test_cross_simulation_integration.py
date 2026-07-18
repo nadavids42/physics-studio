@@ -15,6 +15,8 @@ from physics_playground.registry import SIMULATIONS_BY_ID
 from physics_playground.serialization import dataclass_from_dict, to_jsonable
 
 EXPANSION_IDS = {
+    "cannonball",
+    "pendulum",
     "inclined_plane",
     "torque_levers",
     "center_of_mass",
@@ -94,8 +96,12 @@ def test_pages_expose_all_modes_notebook_assumptions_and_safe_keys() -> None:
         assert "process_run" in source
         assert "record(" in source or "add_trial(" in source
         marker = 'mode_navigation(key="'
-        start = source.index(marker) + len(marker)
-        key = source[start : source.index('"', start)]
+        if marker in source:
+            start = source.index(marker) + len(marker)
+            key = source[start : source.index('"', start)]
+        else:
+            assert 'mode_navigation(key=state_key("learning_mode"))' in source
+            key = f"{manifest.metadata.id}.learning_mode"
         assert key not in seen_mode_keys
         seen_mode_keys.add(key)
 

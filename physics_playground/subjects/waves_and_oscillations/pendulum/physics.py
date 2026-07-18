@@ -27,6 +27,7 @@ from physics_playground.performance import (
     validate_finite_parameters,
 )
 from physics_playground.serialization import to_jsonable
+from physics_playground.units import EARTH_GRAVITY_M_S2
 from physics_playground.validation import PhysicsValidationError, require_positive
 
 
@@ -37,9 +38,9 @@ class PendulumModel(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class PendulumParameters:
-    length_m: float
-    gravity_m_s2: float
-    release_angle_deg: float
+    length_m: float = 2.0
+    gravity_m_s2: float = EARTH_GRAVITY_M_S2
+    release_angle_deg: float = 30.0
     model: PendulumModel = PendulumModel.SMALL_ANGLE
     duration_periods: float = 4.0
     samples: int = 800

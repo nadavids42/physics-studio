@@ -1,5 +1,7 @@
+"""Pure mission evidence for Swing Machine."""
+
 from physics_playground.contracts import MissionEvaluation
-from physics_playground.models.pendulum import PendulumResult
+from physics_playground.subjects.waves_and_oscillations.pendulum.physics import PendulumResult
 from physics_playground.units import MOON_GRAVITY_M_S2
 
 

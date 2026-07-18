@@ -7,7 +7,7 @@ from physics_playground.binding_models import (
     SimulationPreset,
 )
 from physics_playground.model_metadata import PROJECTILE_MODEL_METADATA
-from physics_playground.models.projectile import (
+from physics_playground.subjects.mechanics.cannonball.physics import (
     PROJECTILE_MODEL_VERSION,
     ProjectileParameters,
     ProjectileResult,

@@ -6,17 +6,7 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 from physics_playground.canvas import embed as canvas_embed
-from physics_playground.canvas.pendulum import (
-    PLAYER_HEIGHT,
-    build_pendulum_canvas,
-    build_pendulum_comparison_canvas,
-)
 from physics_playground.missions import ui as mission_ui
-from physics_playground.missions.pendulum import evaluate_pendulum_missions
-from physics_playground.models.pendulum import (
-    PendulumModel,
-    PendulumParameters,
-)
 from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
@@ -28,8 +18,24 @@ from physics_playground.presentation.learning_modes import (
     mode_navigation,
 )
 from physics_playground.presentation.notebook_ui import REUSE_REQUEST_KEY, add_trial
-from physics_playground.presentation.pendulum_charts import error_figure, plot_figure
 from physics_playground.simulation_cache import cached_pendulum
+from physics_playground.state_keys import migrate_simulation_keys, simulation_key
+from physics_playground.subjects.waves_and_oscillations.pendulum.charts import (
+    error_figure,
+    plot_figure,
+)
+from physics_playground.subjects.waves_and_oscillations.pendulum.missions import (
+    evaluate_pendulum_missions,
+)
+from physics_playground.subjects.waves_and_oscillations.pendulum.physics import (
+    PendulumModel,
+    PendulumParameters,
+)
+from physics_playground.subjects.waves_and_oscillations.pendulum.scene import (
+    PLAYER_HEIGHT,
+    build_pendulum_canvas,
+    build_pendulum_comparison_canvas,
+)
 from physics_playground.units import (
     EARTH_GRAVITY_M_S2,
     JUPITER_GRAVITY_M_S2,
@@ -43,14 +49,39 @@ WORLDS = {
     "Jupiter 🟠": JUPITER_GRAVITY_M_S2,
 }
 VERSION = "pendulum-2.0"
+ID = "pendulum"
+
+
+def state_key(name: str) -> str:
+    return simulation_key(ID, name)
 
 
 def _init():
+    migrate_simulation_keys(
+        st.session_state,
+        ID,
+        {
+            "pend_nonce": "nonce",
+            "pend_launched": "launched",
+            "pend_compare_nonce": "compare_nonce",
+            "pend_compare_signature": "compare_signature",
+            "pend_length": "length",
+            "pend_angle": "angle",
+            "pend_model": "model",
+            "pend_world": "world",
+            "pend_learning_mode": "learning_mode",
+            "pend_quiz_guess": "quiz_guess",
+            "pend_quiz_revealed": "quiz_revealed",
+            "pend_quiz_lock": "quiz_lock",
+            "pend_observation": "observation",
+            "pend_compare_observation": "compare_observation",
+        },
+    )
     for k, v in (
-        ("pend_nonce", 0),
-        ("pend_launched", None),
-        ("pend_compare_nonce", 0),
-        ("pend_compare_signature", None),
+        (state_key("nonce"), 0),
+        (state_key("launched"), None),
+        (state_key("compare_nonce"), 0),
+        (state_key("compare_signature"), None),
     ):
         st.session_state.setdefault(k, v)
 
@@ -77,7 +108,7 @@ def _record(r, seed, obs, label=None, badges=()):
     add_trial(
         simulation_id="pendulum",
         parameters=r.parameters.to_dict(),
-        prediction=st.session_state.get("pend_quiz_guess"),
+        prediction=st.session_state.get(state_key("quiz_guess")),
         result_summary=f"{r.parameters.model.value}: period {r.period_s:.2f} s",
         metrics=_metrics(r),
         earned_badges=badges,
@@ -97,13 +128,13 @@ def _reuse():
     if not q or q.get("simulation_id") != "pendulum":
         return
     p = q["parameters"]
-    st.session_state["pend_length"] = float(p["length_m"])
-    st.session_state["pend_angle"] = int(round(float(p["release_angle_deg"])))
-    st.session_state["pend_model"] = p["model"]
-    st.session_state["pend_world"] = min(
+    st.session_state[state_key("length")] = float(p["length_m"])
+    st.session_state[state_key("angle")] = int(round(float(p["release_angle_deg"])))
+    st.session_state[state_key("model")] = p["model"]
+    st.session_state[state_key("world")] = min(
         WORLDS, key=lambda x: abs(WORLDS[x] - float(p["gravity_m_s2"]))
     )
-    st.session_state["pend_learning_mode"] = "Explore"
+    st.session_state[state_key("learning_mode")] = "Explore"
     del st.session_state[REUSE_REQUEST_KEY]
 
 
@@ -111,26 +142,28 @@ def render_explore():
     mode_heading(LearningMode.EXPLORE, "Choose a rope, world, and model")
     c1, c2 = st.columns(2)
     with c1:
-        length = st.slider("Rope length (m)", 0.2, 10.0, 2.0, 0.1, key="pend_length")
-        angle = st.slider("Release angle (degrees)", 5, 85, 30, 1, key="pend_angle")
+        length = st.slider("Rope length (m)", 0.2, 10.0, 2.0, 0.1, key=state_key("length"))
+        angle = st.slider("Release angle (degrees)", 5, 85, 30, 1, key=state_key("angle"))
     with c2:
-        world = st.radio("World", list(WORLDS), key="pend_world")
+        world = st.radio("World", list(WORLDS), key=state_key("world"))
         model = PendulumModel(
-            st.radio("Physics model", [m.value for m in PendulumModel], key="pend_model")
+            st.radio("Physics model", [m.value for m in PendulumModel], key=state_key("model"))
         )
     r = cached_pendulum(PendulumParameters(length, WORLDS[world], angle, model))
     _summary(r)
-    autoplay = st.session_state.pend_launched == r.parameters.to_dict()
+    autoplay = st.session_state[state_key("launched")] == r.parameters.to_dict()
     canvas_embed.show(
-        build_pendulum_canvas(r, seed=20261500 + st.session_state.pend_nonce, autoplay=autoplay),
+        build_pendulum_canvas(
+            r, seed=20261500 + st.session_state[state_key("nonce")], autoplay=autoplay
+        ),
         height=PLAYER_HEIGHT,
     )
-    obs = st.text_input("Optional notebook observation", key="pend_observation")
+    obs = st.text_input("Optional notebook observation", key=state_key("observation"))
     if st.button("🎢 SWING!", type="primary", use_container_width=True):
-        st.session_state.pend_nonce += 1
-        st.session_state.pend_launched = r.parameters.to_dict()
+        st.session_state[state_key("nonce")] += 1
+        st.session_state[state_key("launched")] = r.parameters.to_dict()
         badges = _award(r)
-        _record(r, 20261500 + st.session_state.pend_nonce, obs, badges=badges)
+        _record(r, 20261500 + st.session_state[state_key("nonce")], obs, badges=badges)
         st.rerun()
     mission_ui.mission_checklist("The Swing Machine")
 
@@ -173,11 +206,11 @@ def render_compare():
     a, b, labels, change = _pair(kind)
     changed_variable_banner(change)
     sig = {"kind": kind}
-    obs = st.text_input("Optional comparison observation", key="pend_compare_observation")
+    obs = st.text_input("Optional comparison observation", key=state_key("compare_observation"))
     if st.button("▶ Run comparison", type="primary", use_container_width=True):
-        st.session_state.pend_compare_nonce += 1
-        st.session_state.pend_compare_signature = sig
-        n = st.session_state.pend_compare_nonce
+        st.session_state[state_key("compare_nonce")] += 1
+        st.session_state[state_key("compare_signature")] = sig
+        n = st.session_state[state_key("compare_nonce")]
         _record(a, 20261600 + n, obs, "Run A")
         _record(b, 20261700 + n, obs, "Run B")
     canvas_embed.show(
@@ -185,8 +218,8 @@ def render_compare():
             a,
             b,
             labels=labels,
-            seed=20261800 + st.session_state.pend_compare_nonce,
-            autoplay=st.session_state.pend_compare_signature == sig,
+            seed=20261800 + st.session_state[state_key("compare_nonce")],
+            autoplay=st.session_state[state_key("compare_signature")] == sig,
         ),
         height=PLAYER_HEIGHT,
     )
@@ -196,9 +229,9 @@ def render_compare():
 
 
 def _latest():
-    if not st.session_state.pend_launched:
+    if not st.session_state[state_key("launched")]:
         return PendulumParameters(2, EARTH_GRAVITY_M_S2, 30, PendulumModel.NONLINEAR)
-    d = dict(st.session_state.pend_launched)
+    d = dict(st.session_state[state_key("launched")])
     d["model"] = PendulumModel(d["model"])
     return PendulumParameters(**d)
 
@@ -248,7 +281,7 @@ def render():
     st.header("🎢 The Swing Machine")
     st.markdown("Explore how length, gravity, angle, and model choice change a pendulum.")
     revealed = mission_ui.prediction_quiz(
-        key="pend_quiz",
+        key=state_key("quiz"),
         question="If you pull a small-angle swing farther, one full swing takes...",
         options=["More time", "Less time", "Almost exactly the same time"],
         correct_index=2,
@@ -258,7 +291,7 @@ def render():
     if not revealed:
         st.caption("🔬 Make your prediction before results are shown.")
         return
-    mode = mode_navigation(key="pend_learning_mode")
+    mode = mode_navigation(key=state_key("learning_mode"))
     st.divider()
     try:
         {

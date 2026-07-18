@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from importlib import import_module
-
 import streamlit as st
 
 from physics_playground.application_callbacks import (
@@ -24,7 +22,7 @@ from physics_playground.presentation.profile_ui import (
     persist_application_event,
     render_profile_sidebar,
 )
-from physics_playground.registry import SIMULATION_REGISTRY, SIMULATIONS_BY_ID
+from physics_playground.registry import SIMULATION_REGISTRY, SIMULATIONS_BY_ID, load_validated_page
 from physics_playground.state_keys import SHARED_STATE_KEYS, migrate_legacy_keys
 from physics_playground.validation import PhysicsValidationError
 
@@ -76,10 +74,9 @@ active = st.session_state[SHARED_STATE_KEYS.navigation_active]
 if active is None:
     render_home()
 else:
-    definition = SIMULATIONS_BY_ID[active]
-    module = import_module(definition.page_module)
+    module, entrypoint = load_validated_page(active)
     try:
-        module.render()
+        getattr(module, entrypoint)()
     except (PhysicsValidationError, FloatingPointError, OverflowError, MemoryError) as error:
         st.error(
             "This experiment could not finish safely. Try smaller values, fewer steps, or the recommended time step."

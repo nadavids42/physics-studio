@@ -1,7 +1,11 @@
+"""Static analytical charts for typed pendulum results."""
+
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
-from physics_playground.models.pendulum import approximation_error_curve
+from physics_playground.subjects.waves_and_oscillations.pendulum.physics import (
+    approximation_error_curve,
+)
 
 
 def plot_figure(plot, overlays=()) -> Figure:

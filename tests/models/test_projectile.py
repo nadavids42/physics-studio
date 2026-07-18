@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from physics_playground.models.projectile import (
+from physics_playground.subjects.mechanics.cannonball.physics import (
     ProjectileParameters,
     simulate_no_drag,
     simulate_quadratic_drag,

@@ -21,7 +21,7 @@ def plot_figure(plot: PlotData, overlays: tuple[PlotData, ...] = ()) -> Figure:
 
 
 def range_by_angle_figure(speed_m_s: float, gravity_m_s2: float) -> Figure:
-    from physics_playground.models.projectile import projectile_range_scan
+    from physics_playground.subjects.mechanics.cannonball.physics import projectile_range_scan
 
     angles, ranges = projectile_range_scan(speed_m_s, gravity_m_s2)
     fig, ax = plt.subplots()

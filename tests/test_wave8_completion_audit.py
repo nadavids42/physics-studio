@@ -13,20 +13,24 @@ ROOT = Path(__file__).parents[1] / "physics_playground"
 SCENE_ADAPTERS = (
     "boing.py",
     "bumper_cars.py",
-    "cannonball.py",
+    "subjects/mechanics/cannonball/scene.py",
     "diffusion_player.py",
     "double_pendulum.py",
     "earth_tunnel.py",
     "fluid_container.py",
     "gas_container.py",
     "orbit.py",
-    "pendulum.py",
+    "subjects/waves_and_oscillations/pendulum/scene.py",
     "ray_diagram.py",
     "scalar_field.py",
     "vector_diagram.py",
     "vector_field.py",
     "wavefronts.py",
 )
+
+
+def scene_path(name: str) -> Path:
+    return ROOT / name if "/" in name else ROOT / "canvas" / name
 
 
 def test_all_22_registered_simulations_use_shared_renderers_and_four_modes():
@@ -43,9 +47,8 @@ def test_all_22_registered_simulations_use_shared_renderers_and_four_modes():
 
 
 def test_every_canvas_adapter_builds_the_shared_player_document():
-    canvas = ROOT / "canvas"
     for name in SCENE_ADAPTERS:
-        source = (canvas / name).read_text(encoding="utf-8")
+        source = scene_path(name).read_text(encoding="utf-8")
         assert "build_player_document" in source, name
         assert "requestAnimationFrame" not in source, name
     assert "build_player_document" in (ROOT / "subjects/mechanics/canvas.py").read_text()
@@ -63,7 +66,7 @@ def test_simulation_pages_have_no_isolated_native_chart_renderers():
 
 def test_scene_vectors_do_not_bypass_scale_semantics():
     for name in SCENE_ADAPTERS:
-        source = (ROOT / "canvas" / name).read_text(encoding="utf-8")
+        source = scene_path(name).read_text(encoding="utf-8")
         assert "PhysicsVisuals.arrow" not in source, name
     mechanics = (ROOT / "subjects/mechanics/canvas.py").read_text()
     assert "PhysicsVisuals.arrow" not in mechanics
@@ -138,7 +141,7 @@ def test_every_player_serializes_motion_contrast_large_text_and_both_themes():
 
 def test_context_is_a_background_layer_before_scientific_overlays():
     for name in SCENE_ADAPTERS:
-        source = (ROOT / "canvas" / name).read_text(encoding="utf-8")
+        source = scene_path(name).read_text(encoding="utf-8")
         context = source.find("PhysicsExperience.context")
         first_overlay = min(
             index

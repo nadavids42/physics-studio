@@ -8,19 +8,8 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 from physics_playground.canvas import embed as canvas_embed
-from physics_playground.canvas.cannonball import (
-    PLAYER_HEIGHT,
-    build_cannon_canvas,
-    build_cannon_comparison_canvas,
-)
 from physics_playground.missions import ui as mission_ui
-from physics_playground.missions.cannonball import evaluate_cannonball_missions
 from physics_playground.model_metadata import PROJECTILE_MODEL_METADATA
-from physics_playground.models.projectile import (
-    PROJECTILE_MODEL_VERSION,
-    ProjectileParameters,
-    ProjectileResult,
-)
 from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
@@ -32,11 +21,26 @@ from physics_playground.presentation.learning_modes import (
     mode_navigation,
 )
 from physics_playground.presentation.notebook_ui import add_trial
-from physics_playground.presentation.projectile_charts import plot_figure, range_by_angle_figure
 from physics_playground.setup_handoff import consume_setup_request
 from physics_playground.simulation_cache import (
     cached_projectile,
     cached_projectile_no_drag,
+)
+from physics_playground.state_keys import migrate_simulation_keys, simulation_key
+from physics_playground.subjects.mechanics.cannonball.charts import (
+    plot_figure,
+    range_by_angle_figure,
+)
+from physics_playground.subjects.mechanics.cannonball.missions import evaluate_cannonball_missions
+from physics_playground.subjects.mechanics.cannonball.physics import (
+    PROJECTILE_MODEL_VERSION,
+    ProjectileParameters,
+    ProjectileResult,
+)
+from physics_playground.subjects.mechanics.cannonball.scene import (
+    PLAYER_HEIGHT,
+    build_cannon_canvas,
+    build_cannon_comparison_canvas,
 )
 from physics_playground.units import (
     EARTH_GRAVITY_M_S2,
@@ -51,21 +55,48 @@ WORLDS = {
     "Jupiter 🟠": JUPITER_GRAVITY_M_S2,
 }
 MODEL_VERSION = PROJECTILE_MODEL_VERSION
+ID = "cannonball"
+
+
+def state_key(name: str) -> str:
+    return simulation_key(ID, name)
 
 
 def _init() -> None:
-    st.session_state.setdefault("cannon_target_seed", 20260710)
-    st.session_state.setdefault("cannon_launch_nonce", 0)
-    st.session_state.setdefault("cannon_launched_parameters", None)
-    st.session_state.setdefault("cannon_compare_nonce", 0)
-    st.session_state.setdefault("cannon_compare_signature", None)
-    st.session_state.setdefault("cannon_target_override", None)
+    migrate_simulation_keys(
+        st.session_state,
+        ID,
+        {
+            "cannon_target_seed": "target_seed",
+            "cannon_launch_nonce": "launch_nonce",
+            "cannon_launched_parameters": "launched_parameters",
+            "cannon_compare_nonce": "compare_nonce",
+            "cannon_compare_signature": "compare_signature",
+            "cannon_target_override": "target_override",
+            "cannon_speed": "speed",
+            "cannon_angle": "angle",
+            "cannon_world": "world",
+            "cannon_learning_mode": "learning_mode",
+            "cannon_quiz_guess": "quiz_guess",
+            "cannon_quiz_revealed": "quiz_revealed",
+            "cannon_quiz_lock": "quiz_lock",
+            "cannon_reuse_target": "reuse_target",
+            "cannon_observation": "observation",
+            "cannon_compare_observation": "compare_observation",
+        },
+    )
+    st.session_state.setdefault(state_key("target_seed"), 20260710)
+    st.session_state.setdefault(state_key("launch_nonce"), 0)
+    st.session_state.setdefault(state_key("launched_parameters"), None)
+    st.session_state.setdefault(state_key("compare_nonce"), 0)
+    st.session_state.setdefault(state_key("compare_signature"), None)
+    st.session_state.setdefault(state_key("target_override"), None)
 
 
 def _target() -> float:
-    if st.session_state.cannon_target_override is not None:
-        return float(st.session_state.cannon_target_override)
-    return round(random.Random(st.session_state.cannon_target_seed).uniform(15, 55), 1)
+    if st.session_state[state_key("target_override")] is not None:
+        return float(st.session_state[state_key("target_override")])
+    return round(random.Random(st.session_state[state_key("target_seed")]).uniform(15, 55), 1)
 
 
 def _apply_reuse() -> None:
@@ -73,12 +104,14 @@ def _apply_reuse() -> None:
     if request is None:
         return
     p = request.parameters
-    st.session_state["cannon_speed"] = min(40.0, max(5.0, float(p["launch_speed_m_s"])))
-    st.session_state["cannon_angle"] = min(89, max(5, int(round(float(p["launch_angle_deg"])))))
+    st.session_state[state_key("speed")] = min(40.0, max(5.0, float(p["launch_speed_m_s"])))
+    st.session_state[state_key("angle")] = min(89, max(5, int(round(float(p["launch_angle_deg"])))))
     gravity = float(p["gravity_m_s2"])
-    st.session_state["cannon_world"] = min(WORLDS, key=lambda label: abs(WORLDS[label] - gravity))
-    st.session_state["cannon_target_override"] = float(p.get("target_m", _target()))
-    st.session_state["cannon_learning_mode"] = LearningMode.EXPLORE.value
+    st.session_state[state_key("world")] = min(
+        WORLDS, key=lambda label: abs(WORLDS[label] - gravity)
+    )
+    st.session_state[state_key("target_override")] = float(p.get("target_m", _target()))
+    st.session_state[state_key("learning_mode")] = LearningMode.EXPLORE.value
     st.toast(f"Loaded setup from {request.source_label}.")
 
 
@@ -126,7 +159,7 @@ def _record(
     add_trial(
         simulation_id="cannonball",
         parameters={**result.parameters.to_dict(), "target_m": target},
-        prediction=st.session_state.get("cannon_quiz_guess"),
+        prediction=st.session_state.get(state_key("quiz_guess")),
         result_summary=_message(result, target),
         metrics=_metrics(result),
         earned_badges=badges,
@@ -145,43 +178,45 @@ def render_explore() -> None:
     mode_heading(LearningMode.EXPLORE, "Aim, predict, and fire")
     c1, c2 = st.columns(2)
     with c1:
-        speed = st.slider("Launch speed (m/s)", 5.0, 40.0, 20.0, 0.5, key="cannon_speed")
+        speed = st.slider("Launch speed (m/s)", 5.0, 40.0, 20.0, 0.5, key=state_key("speed"))
     with c2:
-        angle = st.slider("Launch angle (degrees)", 5, 89, 45, 1, key="cannon_angle")
-    world = st.radio("World", list(WORLDS), horizontal=True, key="cannon_world")
+        angle = st.slider("Launch angle (degrees)", 5, 89, 45, 1, key=state_key("angle"))
+    world = st.radio("World", list(WORLDS), horizontal=True, key=state_key("world"))
     gravity = WORLDS[world]
-    same = st.checkbox("Reuse the same target", value=True, key="cannon_reuse_target")
+    same = st.checkbox("Reuse the same target", value=True, key=state_key("reuse_target"))
     if st.button("🔄 New deterministic target", disabled=same):
-        st.session_state.cannon_target_override = None
-        st.session_state.cannon_target_seed += 1
+        st.session_state[state_key("target_override")] = None
+        st.session_state[state_key("target_seed")] += 1
         st.rerun()
     target = _target()
     st.info(f"🎯 Target: {target:.1f} m")
     result = cached_projectile_no_drag(ProjectileParameters(speed, angle, gravity))
     _summary(result)
-    autoplay = st.session_state.cannon_launched_parameters == result.parameters.to_dict()
+    autoplay = st.session_state[state_key("launched_parameters")] == result.parameters.to_dict()
     doc = build_cannon_canvas(
         result,
         target_m=target,
         message=_message(result, target),
-        seed=st.session_state.cannon_target_seed,
+        seed=st.session_state[state_key("target_seed")],
         autoplay=autoplay,
     )
     canvas_embed.show(doc, height=PLAYER_HEIGHT)
     observation = st.text_input(
         "Optional notebook observation",
         placeholder="What did you notice?",
-        key="cannon_observation",
+        key=state_key("observation"),
     )
     if st.button("💥 FIRE!", type="primary", use_container_width=True):
-        nonce = st.session_state.cannon_launch_nonce + 1
-        st.session_state.cannon_launch_nonce = nonce
-        st.session_state.cannon_launched_parameters = result.parameters.to_dict()
+        nonce = st.session_state[state_key("launch_nonce")] + 1
+        st.session_state[state_key("launch_nonce")] = nonce
+        st.session_state[state_key("launched_parameters")] = result.parameters.to_dict()
         badges = _award(result, target)
-        _record(result, target, st.session_state.cannon_target_seed, observation, badges=badges)
+        _record(
+            result, target, st.session_state[state_key("target_seed")], observation, badges=badges
+        )
         if not same:
-            st.session_state.cannon_target_override = None
-            st.session_state.cannon_target_seed += 1
+            st.session_state[state_key("target_override")] = None
+            st.session_state[state_key("target_seed")] += 1
         st.rerun()
     mission_ui.mission_checklist("Cannonball Launcher")
 
@@ -222,12 +257,14 @@ def render_compare() -> None:
     a, b, labels, change = _comparison_results(kind)
     changed_variable_banner(change)
     target = _target()
-    signature = {"kind": kind, "seed": st.session_state.cannon_target_seed}
-    observation = st.text_input("Optional comparison observation", key="cannon_compare_observation")
+    signature = {"kind": kind, "seed": st.session_state[state_key("target_seed")]}
+    observation = st.text_input(
+        "Optional comparison observation", key=state_key("compare_observation")
+    )
     if st.button("▶ Run comparison", type="primary", use_container_width=True):
-        st.session_state.cannon_compare_nonce += 1
-        st.session_state.cannon_compare_signature = signature
-        nonce = st.session_state.cannon_compare_nonce
+        st.session_state[state_key("compare_nonce")] += 1
+        st.session_state[state_key("compare_signature")] = signature
+        nonce = st.session_state[state_key("compare_nonce")]
         _record(a, target, 20260800 + nonce, observation, "Run A")
         _record(b, target, 20260900 + nonce, observation, "Run B")
     doc = build_cannon_comparison_canvas(
@@ -235,8 +272,8 @@ def render_compare() -> None:
         b,
         target_m=target,
         labels=labels,
-        seed=20261000 + st.session_state.cannon_compare_nonce,
-        autoplay=st.session_state.cannon_compare_signature == signature,
+        seed=20261000 + st.session_state[state_key("compare_nonce")],
+        autoplay=st.session_state[state_key("compare_signature")] == signature,
     )
     canvas_embed.show(doc, height=PLAYER_HEIGHT)
     comparison_metrics(
@@ -245,7 +282,7 @@ def render_compare() -> None:
 
 
 def _latest() -> ProjectileParameters:
-    saved = st.session_state.get("cannon_launched_parameters")
+    saved = st.session_state.get(state_key("launched_parameters"))
     return (
         ProjectileParameters(**saved) if saved else ProjectileParameters(25, 40, EARTH_GRAVITY_M_S2)
     )
@@ -329,7 +366,7 @@ def render() -> None:
         "Launch a cannonball, compare trajectories, analyze the measurements, or inspect the model."
     )
     revealed = mission_ui.prediction_quiz(
-        key="cannon_quiz",
+        key=state_key("quiz"),
         question="For maximum no-drag range on level ground, which angle wins?",
         options=["15°", "45°", "75°", "90°"],
         correct_index=1,
@@ -339,7 +376,7 @@ def render() -> None:
     if not revealed:
         st.caption("🔬 Make your prediction before any results are shown.")
         return
-    mode = mode_navigation(key="cannon_learning_mode")
+    mode = mode_navigation(key=state_key("learning_mode"))
     st.divider()
     try:
         {

@@ -3,18 +3,19 @@ from dataclasses import fields
 import pytest
 
 from physics_playground.models.parameters import DoublePendulumParameters
-from physics_playground.models.projectile import ProjectileParameters
 from physics_playground.state_keys import (
     LEGACY_SHARED_KEYS,
     SHARED_STATE_KEYS,
     feature_key,
     migrate_legacy_keys,
+    migrate_simulation_keys,
     simulation_key,
 )
 from physics_playground.subjects.fluids_and_matter.buoyancy.physics import BuoyancyParameters
 from physics_playground.subjects.fluids_and_matter.fluid_pressure.physics import (
     FluidPressureParameters,
 )
+from physics_playground.subjects.mechanics.cannonball.physics import ProjectileParameters
 from physics_playground.subjects.mechanics.inclined_plane.physics import InclinedPlaneParameters
 from physics_playground.units import (
     EARTH_GRAVITY_M_S2,
@@ -58,3 +59,9 @@ def test_legacy_state_migration_preserves_values_and_canonical_precedence() -> N
     state = {old_key: "legacy", canonical_key: "current"}
     migrate_legacy_keys(state)
     assert state == {canonical_key: "current"}
+
+
+def test_simulation_state_migration_uses_vertical_slice_namespace() -> None:
+    state = {"old_speed": 12.0}
+    migrate_simulation_keys(state, "cannonball", {"old_speed": "speed"})
+    assert state == {simulation_key("cannonball", "speed"): 12.0}
