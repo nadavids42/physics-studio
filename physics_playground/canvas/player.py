@@ -8,11 +8,13 @@ responsive/high-DPI canvas setup, accessibility, and deterministic randomness.
 from __future__ import annotations
 
 import json
+import time
 from functools import lru_cache
 from typing import Any
 
 from physics_playground.application_callbacks import get_player_preferences
 from physics_playground.frontend_assets import load_javascript_asset
+from physics_playground.performance import record_timing
 from physics_playground.visual.css import shared_css
 from physics_playground.visual.tokens import DARK_THEME, LIGHT_THEME, theme_payload
 
@@ -110,9 +112,18 @@ def build_player_document(
     }
     payload = json.dumps(config, allow_nan=False, separators=(",", ":"))
     aspect_ratio = logical_width / logical_height
-    return _cached_player_document(
+    before = _cached_player_document.cache_info()
+    started = time.perf_counter()
+    document = _cached_player_document(
         payload, scene_javascript, aspect_ratio, accessible_label, idle_hint, extra_css
     )
+    after = _cached_player_document.cache_info()
+    record_timing(
+        "player.document",
+        time.perf_counter() - started,
+        "cache_hit" if after.hits > before.hits else "computed",
+    )
+    return document
 
 
 @lru_cache(maxsize=128)

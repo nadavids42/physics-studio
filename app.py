@@ -10,6 +10,7 @@ from physics_playground.application_callbacks import (
 )
 from physics_playground.education.catalog import LESSONS_BY_ID
 from physics_playground.missions import ui as mission_ui
+from physics_playground.performance import timing_block
 from physics_playground.presentation.accessibility_ui import (
     apply_global_accessibility,
     current_player_preferences,
@@ -147,7 +148,8 @@ else:
         st.stop()
     module, entrypoint = load_validated_page(active)
     try:
-        getattr(module, entrypoint)()
+        with timing_block(f"page.{active}"):
+            getattr(module, entrypoint)()
     except (PhysicsValidationError, FloatingPointError, OverflowError, MemoryError) as error:
         st.error(
             "This experiment could not finish safely. Try smaller values, fewer steps, or the recommended time step."

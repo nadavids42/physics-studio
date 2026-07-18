@@ -1,12 +1,14 @@
 import pytest
 
 from physics_playground.canvas.player import build_player_document, player_document_cache_info
+from physics_playground.frontend_assets import load_javascript_asset
 from physics_playground.notebook import ExperimentNotebook
 from physics_playground.performance import (
     MAX_INTEGRATION_STEPS,
     MAX_NOTEBOOK_TRIALS,
     MAX_TRAJECTORY_SAMPLES,
     recommended_time_step,
+    timing_snapshot,
 )
 from physics_playground.subjects.mechanics.bumper_cars.physics import CollisionParameters
 from physics_playground.subjects.mechanics.cannonball.physics import (
@@ -89,6 +91,31 @@ def test_static_player_html_is_cached_and_seed_is_part_of_payload():
     )
     after = player_document_cache_info()
     assert a == b and after.hits > before.hits
+    assert any(
+        item["name"] == "player.document" and item["source"] == "cache_hit"
+        for item in timing_snapshot()
+    )
+
+
+def test_player_cache_key_changes_with_physical_payload():
+    kwargs = dict(
+        scene_javascript="const scene={draw(){}};",
+        logical_width=100,
+        logical_height=50,
+        accessible_label="test",
+        idle_hint="play",
+    )
+    first = build_player_document(
+        config={"durationMs": 1, "tracks": [{"id": "x", "x": [1]}]}, **kwargs
+    )
+    changed = build_player_document(
+        config={"durationMs": 1, "tracks": [{"id": "x", "x": [2]}]}, **kwargs
+    )
+    assert first != changed
+
+
+def test_frontend_asset_cache_can_hold_the_complete_built_catalog():
+    assert load_javascript_asset.cache_info().maxsize >= 32
 
 
 def test_notebook_storage_is_bounded():

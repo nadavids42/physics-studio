@@ -176,14 +176,44 @@ def _award(result: ProjectileResult, target: float) -> tuple[str, ...]:
     return mission_ui.process_run("cannonball", evaluate_cannonball_missions(result, target))
 
 
+@st.fragment
+def _explore_commit_controls(result: ProjectileResult, target: float, same_target: bool) -> None:
+    """Update notes independently so typing does not remount the player iframe."""
+
+    observation = st.text_input(
+        "Optional notebook observation",
+        placeholder="What did you notice?",
+        key=state_key("observation"),
+    )
+    if st.button("💥 FIRE!", type="primary", use_container_width=True):
+        nonce = st.session_state[state_key("launch_nonce")] + 1
+        st.session_state[state_key("launch_nonce")] = nonce
+        st.session_state[state_key("launched_parameters")] = result.parameters.to_dict()
+        badges = _award(result, target)
+        _record(
+            result,
+            target,
+            st.session_state[state_key("target_seed")],
+            observation,
+            badges=badges,
+        )
+        if not same_target:
+            st.session_state[state_key("target_override")] = None
+            st.session_state[state_key("target_seed")] += 1
+        st.rerun(scope="app")
+
+
 def render_explore() -> None:
     mode_heading(LearningMode.EXPLORE, "Aim, predict, and fire")
-    c1, c2 = st.columns(2)
-    with c1:
-        speed = st.slider("Launch speed (m/s)", 5.0, 40.0, 20.0, 0.5, key=state_key("speed"))
-    with c2:
-        angle = st.slider("Launch angle (degrees)", 5, 89, 45, 1, key=state_key("angle"))
-    world = st.radio("World", list(WORLDS), horizontal=True, key=state_key("world"))
+    with st.form(state_key("setup_form"), border=True):
+        st.markdown("**Configure the next launch**")
+        c1, c2 = st.columns(2)
+        with c1:
+            speed = st.slider("Launch speed (m/s)", 5.0, 40.0, 20.0, 0.5, key=state_key("speed"))
+        with c2:
+            angle = st.slider("Launch angle (degrees)", 5, 89, 45, 1, key=state_key("angle"))
+        world = st.radio("World", list(WORLDS), horizontal=True, key=state_key("world"))
+        st.form_submit_button("Apply launch setup", type="primary", use_container_width=True)
     gravity = WORLDS[world]
     same = st.checkbox("Reuse the same target", value=True, key=state_key("reuse_target"))
     if st.button("🔄 New deterministic target", disabled=same):
@@ -203,23 +233,7 @@ def render_explore() -> None:
         autoplay=autoplay,
     )
     canvas_embed.show(doc, height=PLAYER_HEIGHT)
-    observation = st.text_input(
-        "Optional notebook observation",
-        placeholder="What did you notice?",
-        key=state_key("observation"),
-    )
-    if st.button("💥 FIRE!", type="primary", use_container_width=True):
-        nonce = st.session_state[state_key("launch_nonce")] + 1
-        st.session_state[state_key("launch_nonce")] = nonce
-        st.session_state[state_key("launched_parameters")] = result.parameters.to_dict()
-        badges = _award(result, target)
-        _record(
-            result, target, st.session_state[state_key("target_seed")], observation, badges=badges
-        )
-        if not same:
-            st.session_state[state_key("target_override")] = None
-            st.session_state[state_key("target_seed")] += 1
-        st.rerun()
+    _explore_commit_controls(result, target, same)
     mission_ui.mission_checklist("Cannonball Launcher")
 
 
@@ -251,6 +265,25 @@ def _comparison_results(
     )
 
 
+@st.fragment
+def _compare_commit_controls(
+    first: ProjectileResult,
+    second: ProjectileResult,
+    target: float,
+    signature: dict[str, object],
+) -> None:
+    observation = st.text_input(
+        "Optional comparison observation", key=state_key("compare_observation")
+    )
+    if st.button("▶ Run comparison", type="primary", use_container_width=True):
+        st.session_state[state_key("compare_nonce")] += 1
+        st.session_state[state_key("compare_signature")] = signature
+        nonce = st.session_state[state_key("compare_nonce")]
+        _record(first, target, 20260800 + nonce, observation, "Run A")
+        _record(second, target, 20260900 + nonce, observation, "Run B")
+        st.rerun(scope="app")
+
+
 def render_compare() -> None:
     mode_heading(LearningMode.COMPARE, "Overlay two trajectories")
     kind = st.selectbox(
@@ -260,15 +293,6 @@ def render_compare() -> None:
     changed_variable_banner(change)
     target = _target()
     signature = {"kind": kind, "seed": st.session_state[state_key("target_seed")]}
-    observation = st.text_input(
-        "Optional comparison observation", key=state_key("compare_observation")
-    )
-    if st.button("▶ Run comparison", type="primary", use_container_width=True):
-        st.session_state[state_key("compare_nonce")] += 1
-        st.session_state[state_key("compare_signature")] = signature
-        nonce = st.session_state[state_key("compare_nonce")]
-        _record(a, target, 20260800 + nonce, observation, "Run A")
-        _record(b, target, 20260900 + nonce, observation, "Run B")
     doc = build_cannon_comparison_canvas(
         a,
         b,
@@ -278,6 +302,7 @@ def render_compare() -> None:
         autoplay=st.session_state[state_key("compare_signature")] == signature,
     )
     canvas_embed.show(doc, height=PLAYER_HEIGHT)
+    _compare_commit_controls(a, b, target, signature)
     comparison_metrics(
         {k: (k, v) for k, v in _metrics(a).items()}, {k: (k, v) for k, v in _metrics(b).items()}
     )

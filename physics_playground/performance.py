@@ -5,7 +5,8 @@ from __future__ import annotations
 import math
 import time
 from collections import deque
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import fields, is_dataclass
 from functools import wraps
 from threading import Lock
@@ -86,6 +87,17 @@ def timed(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
         return wrapped
 
     return decorator
+
+
+@contextmanager
+def timing_block(name: str, source: str = "render") -> Iterator[None]:
+    """Record a bounded timing sample for a page or presentation operation."""
+
+    start = time.perf_counter()
+    try:
+        yield
+    finally:
+        record_timing(name, time.perf_counter() - start, source)
 
 
 def timing_snapshot() -> list[TimingRecord]:

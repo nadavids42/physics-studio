@@ -3,6 +3,7 @@
 import streamlit as st
 
 from physics_playground.canvas.player import player_document_cache_info
+from physics_playground.frontend_assets import frontend_asset_cache_info
 from physics_playground.performance import (
     MAX_INTEGRATION_STEPS,
     MAX_NOTEBOOK_TRIALS,
@@ -24,8 +25,13 @@ def render_developer_diagnostics():
         st.caption(
             f"HTML document cache: {info.hits} hits, {info.misses} misses, {info.currsize} entries"
         )
+        assets = frontend_asset_cache_info()
+        st.caption(
+            f"Frontend asset cache: {assets.hits} hits, {assets.misses} misses, "
+            f"{assets.currsize}/{assets.maxsize} entries"
+        )
         if not timings:
             st.info("No simulation timing samples have been recorded yet.")
         else:
             for item in timings[-10:]:
-                st.markdown(f"- `{item['name']}`: {item['milliseconds']:.2f} ms")
+                st.markdown(f"- `{item['name']}`: {item['milliseconds']:.2f} ms ({item['source']})")

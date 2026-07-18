@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
 from physics_playground.contracts import PlotData
+from physics_playground.performance import timed
 
 
 def plot_figure(plot: PlotData, overlays: tuple[PlotData, ...] = ()) -> Figure:
@@ -20,6 +21,7 @@ def plot_figure(plot: PlotData, overlays: tuple[PlotData, ...] = ()) -> Figure:
     return fig
 
 
+@timed("chart.cannonball.range_by_angle")
 def range_by_angle_figure(speed_m_s: float, gravity_m_s2: float) -> Figure:
     from physics_playground.subjects.mechanics.cannonball.physics import projectile_range_scan
 
