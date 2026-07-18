@@ -119,6 +119,23 @@ then lazily imports its page entrypoint. Registry and manifest catalogs remain p
 declarations, with tests enforcing exact ID and metadata consistency. Contributors must update
 both catalogs and pass validation before a simulation is reachable.
 
+## Discovery and navigation
+
+The home screen is the primary discovery surface. `presentation/navigation.py` joins subject
+ownership from validated expansion manifests with units and lessons from the curriculum manifest.
+It does not maintain a separate simulation taxonomy. Searchable home cards expose lessons,
+simulations, concepts, difficulty, and learner progress.
+
+The sidebar intentionally stays bounded as the catalog grows: it contains subject,
+unit-or-collection, and concept selectors, but never one control per simulation. An unfinished
+lesson may be recommended as an optional next activity; recommendations do not hide or gate other
+content. Native Streamlit controls retain keyboard behavior and the shared responsive CSS wraps
+controls on narrow screens.
+
+Simulation registry IDs remain the stable navigation identifier. Links may use
+`?simulation=<registry-id>` and optionally `&lesson=<curriculum-lesson-id>`. URL targets are
+validated against the registry and curriculum before use.
+
 ## Compatibility and state
 
 Stable simulation IDs, mission IDs, model versions, notebook fields, profile schemas, and existing

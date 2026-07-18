@@ -299,7 +299,8 @@ def render_learning_pathway(lesson: Lesson) -> None:
     activities, checkpoints = _requirements(lesson, preferences.mathematical_depth)
     total = len(activities) + len(checkpoints)
     completed = len(progress.completed_activity_ids) + len(progress.completed_checkpoint_ids)
-    with st.expander(f"Learning pathway: {lesson.title}", expanded=False):
+    requested_lesson = st.session_state.get(SHARED_STATE_KEYS.navigation_active_lesson)
+    with st.expander(f"Learning pathway: {lesson.title}", expanded=requested_lesson == lesson.id):
         st.caption(f"About {lesson.estimated_minutes} minutes · {lesson.profile.depth.value}")
         introduction = {
             AudienceLevel.EXPLORER: "Begin with the path you can observe. Change one quantity at a time, record what changes, and use the equation to explain that evidence.",

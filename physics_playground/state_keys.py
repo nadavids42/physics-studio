@@ -29,6 +29,9 @@ def simulation_key(simulation_id: str, name: str) -> str:
 class SharedStateKeys:
     navigation_active: str = feature_key("navigation", "active_simulation")
     navigation_selector: str = feature_key("navigation", "selector")
+    navigation_active_lesson: str = feature_key("navigation", "active_lesson")
+    navigation_subject_filter: str = feature_key("navigation", "subject_filter")
+    navigation_concept_filter: str = feature_key("navigation", "concept_filter")
     accessibility_settings: str = feature_key("accessibility", "settings")
     accessibility_presentation_level: str = feature_key("accessibility", "presentation_level")
     accessibility_visual_preferences: str = feature_key("accessibility", "visual_preferences")
