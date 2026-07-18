@@ -35,7 +35,7 @@ def render_explore():
     with c2:perturb=st.number_input("Perturbation size (degrees)",0.0,10.0,.1,.01,key="chaos_perturb");dt=st.number_input("Integration time step",.001,.05,.005,.001,key="chaos_dt")
     p=DoublePendulumParameters(angle_1_deg=a1,angle_2_deg=a2,perturbation_deg=perturb,time_step_s=dt);warning=convergence_warning(p)
     if warning:st.warning(warning)
-    r=simulate_double_pendulum(p);_summary(r);autoplay=st.session_state.chaos_launched==p.to_dict();canvas_kit.show(build_double_canvas(r,seed=20262600+st.session_state.chaos_nonce,autoplay=autoplay),height=PLAYER_HEIGHT)
+    r=simulate_double_pendulum(p);_summary(r);show_separation=st.checkbox("Show recorded separation callout",value=True,key="chaos_show_separation");inspect=st.selectbox("Optional visual inspection focus",["Fixed camera (both systems)","Baseline A","Perturbed B"],key="chaos_inspect");inspect_system={"Baseline A":"a","Perturbed B":"b"}.get(inspect);autoplay=st.session_state.chaos_launched==p.to_dict();canvas_kit.show(build_double_canvas(r,seed=20262600+st.session_state.chaos_nonce,autoplay=autoplay,show_separation=show_separation,inspect_system=inspect_system),height=PLAYER_HEIGHT)
     obs=st.text_input("Optional notebook observation",key="chaos_observation")
     if st.button("🌀 RELEASE!",type="primary",use_container_width=True):st.session_state.chaos_nonce+=1;st.session_state.chaos_launched=p.to_dict();badges=_award(r);_record(r,20262600+st.session_state.chaos_nonce,obs,badges=badges);st.rerun()
     kidtools.mission_checklist("Double Pendulum of Chaos")
