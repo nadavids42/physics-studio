@@ -121,6 +121,6 @@ def test_asset_library_is_available_to_all_shared_player_scenes():
         accessible_label="Asset test",
         idle_hint="Play",
     )
-    assert "const PhysicsAssets" in document
+    assert "globalThis.PhysicsAssets" in document
     assert "Unknown Physics Studio asset" in document
     assert "Object.freeze(Object.keys(library))" in document

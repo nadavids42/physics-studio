@@ -1,5 +1,7 @@
 """Contract tests for the browser-side player document."""
 
+import pytest
+
 from physics_playground.canvas.player import build_player_document
 from physics_playground.subjects.mechanics.bumper_cars.physics import (
     CollisionParameters,
@@ -53,7 +55,23 @@ def test_bumper_canvas_uses_tracks_and_structured_impact_event() -> None:
     assert '"id":"impact"' in document
     assert '"type":"particle_burst"' in document
     assert '"seed":20260713' in document
-    assert "new AnimationPlayer(playerConfig,scene)" in document
+    assert "mountPhysicsPlayer(playerConfig,scene)" in document
+
+
+@pytest.mark.parametrize(
+    "config",
+    ({"tracks": []}, {"durationMs": 1}, {"durationMs": 1, "tracks": [{"id": 1, "x": []}]}),
+)
+def test_python_rejects_malformed_player_payloads(config) -> None:
+    with pytest.raises(ValueError):
+        build_player_document(
+            config=config,
+            scene_javascript="const scene={draw(){}};",
+            logical_width=100,
+            logical_height=50,
+            accessible_label="Malformed",
+            idle_hint="Play",
+        )
 
 
 def test_non_collision_canvas_has_no_impact_event() -> None:

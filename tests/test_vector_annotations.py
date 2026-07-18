@@ -55,8 +55,8 @@ def test_shared_annotation_library_contains_every_required_helper():
     )
     for name in required:
         assert name in CANVAS_VECTOR_JS
-    assert "scale_mode==='physical'" in CANVAS_VECTOR_JS
-    assert "Schematic vectors — not drawn to scale" in CANVAS_VECTOR_JS
+    assert 'scale_mode === "physical"' in CANVAS_VECTOR_JS
+    assert "not drawn to scale" in CANVAS_VECTOR_JS
 
 
 def test_shared_player_exposes_vector_annotations_to_all_scenes():
@@ -68,7 +68,7 @@ def test_shared_player_exposes_vector_annotations_to_all_scenes():
         accessible_label="Vectors",
         idle_hint="Play",
     )
-    assert "const PhysicsAnnotations" in doc
+    assert "globalThis.PhysicsAnnotations" in doc
     assert "function dimensionLine" in doc
 
 

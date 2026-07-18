@@ -36,19 +36,19 @@ def test_player_accepts_each_explicit_presentation_level(level):
         idle_hint="Play",
     )
     assert f'"presentationLevel":"{level.value}"' in document
-    assert "const PhysicsExperience" in document
+    assert "globalThis.PhysicsExperience" in document
 
 
 def test_shared_assets_remove_depth_in_diagram_mode():
     assert "PhysicsExperience.profile(s).depth" in CANVAS_ASSET_JS
-    assert "depth&&o.highlight" in CANVAS_ASSET_JS
-    assert "shadow:depth&&" in CANVAS_ASSET_JS
+    assert "depth && o.highlight" in CANVAS_ASSET_JS
+    assert "shadow: depth &&" in CANVAS_ASSET_JS
 
 
 def test_contextual_library_supports_initial_real_world_scenes():
     for context in ("projectileField", "laboratory", "space", "opticsBench", "rollerCoaster"):
         assert context in CANVAS_EXPERIENCE_JS
-    assert "preserveScientificOverlays:true" in CANVAS_EXPERIENCE_JS
+    assert "preserveScientificOverlays: true" in CANVAS_EXPERIENCE_JS
     assert "scientificOverlay" in CANVAS_EXPERIENCE_JS
 
 

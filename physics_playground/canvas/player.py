@@ -12,13 +12,9 @@ from functools import lru_cache
 from typing import Any
 
 from physics_playground.application_callbacks import get_player_preferences
-from physics_playground.visual.animation import CANVAS_ANIMATION_JS
-from physics_playground.visual.assets import CANVAS_ASSET_JS
+from physics_playground.frontend_assets import load_javascript_asset
 from physics_playground.visual.css import shared_css
-from physics_playground.visual.experience import CANVAS_EXPERIENCE_JS
-from physics_playground.visual.primitives import CANVAS_VISUAL_JS
 from physics_playground.visual.tokens import DARK_THEME, LIGHT_THEME, theme_payload
-from physics_playground.visual.vectors import CANVAS_VECTOR_JS
 
 PLAYER_CSS = r"""
 * { box-sizing: border-box; }
@@ -62,149 +58,27 @@ body.high-contrast .controls button, body.high-contrast .controls select { backg
 body.high-contrast .controls input[type=range] { accent-color:#FFD600; }
 """
 
-PLAYER_JS = r"""
-function resolveVisualTheme(config) {
-  const requested=config.theme||'auto';
-  const dark=requested==='dark'||(requested==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);
-  config.resolvedTheme=dark?'dark':'light';
-  config.visualTokens=(config.visualThemes||{})[config.resolvedTheme]||config.visualTokens||{};
-  document.documentElement.dataset.psTheme=config.resolvedTheme;
-}
-function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, value)); }
-function lerp(a, b, amount) { return a + (b - a) * amount; }
-function sample(values, fraction) {
-  if (!values.length) return 0;
-  const index = clamp(fraction, 0, 1) * (values.length - 1);
-  const lower = Math.floor(index), upper = Math.min(values.length - 1, lower + 1);
-  return lerp(values[lower], values[upper], index - lower);
-}
-function seededRandom(seed) {
-  let state = (seed >>> 0) || 1;
-  return function() {
-    state += 0x6D2B79F5;
-    let value = state;
-    value = Math.imul(value ^ value >>> 15, value | 1);
-    value ^= value + Math.imul(value ^ value >>> 7, value | 61);
-    return ((value ^ value >>> 14) >>> 0) / 4294967296;
-  };
-}
-class ParticleSystem {
-  constructor(random, reducedMotion) { this.items = []; this.random = random; this.reducedMotion = reducedMotion; }
-  burst(x, y, count, colors) {
-    if (this.reducedMotion) return;
-    for (let index = 0; index < count; index++) {
-      const angle = this.random() * Math.PI * 2, speed = 90 + this.random() * 210;
-      this.items.push({x, y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed-80,
-        life: 1, size: 2+this.random()*3, color: colors[Math.floor(this.random()*colors.length)]});
-    }
-  }
-  reset() { this.items = []; }
-  update(seconds) {
-    for (const item of this.items) { item.x += item.vx*seconds; item.y += item.vy*seconds;
-      item.vy += 320*seconds; item.life -= 1.6*seconds; }
-    this.items = this.items.filter(item => item.life > 0);
-  }
-  draw(ctx) { for (const item of this.items) { ctx.globalAlpha = Math.max(0,item.life);
-      ctx.fillStyle=item.color; ctx.beginPath(); ctx.arc(item.x,item.y,item.size,0,Math.PI*2); ctx.fill(); }
-    ctx.globalAlpha=1; }
-}
-class TrailStore {
-  constructor(limit=18) { this.limit=limit; this.items=new Map(); }
-  reset() { this.items.clear(); }
-  push(id, point) { const points=this.items.get(id)||[]; points.push(point);
-    while(points.length>this.limit) points.shift(); this.items.set(id,points); }
-  get(id) { return this.items.get(id)||[]; }
-}
-class AnimationPlayer {
-  constructor(config, scene) {
-    this.config=config; this.scene=scene; this.canvas=document.getElementById('animation-canvas');
-    this.ctx=this.canvas.getContext('2d'); this.wrap=document.getElementById('canvas-wrap');
-    this.playButton=document.getElementById('play-pause'); this.replayButton=document.getElementById('replay');
-    this.stepBackButton=document.getElementById('step-back'); this.stepForwardButton=document.getElementById('step-forward');
-    this.scrubber=document.getElementById('scrubber'); this.speed=document.getElementById('speed');
-    this.message=document.getElementById('message'); this.hint=document.getElementById('hint');
-    this.status=document.getElementById('status'); this.reducedMotion=Boolean(config.reducedMotion)||matchMedia('(prefers-reduced-motion: reduce)').matches;
-    document.body.classList.toggle('high-contrast',Boolean(config.highContrast));document.body.classList.toggle('large-text',Boolean(config.largeText));
-    this.random=seededRandom(config.seed); this.particles=new ParticleSystem(this.random,this.reducedMotion);
-    this.trails=new TrailStore(config.trailLength||18); this.fraction=0; this.state='idle'; this.playbackRate=1;
-    this.lastTimestamp=null; this.fired=new Set(); this.frameRequest=null; this.cssWidth=1; this.cssHeight=1;this.lastTrailFraction=null;
-    this.fixedStep=1/60;this.accumulator=0;this.camera=new PhysicsAnimation.Camera(config.camera||{},this.reducedMotion);
-    this.bind(); this.resize(); this.render(0);
-    if(config.autoplay && !this.reducedMotion) this.play();
-    else if(config.autoplay && this.reducedMotion) {
-      this.status.textContent='Reduced motion is enabled. Press Play to start the animation.';
-    }
-  }
-  bind() {
-    this.playButton.addEventListener('click',()=>this.toggle());
-    this.replayButton.addEventListener('click',()=>this.replay());
-    this.stepBackButton.addEventListener('click',()=>this.stepFrames(-1));
-    this.stepForwardButton.addEventListener('click',()=>this.stepFrames(1));
-    this.scrubber.addEventListener('input',event=>this.seek(Number(event.target.value)/1000));
-    this.speed.addEventListener('change',event=>{this.playbackRate=Number(event.target.value);});
-    this.resizeObserver=new ResizeObserver(()=>this.resize());this.resizeObserver.observe(this.wrap);
-    this.onVisibility=()=>{if(document.hidden&&this.state==='playing') this.pause();};document.addEventListener('visibilitychange',this.onVisibility);
-    this.onKeydown=event=>{
-      if(['INPUT','SELECT','BUTTON'].includes(document.activeElement.tagName)&&event.key!==' ') return;
-      if(event.key===' '){event.preventDefault();this.toggle();}
-      else if(event.key==='r'||event.key==='R') this.replay();
-      else if(event.key==='ArrowRight') this.seek(this.fraction+.02);
-      else if(event.key==='ArrowLeft') this.seek(this.fraction-.02);
-      else if(event.key==='.'||event.key==='>') this.stepFrames(1);
-      else if(event.key===','||event.key==='<') this.stepFrames(-1);
-    };document.addEventListener('keydown',this.onKeydown);window.addEventListener('pagehide',()=>this.destroy(),{once:true});
-  }
-  resize() {
-    const box=this.wrap.getBoundingClientRect(), dpr=Math.min(this.config.maximumDpr||2.5,Math.max(1,window.devicePixelRatio||1));
-    const nextWidth=Math.max(1,box.width),nextHeight=Math.max(1,box.height);
-    if(Math.abs(nextWidth-this.cssWidth)<.5&&Math.abs(nextHeight-this.cssHeight)<.5&&this.canvas.width===Math.round(nextWidth*dpr))return;
-    this.cssWidth=nextWidth; this.cssHeight=nextHeight;
-    this.canvas.width=Math.round(this.cssWidth*dpr); this.canvas.height=Math.round(this.cssHeight*dpr);
-    this.ctx.setTransform(dpr,0,0,dpr,0,0); this.render(this.fraction);
-  }
-  coordinates() { const view=this.config.view||{}; const xmin=view.minimum??0, xmax=view.maximum??1;
-    const left=40,right=this.cssWidth-40; return {x:value=>left+(value-xmin)/Math.max(.0001,xmax-xmin)*(right-left),
-      y:value=>this.cssHeight-60-value, width:this.cssWidth,height:this.cssHeight}; }
-  snapshot(fraction) { const tracks={}; for(const track of this.config.tracks) tracks[track.id]={
-      id:track.id,label:track.label,style:track.style||{},x:sample(track.x,fraction),
-      y:track.y?sample(track.y,fraction):null,trail:this.trails.get(track.id)}; return tracks; }
-  play() { if(this.state==='done') this.replay(); this.state='playing'; this.lastTimestamp=null;
-    this.playButton.textContent='⏸'; this.playButton.setAttribute('aria-label','Pause animation');
-    this.hint.hidden=true; this.status.textContent='Animation playing'; this.ensureFrame(); }
-  pause() { this.state='paused'; this.playButton.textContent='▶'; this.playButton.setAttribute('aria-label','Play animation');
-    this.status.textContent='Animation paused'; }
-  resume() { this.play(); }
-  toggle() { this.state==='playing'?this.pause():this.play(); }
-  replay() { this.fraction=0; this.fired.clear(); this.trails.reset(); this.particles.reset();this.camera.reset();this.lastTrailFraction=null;
-    this.message.classList.remove('show'); this.scrubber.value='0'; this.state='paused'; this.play(); }
-  seek(fraction) { this.fraction=clamp(fraction,0,1); this.scrubber.value=String(Math.round(this.fraction*1000));
-    this.fired.clear(); for(const event of this.config.events||[]) if(event.fraction<=this.fraction) this.fired.add(event.id);
-    this.trails.reset(); this.particles.reset();this.lastTrailFraction=null; if(this.fraction<1) this.message.classList.remove('show');
-    this.render(this.fraction); this.status.textContent=`Animation at ${Math.round(this.fraction*100)} percent`; }
-  frameCount(){return Math.max(2,this.config.frameCount||0,...(this.config.tracks||[]).map(track=>Math.max(track.x?.length||0,track.y?.length||0)));}
-  stepFrames(amount) { if(this.state==='playing')this.pause();const count=this.frameCount(),index=Math.round(this.fraction*(count-1));
-    this.seek(clamp(index+amount,0,count-1)/(count-1));this.status.textContent=`Frame ${clamp(index+amount,0,count-1)+1} of ${count}`; }
-  ensureFrame() { if(this.frameRequest===null) this.frameRequest=requestAnimationFrame(timestamp=>this.tick(timestamp)); }
-  tick(timestamp) { this.frameRequest=null; const rawElapsed=this.lastTimestamp===null?0:(timestamp-this.lastTimestamp)/1000,elapsed=clamp(rawElapsed,0,.25);
-    this.lastTimestamp=timestamp;this.accumulator+=elapsed;let stableElapsed=0,steps=0;while(this.accumulator>=this.fixedStep&&steps<15){stableElapsed+=this.fixedStep;this.accumulator-=this.fixedStep;steps++}
-    if(this.state==='playing') { const duration=this.config.durationMs/1000;
-      this.fraction=clamp(this.fraction+stableElapsed*this.playbackRate/duration,0,1); this.fireEvents();
-      this.scrubber.value=String(Math.round(this.fraction*1000)); if(this.fraction>=1) this.complete(); }
-    this.camera.update(stableElapsed);this.particles.update(stableElapsed); this.render(this.fraction);
-    if(this.state==='playing'||this.particles.items.length) this.ensureFrame(); }
-  fireEvents() { for(const event of this.config.events||[]) if(this.fraction>=event.fraction&&!this.fired.has(event.id)) {
-      this.fired.add(event.id); if(this.scene.onEvent) this.scene.onEvent(event,this); } }
-  complete() { this.state='done'; this.playButton.textContent='▶'; this.playButton.setAttribute('aria-label','Replay animation');
-    this.message.textContent=this.config.completionMessage||''; this.message.classList.toggle('show',!!this.config.completionMessage);
-    this.status.textContent=this.config.completionMessage||'Animation complete'; }
-  render(fraction) { if(!this.scene||!this.ctx) return; const transform=this.coordinates(), tracks=this.snapshot(fraction);
-    if(this.lastTrailFraction===null||Math.abs(fraction-this.lastTrailFraction)>1e-9){for(const track of Object.values(tracks)) this.trails.push(track.id,{x:track.x,y:track.y});this.lastTrailFraction=fraction;}
-    this.scene.draw(this.ctx,{fraction,state:this.state,tracks,transform,particles:this.particles,
-      trails:this.trails,reducedMotion:this.reducedMotion,config:this.config,camera:this.camera,effects:PhysicsAnimation}); this.particles.draw(this.ctx); }
-  destroy(){if(this.frameRequest!==null)cancelAnimationFrame(this.frameRequest);this.frameRequest=null;this.resizeObserver?.disconnect();
-    document.removeEventListener('visibilitychange',this.onVisibility);document.removeEventListener('keydown',this.onKeydown);this.particles.reset();this.trails.reset();}
-}
-"""
+PLAYER_JS = load_javascript_asset("player-runtime.js")
+
+
+def _validate_player_config(config: dict[str, Any]) -> None:
+    """Validate the stable Python-to-browser player payload boundary."""
+
+    duration_ms = config.get("durationMs")
+    if (
+        not isinstance(duration_ms, int | float)
+        or isinstance(duration_ms, bool)
+        or duration_ms <= 0
+    ):
+        raise ValueError("Player config requires a positive numeric durationMs.")
+    tracks = config.get("tracks")
+    if not isinstance(tracks, list):
+        raise ValueError("Player config requires a tracks list.")
+    for track in tracks:
+        if not isinstance(track, dict) or not isinstance(track.get("id"), str):
+            raise ValueError("Each player track requires a string id.")
+        if not isinstance(track.get("x"), list):
+            raise ValueError("Each player track requires an x list.")
 
 
 def build_player_document(
@@ -219,6 +93,7 @@ def build_player_document(
 ) -> str:
     """Build a standalone responsive player document for Streamlit embedding."""
 
+    _validate_player_config(config)
     config = {
         **config,
         "visualThemes": {"light": theme_payload(LIGHT_THEME), "dark": theme_payload(DARK_THEME)},
@@ -263,7 +138,7 @@ def _cached_player_document(
     <label class="sr-only" for="scrubber">Animation position</label><input id="scrubber" type="range" min="0" max="1000" value="0">
     <label class="speed-label" for="speed">Speed <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
   </div><div id="status" class="sr-only" aria-live="polite">Animation ready</div></div>
-<script>{PLAYER_JS}\n{CANVAS_VISUAL_JS}\n{CANVAS_ASSET_JS}\n{CANVAS_VECTOR_JS}\n{CANVAS_ANIMATION_JS}\n{CANVAS_EXPERIENCE_JS}\nconst playerConfig={payload};\nresolveVisualTheme(playerConfig);\n{scene_javascript}\nwindow.animationPlayer=new AnimationPlayer(playerConfig,scene);</script>
+<script>{PLAYER_JS}\nconst playerConfig={payload};\n{scene_javascript}\nwindow.animationPlayer=mountPhysicsPlayer(playerConfig,scene);</script>
 </body></html>"""
 
 

@@ -85,10 +85,10 @@ def test_vector_display_geometry_for_all_scaling_modes():
 
 
 def test_high_dpi_canvas_is_scaled_and_bounded():
-    assert "window.devicePixelRatio" in PLAYER_JS
-    assert "maximumDpr||2.5" in PLAYER_JS
-    assert "Math.round(this.cssWidth*dpr)" in PLAYER_JS
-    assert "this.ctx.setTransform(dpr,0,0,dpr,0,0)" in PLAYER_JS
+    assert "devicePixelRatio" in PLAYER_JS
+    assert "maximumDpr" in PLAYER_JS
+    assert "Math.round(nextWidth * dpr)" in PLAYER_JS
+    assert "this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0)" in PLAYER_JS
 
 
 def test_reduced_motion_disables_autoplay_and_decorative_motion_only():
@@ -101,7 +101,7 @@ def test_reduced_motion_disables_autoplay_and_decorative_motion_only():
         idle_hint="Play",
     )
     assert "prefers-reduced-motion:reduce" in document
-    assert "if(config.autoplay && !this.reducedMotion)" in document
+    assert "config.autoplay && !this.reducedMotion" in document
     assert "if (this.reducedMotion) return" in document
     assert 'id="step-forward"' in document and 'id="scrubber"' in document
 

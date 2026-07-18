@@ -8,11 +8,17 @@ with Prettier, and bundled with esbuild. Built browser assets are committed unde
 `physics_playground/static/js/` so a normal Python installation and Streamlit deployment do not
 need Node.js.
 
-The proof of concept migrates `PhysicsVisuals`, the shared canvas-primitives utility. Its editable
-source is `frontend/src/physics-visuals.js`; `physics_playground/visual/primitives.py` now contains
-only a compatibility export loaded through `physics_playground.frontend_assets`. The iframe still
-receives the same `CANVAS_VISUAL_JS` string and the existing Python-to-player JSON payload contract
-is unchanged.
+The shared player runtime, canvas primitives, scientific assets, vector annotations, animation
+effects, and experience helpers now live in `frontend/src`. `player-runtime.js` is the composition
+root. It installs the temporary browser globals consumed by inline scene adapters, while the
+modules themselves use explicit imports and exports. Python compatibility constants load built
+package assets and contain no editable JavaScript.
+
+Each iframe receives one copy of the composed player bundle. This removes the former duplication of
+six separately concatenated libraries inside a document. Browser security isolation prevents
+sibling Streamlit component iframes from safely sharing one live global runtime; changing that
+would require a versioned component or external-asset delivery contract. The committed bundle is
+therefore the smallest safe loading strategy during this transition.
 
 ## Responsibilities
 
@@ -27,7 +33,7 @@ frontend/
 physics_playground/
   frontend_assets.py   safe, cached package-resource loader
   static/js/           committed production build artifacts
-  canvas/player.py     transitional iframe assembly and payload serialization
+  canvas/player.py     validated payload serialization and transitional iframe assembly
 ```
 
 Source modules should expose one coherent responsibility. Browser globals may be assigned only at
@@ -56,21 +62,21 @@ package data and remain available from wheels and source distributions.
 
 Python remains authoritative for immutable trajectory data, themes, accessibility settings, and
 scene configuration. `build_player_document()` continues to serialize the existing JSON object and
-concatenate browser code into the iframe document. Extraction changes code ownership and build
-location only; it must not change payload fields, numerical arrays, units, seeds, or interpolation
-semantics.
+places that payload beside the single built runtime in the iframe document. JavaScript validates
+the browser-facing minimum contract before mounting and owns playback, interaction, resizing, and
+rendering. Extraction does not change payload fields, numerical arrays, units, seeds, or
+interpolation semantics.
 
 ## Staged migration
 
 1. **Foundation — complete.** Maintain the ES-module workspace, deterministic build, static loader,
-   CI checks, runtime Vitest proof, and extracted `PhysicsVisuals` utility.
-2. **Leaf utilities.** Extract vectors, experience/context helpers, and animation helpers one at a
-   time. Add focused runtime tests before replacing each Python constant.
-3. **Scientific assets.** Split the asset library by responsibility while preserving the public
-   `PhysicsAssets` compatibility object used by current scenes.
-4. **Player runtime.** Move playback state, controls, timestep/display interpolation, DPR handling,
-   and lifecycle behavior into modules. Retain payload contract characterization tests and add DOM
-   tests only where they provide stable behavioral value.
+   CI checks, and packaged static assets.
+2. **Shared runtime — complete.** Canvas primitives, vectors, experience/context helpers,
+   animation helpers, scientific assets, playback state, controls, stable timestep handling, DPR
+   sizing, visibility pause, announcements, keyboard input, and teardown are authored modules.
+   Vitest covers playback, stepping, scrubbing, reduced motion, malformed input, and teardown.
+3. **Asset decomposition — optional.** Split the large scientific asset module by scientific domain
+   only when ownership or bundle measurements justify it. Preserve `PhysicsAssets` meanwhile.
 5. **Scene adapters.** Move simulation-specific scene strings from slice `scene.py` files into
    subject/simulation frontend modules. Python scene modules should then serialize data and request
    named built assets rather than contain editable JavaScript.

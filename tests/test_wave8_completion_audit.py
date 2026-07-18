@@ -70,8 +70,8 @@ def test_scene_vectors_do_not_bypass_scale_semantics():
         assert "PhysicsVisuals.arrow" not in source, name
     mechanics = (ROOT / "subjects/mechanics/canvas.py").read_text()
     assert "PhysicsVisuals.arrow" not in mechanics
-    vector_helpers = (ROOT / "visual/vectors.py").read_text()
-    assert "scale_mode:o.scale_mode||'schematic'" in vector_helpers
+    vector_helpers = (Path(__file__).parents[1] / "frontend/src/vectors.js").read_text()
+    assert 'scale_mode: o.scale_mode || "schematic"' in vector_helpers
 
 
 @pytest.mark.parametrize("theme", (LIGHT_THEME, DARK_THEME), ids=("light", "dark"))
@@ -134,7 +134,7 @@ def test_every_player_serializes_motion_contrast_large_text_and_both_themes():
         '"theme":',
     ):
         assert token in document
-    assert "classList.toggle('large-text'" in PLAYER_JS
+    assert 'classList.toggle("large-text"' in PLAYER_JS
     assert "body.large-text" in PLAYER_CSS
     assert "min-height: 44px" in PLAYER_CSS
 

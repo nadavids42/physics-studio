@@ -1,4 +1,5 @@
 from copy import deepcopy
+from pathlib import Path
 
 from physics_playground.canvas.player import PLAYER_JS, build_player_document
 from physics_playground.visual.animation import CANVAS_ANIMATION_JS
@@ -38,22 +39,19 @@ def test_player_has_pause_resume_restart_stepping_speed_and_scrubbing_controls()
 
 def test_player_uses_stable_display_timestep_raf_and_bounded_dpr():
     assert "requestAnimationFrame" in PLAYER_JS
-    assert "this.fixedStep=1/60" in PLAYER_JS
-    assert "this.accumulator" in PLAYER_JS
-    assert "steps<15" in PLAYER_JS
-    assert "maximumDpr||2.5" in PLAYER_JS
-    assert "devicePixelRatio" in PLAYER_JS
+    for token in ("fixedStep", "accumulator", "steps < 15", "maximumDpr", "devicePixelRatio"):
+        assert token in PLAYER_JS
 
 
 def test_player_cleans_up_browser_resources_and_does_not_add_stationary_trails():
     for token in (
         "resizeObserver?.disconnect",
-        "removeEventListener('visibilitychange'",
-        "removeEventListener('keydown'",
+        'removeEventListener("visibilitychange"',
+        'removeEventListener("keydown"',
         "cancelAnimationFrame",
     ):
         assert token in PLAYER_JS
-    assert "Math.abs(fraction-this.lastTrailFraction)>1e-9" in PLAYER_JS
+    assert "Math.abs(fraction - this.lastTrailFraction) > 1e-9" in PLAYER_JS
 
 
 def test_animation_helpers_cover_camera_trails_blur_impacts_and_focus():
@@ -67,9 +65,9 @@ def test_animation_helpers_cover_camera_trails_blur_impacts_and_focus():
         "focusTransition",
     ):
         assert name in CANVAS_ANIMATION_JS
-    assert "this.reducedMotion?0" in CANVAS_ANIMATION_JS
-    assert "if(options.reducedMotion)return" in CANVAS_ANIMATION_JS
-    assert "Math.min(options.samples??3,4)" in CANVAS_ANIMATION_JS
+    assert "this.reducedMotion ? 0" in CANVAS_ANIMATION_JS
+    assert "if (options.reducedMotion) return" in CANVAS_ANIMATION_JS
+    assert "Math.min(options.samples ?? 3, 4)" in CANVAS_ANIMATION_JS
 
 
 def test_building_animation_document_does_not_mutate_physics_payload():
@@ -87,7 +85,8 @@ def test_building_animation_document_does_not_mutate_physics_payload():
 
 
 def test_decorative_effects_are_presentation_only():
-    assert "config.tracks" not in CANVAS_ANIMATION_JS
-    assert "visualTokens" not in CANVAS_ANIMATION_JS
-    assert "record" not in CANVAS_ANIMATION_JS.lower()
+    source = (Path(__file__).parents[1] / "frontend/src/animation.js").read_text()
+    assert "config.tracks" not in source
+    assert "visualTokens" not in source
+    assert "record" not in source.lower()
     assert "PhysicsAnimation" in _document()

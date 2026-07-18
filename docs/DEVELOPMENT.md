@@ -34,8 +34,8 @@ ruff format .
 ruff check --fix .
 ```
 
-Ruff formats Python syntax but does not reformat JavaScript stored inside Python string
-literals. Changes to embedded JavaScript still require focused player and visual-system tests.
+Ruff formats Python syntax. Shared browser runtime code is formatted separately with Prettier;
+remaining simulation-specific inline scene adapters require focused player and visual-system tests.
 
 To run the optional local commit hooks:
 
