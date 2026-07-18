@@ -25,6 +25,7 @@ therefore the smallest safe loading strategy during this transition.
 ```text
 frontend/
   src/                 authored ES modules
+  src/scenes/          shared and subject-colocated scene adapters
   test/                executable Vitest tests
   scripts/build.mjs    deterministic esbuild entrypoint
   eslint.config.js     JavaScript correctness rules
@@ -78,8 +79,8 @@ interpolation semantics.
 3. **Asset decomposition — optional.** Split the large scientific asset module by scientific domain
    only when ownership or bundle measurements justify it. Preserve `PhysicsAssets` meanwhile.
 5. **Scene adapters.** Move simulation-specific scene strings from slice `scene.py` files into
-   subject/simulation frontend modules. Python scene modules should then serialize data and request
-   named built assets rather than contain editable JavaScript.
+   subject/simulation frontend modules. **Complete:** Python scene modules serialize data and load
+   named built assets rather than containing editable JavaScript.
 6. **Assembly consolidation.** Replace transitional string concatenation with a versioned player
    bundle plus explicit scene registration. Keep Streamlit iframe embedding and progressive static
    fallbacks.
@@ -98,3 +99,29 @@ interpolation semantics.
 This plan deliberately avoids React, a game engine, a development server dependency, or a complex
 asset manifest. Those can be reconsidered only if later scene composition demonstrates a concrete
 need.
+
+## Visual regression baselines
+
+The intentional browser set contains five cases covering mechanics, oscillation, optics, both
+themes, high contrast, reduced motion, and a narrow viewport. Chromium renders each case and Pillow
+compares a perceptual difference hash plus mean color. This tolerates minor antialiasing differences
+without accepting meaningful composition or theme regressions; it does not create a large set of
+pixel-perfect screenshots.
+
+To inspect a visual change, run:
+
+```bash
+CHROMIUM_BIN=/path/to/chromium pytest tests/test_visual_screenshots.py
+```
+
+If the change is intentional, render and inspect every case, then update the compact baseline:
+
+```bash
+PHYSICS_UPDATE_VISUAL_BASELINES=1 CHROMIUM_BIN=/path/to/chromium \
+  pytest tests/test_visual_screenshots.py
+git diff -- tests/visual_baselines.json
+CHROMIUM_BIN=/path/to/chromium pytest tests/test_visual_screenshots.py
+```
+
+Never update the baseline merely to make CI green. The dedicated CI job installs Chromium and runs
+the visual set together with the Streamlit `AppTest` smoke coverage on every pull request and push.

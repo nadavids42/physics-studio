@@ -30,11 +30,12 @@ dependencies = [
 dev = [
     "build>=1.2",
     "mypy>=1.11",
+    "pillow>=10.0",
     "pre-commit>=3.8",
     "pytest>=8.0",
     "ruff==0.9.10",
 ]
-test = ["pytest>=8.0"]
+test = ["pillow>=10.0", "pytest>=8.0"]
 
 [project.urls]
 Documentation = "https://github.com/nadavids42/physics-studio#readme"

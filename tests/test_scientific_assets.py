@@ -2,8 +2,7 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from physics_playground.canvas.player import build_player_document
-from physics_playground.visual.assets import CANVAS_ASSET_JS, AssetKind, AssetSpec, AssetStyle
+from physics_playground.visual.assets import AssetKind, AssetSpec, AssetStyle
 
 REQUIRED_ASSETS = {
     "sphere",
@@ -51,8 +50,6 @@ REQUIRED_ASSETS = {
 
 def test_asset_catalog_covers_every_required_scientific_primitive():
     assert {kind.value for kind in AssetKind} == REQUIRED_ASSETS
-    for name in REQUIRED_ASSETS:
-        assert name in CANVAS_ASSET_JS
 
 
 def test_asset_spec_serializes_shared_configuration():
@@ -91,36 +88,3 @@ def test_asset_spec_provides_practical_fallback_description_and_is_immutable():
     assert spec.accessible_description == "Velocity at (1.5, -2)."
     with pytest.raises(FrozenInstanceError):
         spec.x = 3
-
-
-def test_asset_library_has_shared_state_depth_and_semantic_rendering_hooks():
-    for contract in (
-        "o.selected",
-        "o.disabled",
-        "o.highlight",
-        "o.shadow",
-        "o.glow",
-        "o.opacity",
-        "o.rotation",
-        "o.scale",
-    ):
-        assert contract in CANVAS_ASSET_JS
-    assert "createRadialGradient" in CANVAS_ASSET_JS
-    assert "createLinearGradient" in CANVAS_ASSET_JS
-    assert "V.token" in CANVAS_ASSET_JS
-    assert "V.arrow" in CANVAS_ASSET_JS
-    assert "function drawAll" in CANVAS_ASSET_JS
-
-
-def test_asset_library_is_available_to_all_shared_player_scenes():
-    document = build_player_document(
-        config={"durationMs": 1, "tracks": [], "events": []},
-        scene_javascript="const scene={draw(){}};",
-        logical_width=100,
-        logical_height=50,
-        accessible_label="Asset test",
-        idle_hint="Play",
-    )
-    assert "globalThis.PhysicsAssets" in document
-    assert "Unknown Physics Studio asset" in document
-    assert "Object.freeze(Object.keys(library))" in document

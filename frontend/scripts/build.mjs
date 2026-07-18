@@ -11,6 +11,26 @@ const targets = [
   ["animation.js", "physics-animation.js"],
   ["experience.js", "physics-experience.js"],
   ["player-runtime.js", "player-runtime.js"],
+  ["scenes/shared/vector-diagram.js", "scene-vector-diagram.js"],
+  ["scenes/shared/ray-diagram.js", "scene-ray-diagram.js"],
+  ["scenes/shared/wavefronts.js", "scene-wavefronts.js"],
+  ["scenes/shared/scalar-field.js", "scene-scalar-field.js"],
+  ["scenes/shared/gas-container.js", "scene-gas-container.js"],
+  ["scenes/shared/diffusion-player.js", "scene-diffusion-player.js"],
+  ["scenes/shared/vector-field.js", "scene-vector-field.js"],
+  ["scenes/shared/fluid-container.js", "scene-fluid-container.js"],
+  ["scenes/mechanics/shared.js", "scene-mechanics.js"],
+  ["scenes/mechanics/bumper-cars.js", "scene-bumper-cars.js"],
+  [
+    "scenes/mechanics/bumper-cars-comparison.js",
+    "scene-bumper-cars-comparison.js",
+  ],
+  ["scenes/mechanics/orbital-gravity.js", "scene-orbital-gravity.js"],
+  ["scenes/mechanics/earth-tunnel.js", "scene-earth-tunnel.js"],
+  ["scenes/mechanics/cannonball.js", "scene-cannonball.js"],
+  ["scenes/waves/pendulum.js", "scene-pendulum.js"],
+  ["scenes/waves/double-pendulum.js", "scene-double-pendulum.js"],
+  ["scenes/waves/boing.js", "scene-boing.js"],
 ];
 
 async function generate(entry) {

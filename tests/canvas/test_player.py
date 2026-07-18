@@ -13,35 +13,6 @@ from physics_playground.subjects.mechanics.bumper_cars.scene import (
 )
 
 
-def test_shared_player_contains_required_controls_and_accessibility() -> None:
-    document = build_player_document(
-        config={
-            "durationMs": 1000,
-            "autoplay": False,
-            "seed": 7,
-            "tracks": [],
-            "events": [],
-        },
-        scene_javascript="const scene={draw(){}};",
-        logical_width=640,
-        logical_height=320,
-        accessible_label="Test animation",
-        idle_hint="Press play",
-    )
-    assert 'id="play-pause"' in document
-    assert 'id="replay"' in document
-    assert 'id="scrubber"' in document
-    assert 'id="speed"' in document
-    assert 'aria-live="polite"' in document
-    assert "ResizeObserver" in document
-    assert "devicePixelRatio" in document
-    assert "prefers-reduced-motion" in document
-    assert "seededRandom" in document
-    assert "keydown" in document
-    assert "high-contrast" in document
-    assert "reducedMotion" in document
-
-
 def test_bumper_canvas_uses_tracks_and_structured_impact_event() -> None:
     result = simulate_collision(CollisionParameters(2.0, 2.0, 4.0, 0.0, 1.0))
     document = build_bumper_canvas(

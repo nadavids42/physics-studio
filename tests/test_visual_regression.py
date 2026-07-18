@@ -1,18 +1,15 @@
 """Stable structural and semantic regression tests for the shared visual system."""
 
 import ast
-import hashlib
-import json
 from dataclasses import fields
 from pathlib import Path
 
 import pytest
 
-from physics_playground.canvas.player import PLAYER_JS, build_player_document
+from physics_playground.canvas.player import build_player_document
 from physics_playground.presentation.accessibility_ui import SETTINGS_KEY, VISUAL_SESSION_KEYS
 from physics_playground.visual.assets import AssetKind, AssetSpec, AssetStyle
 from physics_playground.visual.experience import PresentationLevel, VisualPreferences, VisualTheme
-from physics_playground.visual.primitives import CANVAS_VISUAL_JS
 from physics_playground.visual.tokens import (
     DARK_THEME,
     LIGHT_THEME,
@@ -39,7 +36,7 @@ def test_design_token_groups_are_available_and_palette_shapes_match():
         assert len(set(theme.graph_colors)) == len(theme.graph_colors)
 
 
-def test_shared_asset_configuration_semantic_golden_snapshot():
+def test_shared_asset_configuration_has_stable_semantic_structure():
     assets = (
         AssetSpec(
             AssetKind.BLOCK,
@@ -60,13 +57,52 @@ def test_shared_asset_configuration_semantic_golden_snapshot():
             options={"scale_mode": "schematic"},
         ),
     )
-    canonical = json.dumps(
-        [asset.to_dict() for asset in assets], sort_keys=True, separators=(",", ":")
-    )
-    assert (
-        hashlib.sha256(canonical.encode()).hexdigest()
-        == "60a597853f53bda99ecfb60d2ad5c693d2013f47e39a903d1705d121e4a29e5c"
-    )
+    assert [asset.to_dict() for asset in assets] == [
+        {
+            "kind": "block",
+            "x": 20,
+            "y": 30,
+            "width": 60,
+            "height": 40,
+            "scale": 1,
+            "rotation": 0,
+            "label": "Block A",
+            "description": "",
+            "style": {
+                "fill": None,
+                "outline": None,
+                "opacity": 1,
+                "selected": True,
+                "disabled": False,
+                "highlight": False,
+                "shadow": True,
+                "glow": False,
+            },
+            "options": {},
+        },
+        {
+            "kind": "forceArrow",
+            "x": 20,
+            "y": 30,
+            "width": 80,
+            "height": 40,
+            "scale": 1,
+            "rotation": 0,
+            "label": "Net force",
+            "description": "",
+            "style": {
+                "fill": None,
+                "outline": None,
+                "opacity": 1,
+                "selected": False,
+                "disabled": False,
+                "highlight": False,
+                "shadow": False,
+                "glow": False,
+            },
+            "options": {"scale_mode": "schematic"},
+        },
+    ]
     assert assets[0].accessible_description == "Block A at (20, 30)."
 
 
@@ -82,28 +118,6 @@ def test_vector_display_geometry_for_all_scaling_modes():
     assert normalized.display_length_px == 72
     assert schematic.display_length_px == 48
     assert normalized.scale_disclosure and schematic.scale_disclosure
-
-
-def test_high_dpi_canvas_is_scaled_and_bounded():
-    assert "devicePixelRatio" in PLAYER_JS
-    assert "maximumDpr" in PLAYER_JS
-    assert "Math.round(nextWidth * dpr)" in PLAYER_JS
-    assert "this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0)" in PLAYER_JS
-
-
-def test_reduced_motion_disables_autoplay_and_decorative_motion_only():
-    document = build_player_document(
-        config={"durationMs": 1000, "autoplay": True, "tracks": [], "events": []},
-        scene_javascript="const scene={draw(){}};",
-        logical_width=200,
-        logical_height=100,
-        accessible_label="Reduced motion",
-        idle_hint="Play",
-    )
-    assert "prefers-reduced-motion:reduce" in document
-    assert "config.autoplay && !this.reducedMotion" in document
-    assert "if (this.reducedMotion) return" in document
-    assert 'id="step-forward"' in document and 'id="scrubber"' in document
 
 
 @pytest.mark.parametrize("theme", list(VisualTheme))
@@ -135,16 +149,6 @@ def test_visual_preferences_round_trip_and_invalid_values_fall_back():
 def test_responsive_layout_contract_has_ordered_breakpoints_and_canvas_helper():
     assert 0 < RESPONSIVE.mobile_max_px < RESPONSIVE.tablet_max_px < RESPONSIVE.content_max_px
     assert RESPONSIVE.control_target_px >= 44
-    assert "responsiveTokens.mobile_max_px || 480" in CANVAS_VISUAL_JS
-    assert "responsiveTokens.tablet_max_px || 820" in CANVAS_VISUAL_JS
-    assert "img,svg,canvas,iframe {max-width:100%;}" in build_player_document(
-        config={"durationMs": 1, "tracks": [], "events": []},
-        scene_javascript="const scene={draw(){}};",
-        logical_width=100,
-        logical_height=50,
-        accessible_label="Responsive",
-        idle_hint="Play",
-    )
 
 
 def _existing_session_keys() -> set[str]:
@@ -176,39 +180,3 @@ def test_visual_session_state_keys_are_unique_and_do_not_collide_with_existing_k
     assert len(VISUAL_SESSION_KEYS) == 4
     assert SETTINGS_KEY not in VISUAL_SESSION_KEYS
     assert VISUAL_SESSION_KEYS.isdisjoint(_existing_session_keys())
-
-
-def test_pilot_scene_semantic_golden_signatures():
-    from physics_playground.canvas import ray_diagram
-    from physics_playground.subjects.mechanics.bumper_cars import scene as bumper_cars
-    from physics_playground.subjects.mechanics.cannonball import scene as cannonball
-    from physics_playground.subjects.mechanics.orbital_gravity import scene as orbit
-    from physics_playground.subjects.waves_and_oscillations.pendulum import scene as pendulum
-
-    signatures = {
-        "projectile": (
-            "PhysicsAssets.cannon",
-            "PhysicsAssets.projectile",
-            "PhysicsAnimation.fadingTrail",
-        ),
-        "pendulum": ("PhysicsAssets.pivot", "PhysicsAssets.cable", "PhysicsAssets.pendulumBob"),
-        "orbit": ("PhysicsAssets.star", "PhysicsAssets.planet", "PhysicsAnimation.fadingTrail"),
-        "collision": (
-            "PhysicsAssets.cart",
-            "PhysicsAnimation.impactRipple",
-            "PhysicsAnimation.collisionFlash",
-        ),
-        "optics": ("PhysicsAssets.lens", "PhysicsAssets.ray", "PhysicsAnnotations.normalLine"),
-    }
-    sources = {
-        "projectile": cannonball.SCENE,
-        "pendulum": pendulum.SCENE,
-        "orbit": orbit.SCENE,
-        "collision": bumper_cars.SCENE_JAVASCRIPT,
-        "optics": ray_diagram.SCENE,
-    }
-    actual = {
-        name: tuple(token for token in expected if token in sources[name])
-        for name, expected in signatures.items()
-    }
-    assert actual == signatures

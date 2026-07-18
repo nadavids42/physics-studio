@@ -35,3 +35,34 @@ def test_shared_runtime_and_compatibility_assets_are_packaged() -> None:
         "physics-experience.js",
     ):
         assert load_javascript_asset(name)
+
+
+def test_every_extracted_scene_asset_is_packaged() -> None:
+    scene_assets = (
+        "scene-boing.js",
+        "scene-bumper-cars-comparison.js",
+        "scene-bumper-cars.js",
+        "scene-cannonball.js",
+        "scene-diffusion-player.js",
+        "scene-double-pendulum.js",
+        "scene-earth-tunnel.js",
+        "scene-fluid-container.js",
+        "scene-gas-container.js",
+        "scene-mechanics.js",
+        "scene-orbital-gravity.js",
+        "scene-pendulum.js",
+        "scene-ray-diagram.js",
+        "scene-scalar-field.js",
+        "scene-vector-diagram.js",
+        "scene-vector-field.js",
+        "scene-wavefronts.js",
+    )
+    for name in scene_assets:
+        assert "globalThis.scene" in load_javascript_asset(name)
+
+
+def test_python_contains_no_editable_scene_javascript() -> None:
+    root = Path("physics_playground")
+    sources = "\n".join(path.read_text(encoding="utf-8") for path in root.rglob("*.py"))
+    assert "const scene=" not in sources
+    assert "const scene =" not in sources

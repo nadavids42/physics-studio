@@ -1,32 +1,14 @@
 """Bumper Cars scene adapter for the shared browser-side animation player."""
 
 from physics_playground.canvas.player import build_player_document
+from physics_playground.frontend_assets import load_javascript_asset
 from physics_playground.serialization import to_jsonable
 from physics_playground.subjects.mechanics.bumper_cars.physics import CollisionResult
 
 CANVAS_W, CANVAS_H = 680, 260
 PLAYER_HEIGHT = 350
 
-SCENE_JAVASCRIPT = r"""
-function drawBackground(ctx,t,frame){const W=t.width,H=t.height,ground=H-60,mode=PhysicsExperience.context(ctx,frame,'collisionTrack');if(!mode.environment){ctx.fillStyle=PhysicsVisuals.token(frame,'colors','surface_muted','#EAF0F6');ctx.fillRect(0,ground,W,H-ground)}ctx.strokeStyle='rgba(255,255,255,.6)';
-  ctx.lineWidth=3;ctx.setLineDash([14,10]);ctx.beginPath();ctx.moveTo(0,ground+30);ctx.lineTo(W,ground+30);ctx.stroke();ctx.setLineDash([]);}
-function drawCar(ctx,frame,x,color,label,ground,trail){PhysicsAnimation.fadingTrail(ctx,trail,p=>({x:p.px,y:ground-15}),{color,width:5,opacity:.22});PhysicsAssets.cart(ctx,frame,{x,y:ground-24,width:52,height:28,fill:color,highlight:true,shadow:true,label});}
-const scene={
-  onEvent(event,player){if(event.type==='particle_burst'){const a=sample(player.config.tracks[0].x,event.fraction);
-    const b=sample(player.config.tracks[1].x,event.fraction),t=player.coordinates();
-    player.particles.burst((t.x(a)+t.x(b))/2,t.height-80,event.count,event.colors);}},
-  draw(ctx,frame){const t=frame.transform,ground=t.height-60;drawBackground(ctx,t,frame);
-    const a=frame.tracks.car_a,b=frame.tracks.car_b,ax=t.x(a.x),bx=t.x(b.x);
-    const trailA=frame.trails.get('car_a').map(point=>({px:t.x(point.x)}));
-    const trailB=frame.trails.get('car_b').map(point=>({px:t.x(point.x)}));
-    const impact=frame.config.impactFraction,since=Math.max(0,frame.fraction-impact)*frame.config.durationMs/1000;
-    if(frame.config.sticky&&frame.fraction>=impact&&frame.state!=='idle'){ctx.strokeStyle=PhysicsVisuals.token(frame,'colors','uncertainty','#64748B');ctx.lineWidth=6;
-      ctx.beginPath();ctx.moveTo(ax,ground-19);ctx.lineTo(bx,ground-19);ctx.stroke();}
-    drawCar(ctx,frame,ax,PhysicsVisuals.token(frame,'colors','graph_1','#0072B2'),'A',ground,trailA);
-    drawCar(ctx,frame,bx,PhysicsVisuals.token(frame,'colors','graph_2','#D55E00'),'B',ground,trailB);
-    if(frame.fraction>=impact&&since<.7){const x=(ax+bx)/2,y=ground-25,p=Math.min(1,since/.7);PhysicsAnimation.impactRipple(ctx,x,y,p,{reducedMotion:frame.reducedMotion,color:PhysicsVisuals.token(frame,'colors','warning','#9A5B00')});PhysicsAnimation.collisionFlash(ctx,x,y,p,{reducedMotion:frame.reducedMotion,config:frame.config});}}
-};
-"""
+SCENE_JAVASCRIPT = load_javascript_asset("scene-bumper-cars.js")
 
 
 def build_bumper_canvas(
@@ -79,20 +61,7 @@ def build_bumper_canvas(
     )
 
 
-COMPARISON_SCENE_JAVASCRIPT = r"""
-function comparisonBackground(ctx,t,frame){PhysicsExperience.context(ctx,frame,'collisionTrack');
-  ctx.strokeStyle=PhysicsVisuals.token(frame,'colors','border','#B8C5D1');ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,t.height/2);ctx.lineTo(t.width,t.height/2);ctx.stroke();
-  ctx.fillStyle=PhysicsVisuals.token(frame,'colors','text','#152536');PhysicsVisuals.applyText(ctx,frame,'label');ctx.fillText('Run A',12,22);ctx.fillText('Run B',12,t.height/2+22);}
-function comparisonCar(ctx,frame,x,y,color,label){PhysicsAssets.cart(ctx,frame,{x,y,width:46,height:25,fill:color,highlight:true,shadow:true,label});}
-const scene={onEvent(event,player){if(event.type==='particle_burst'){const t=player.coordinates();
-    const a=sample(player.config.tracks[event.trackA].x,event.fraction),b=sample(player.config.tracks[event.trackB].x,event.fraction);
-    const lane=event.lane==='a'?t.height*.27:t.height*.75;player.particles.burst((t.x(a)+t.x(b))/2,lane,event.count,event.colors);}},
-  draw(ctx,frame){const t=frame.transform;comparisonBackground(ctx,t,frame);const tracks=frame.tracks,c1=PhysicsVisuals.token(frame,'colors','graph_1','#0072B2'),c2=PhysicsVisuals.token(frame,'colors','graph_2','#D55E00');
-    comparisonCar(ctx,frame,t.x(tracks.run_a_car_a.x),t.height*.27,c1,'A');
-    comparisonCar(ctx,frame,t.x(tracks.run_a_car_b.x),t.height*.27,c2,'B');
-    comparisonCar(ctx,frame,t.x(tracks.run_b_car_a.x),t.height*.75,c1,'A');
-    comparisonCar(ctx,frame,t.x(tracks.run_b_car_b.x),t.height*.75,c2,'B');}};
-"""
+COMPARISON_SCENE_JAVASCRIPT = load_javascript_asset("scene-bumper-cars-comparison.js")
 
 
 def build_bumper_comparison_canvas(
