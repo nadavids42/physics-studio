@@ -13,7 +13,7 @@ from typing import Any, Mapping
 class AssetKind(StrEnum):
     SPHERE="sphere"; MASS="mass"; BLOCK="block"; CART="cart"; PENDULUM_BOB="pendulumBob"
     PIVOT="pivot"; CABLE="cable"; ROD="rod"; SPRING="spring"; RAMP="ramp"; PULLEY="pulley"
-    LEVER="lever"; WHEEL="wheel"; PLANET="planet"; MOON="moon"; STAR="star"; SATELLITE="satellite"
+    LEVER="lever"; TRACK="track"; WHEEL="wheel"; PLANET="planet"; MOON="moon"; STAR="star"; SATELLITE="satellite"
     PROJECTILE="projectile"; CANNON="cannon"; FLUID_CONTAINER="fluidContainer"; FLUID_SURFACE="fluidSurface"
     LENS="lens"; MIRROR="mirror"; RAY="ray"; WAVEFRONT="wavefront"; CHARGE="charge"
     FIELD_LINE="fieldLine"; FORCE_ARROW="forceArrow"; VELOCITY_ARROW="velocityArrow"
@@ -83,6 +83,8 @@ const PhysicsAssets=(()=>{
     ctx.beginPath();if(o.descending){ctx.moveTo(-w/2,-h/2);ctx.lineTo(-w/2,h/2);ctx.lineTo(w/2,h/2)}else{ctx.moveTo(-w/2,h/2);ctx.lineTo(w/2,h/2);ctx.lineTo(w/2,-h/2)}ctx.closePath();ctx.fill();ctx.stroke();finish(ctx,s,o)}
   function pulley(ctx,s,o={}){wheel(ctx,s,{...o,width:o.width||48,height:o.height||48,fill:o.fill||V.token(s,'colors','surface_muted','#EAF0F6')})}
   function lever(ctx,s,o={}){rod(ctx,s,{...o,x:o.x-(o.width||160)/2,y:o.y,end:point(o.width||160,0),lineWidth:o.height||9,label:''});pivot(ctx,s,{...o,width:32,height:28,label:'',shadow:false});if(o.label)finish(ctx,s,{...o,shadow:false})}
+  function track(ctx,s,o={}){const pts=o.points||[],color=o.outline||V.token(s,'colors','text','#152536');if(pts.length<2)return;ctx.save();ctx.strokeStyle=color;ctx.globalAlpha=o.opacity??1;ctx.lineWidth=o.lineWidth||5;ctx.lineCap='round';ctx.lineJoin='round';if(o.dashed)ctx.setLineDash([8,7]);ctx.beginPath();pts.forEach((q,i)=>i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.stroke();
+    if(!o.dashed&&o.ties!==false){ctx.lineWidth=1.5;ctx.globalAlpha*=.55;for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],length=Math.hypot(b.x-a.x,b.y-a.y),count=Math.max(1,Math.floor(length/24)),ux=(b.x-a.x)/length,uy=(b.y-a.y)/length,nx=-uy*7,ny=ux*7;for(let j=0;j<=count;j++){const q={x:a.x+(b.x-a.x)*j/count,y:a.y+(b.y-a.y)*j/count};ctx.beginPath();ctx.moveTo(q.x-nx,q.y-ny);ctx.lineTo(q.x+nx,q.y+ny);ctx.stroke()}}}ctx.restore()}
   function planet(ctx,s,o={}){body(ctx,s,{...o,radius:o.radius||Math.min(o.width||72,o.height||72)/2},'electric_field')}
   function moon(ctx,s,o={}){body(ctx,s,{...o,radius:o.radius||Math.min(o.width||34,o.height||34)/2,highlight:false},'uncertainty')}
   function star(ctx,s,o={}){const r=o.radius||Math.min(o.width||70,o.height||70)/2,c=colors(s,o,'energy');setup(ctx,s,{...o,glow:o.glow!==false});ctx.fillStyle=c.fill;ctx.strokeStyle=c.outline;ctx.beginPath();
@@ -122,7 +124,7 @@ const PhysicsAssets=(()=>{
     ctx.fillStyle=o.fill||V.token(s,'colors','surface_raised','#FFF');ctx.strokeStyle=o.outline||V.token(s,'colors','border','#B8C5D1');ctx.lineWidth=1.5;ctx.beginPath();ctx.roundRect(x,y,w,h,12);ctx.fill();ctx.stroke();ctx.shadowColor='transparent';
     if(o.target){ctx.beginPath();ctx.moveTo(x+w*.2,y+h);ctx.lineTo(o.target.x,o.target.y);ctx.stroke()}V.applyText(ctx,s,'annotation');ctx.fillStyle=V.token(s,'colors','text','#152536');
     const lines=String(o.text||o.label||'').split('\n');lines.slice(0,3).forEach((line,i)=>ctx.fillText(line,x+12,y+22+i*17));ctx.restore()}
-  const library={sphere,mass,block,cart,pendulumBob,pivot,cable,rod,spring,ramp,pulley,lever,wheel,planet,moon,star,satellite,projectile,cannon,
+  const library={sphere,mass,block,cart,pendulumBob,pivot,cable,rod,spring,ramp,pulley,lever,track,wheel,planet,moon,star,satellite,projectile,cannon,
     fluidContainer,fluidSurface,lens,mirror,ray,wavefront,charge,fieldLine,forceArrow,velocityArrow,accelerationArrow,torqueArc,angleMarker,ruler,grid,trail,collisionFlash,callout};
   function draw(ctx,s,spec){const fn=library[spec.kind];if(!fn)throw new Error(`Unknown Physics Studio asset: ${spec.kind}`);fn(ctx,s,{...spec,...(spec.style||{}),...(spec.options||{})})}
   function drawAll(ctx,s,specs){for(const spec of specs||[])draw(ctx,s,spec)}
