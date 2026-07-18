@@ -1,14 +1,18 @@
 from physics_playground.contracts import MissionEvaluation
 
-from .physics import GasLawScenario
+from .physics import GasLawResult, GasLawScenario
 
 
-def evaluate(r, comparison=False):
+def evaluate(result: GasLawResult, comparison: bool = False) -> tuple[MissionEvaluation, ...]:
     return (
-        MissionEvaluation("gas_boyle", r.scenario is GasLawScenario.BOYLE, "Ran Boyle's law"),
-        MissionEvaluation("gas_charles", r.scenario is GasLawScenario.CHARLES, "Ran Charles's law"),
+        MissionEvaluation("gas_boyle", result.scenario is GasLawScenario.BOYLE, "Ran Boyle's law"),
         MissionEvaluation(
-            "gas_gay_lussac", r.scenario is GasLawScenario.GAY_LUSSAC, "Ran Gay-Lussac's law"
+            "gas_charles", result.scenario is GasLawScenario.CHARLES, "Ran Charles's law"
+        ),
+        MissionEvaluation(
+            "gas_gay_lussac",
+            result.scenario is GasLawScenario.GAY_LUSSAC,
+            "Ran Gay-Lussac's law",
         ),
         MissionEvaluation("gas_compare", comparison, "Compared gas states"),
     )

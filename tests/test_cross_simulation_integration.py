@@ -97,13 +97,15 @@ def test_pages_expose_all_modes_notebook_assumptions_and_safe_keys() -> None:
         assert spec and spec.origin
         source = Path(spec.origin).read_text()
         assert all(f"LearningMode.{name}" in source for name in mode_names)
-        assert "assumptions_panel" in source
-        assert "process_run" in source
-        assert "record(" in source or "add_trial(" in source
+        assert "assumptions_panel" in source or "render_assumptions_and_limitations" in source
+        assert "process_run" in source or "RUNTIME.process_missions" in source
+        assert "record(" in source or "add_trial(" in source or "RUNTIME.record_trial" in source
         marker = 'mode_navigation(key="'
         if marker in source:
             start = source.index(marker) + len(marker)
             key = source[start : source.index('"', start)]
+        elif "RUNTIME.select_mode" in source:
+            key = f"{manifest.metadata.id}.runtime_mode"
         else:
             assert "mode_navigation(key=state_key(" in source
             key = f"{manifest.metadata.id}.namespaced_mode"

@@ -17,6 +17,7 @@ from physics_playground.simulation_plugin_validation import (
     validate_simulation_plugin,
     validate_simulation_plugins,
 )
+from physics_playground.subjects.fluids_and_matter.gas_laws.plugin import GAS_LAWS_PLUGIN
 from physics_playground.subjects.mechanics.cannonball.metadata import SIMULATION
 from physics_playground.subjects.mechanics.cannonball.physics import (
     ProjectileParameters,
@@ -113,3 +114,7 @@ def test_renderer_must_be_available() -> None:
         validate_simulation_plugin(
             plugin(presentation=PresentationAdapter(PAGE, "physics_playground.missing.render"))
         )
+
+
+def test_gas_laws_is_the_first_production_plugin() -> None:
+    validate_simulation_plugin(GAS_LAWS_PLUGIN)
