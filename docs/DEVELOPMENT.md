@@ -84,3 +84,9 @@ npm run check
 Edit JavaScript in `frontend/src`, not the built files under `physics_playground/static/js`. Run
 `npm run build` after source changes and commit the updated artifact. See
 `docs/FRONTEND_EXTRACTION.md` for the staged extraction plan.
+
+## Educational content
+
+Typed lessons live under `physics_playground/education` and reference simulations by validated
+registry ID without importing Streamlit pages. See `docs/LESSON_AUTHORING.md` for the lesson
+structure, activity sequencing rules, worked examples, guided derivations, and validation workflow.
