@@ -216,10 +216,12 @@ def build_player_document(
 
     config={**config,"visualThemes":{"light":theme_payload(LIGHT_THEME),"dark":theme_payload(DARK_THEME)},"theme":config.get("theme","auto")}
     try:
-        from physics_playground.presentation.accessibility import get_accessibility_settings,get_presentation_level
+        from physics_playground.presentation.accessibility import get_accessibility_settings,get_visual_preferences
         settings=get_accessibility_settings()
+        preferences=get_visual_preferences()
         config={**config,"reducedMotion":settings.reduced_motion,"highContrast":settings.high_contrast,
-                "presentationLevel":config.get("presentationLevel",get_presentation_level().value)}
+                "presentationLevel":config.get("presentationLevel",preferences.presentation_level.value),
+                "theme":config.get("theme",preferences.theme.value)}
     except Exception:
         config={**config,"reducedMotion":False,"highContrast":False,
                 "presentationLevel":config.get("presentationLevel",DEFAULT_PRESENTATION_LEVEL.value)}

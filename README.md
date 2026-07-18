@@ -2,6 +2,8 @@
 
 A Streamlit playground containing twenty-two kid-friendly physics simulations and expert-mode extensions.
 
+The shared scientific illustration system, asset API, presentation levels, accessibility rules, and remaining-simulation migration guide are documented in [docs/VISUAL_SYSTEM.md](docs/VISUAL_SYSTEM.md).
+
 Future subject-area simulations follow the contracts, package layout, and acceptance checklist in `EXPANSION_ARCHITECTURE.md`. They remain outside the registry until their `ExpansionDefinition` passes shared validation.
 
 ## Mechanics foundations
@@ -60,12 +62,14 @@ user presses the run button.
 
 ## Shared browser animation player
 
-`physics_playground/canvas/player.py` owns playback, pause, replay, scrubbing,
-playback rate, responsive and high-DPI sizing, reduced-motion behavior,
-keyboard controls, trails, fraction-based events, seeded particles, completion
-messages, and accessible status announcements. Bumper Cars supplies only its
-typed trajectory payload and scene drawing adapter. The other six simulations
-continue using the legacy canvas helper until their individual migrations.
+`physics_playground/canvas/player.py` owns playback, pause, replay, frame
+stepping, scrubbing, playback rate, responsive and high-DPI sizing,
+reduced-motion behavior, keyboard controls, trails, fraction-based events,
+seeded particles, completion messages, and accessible status announcements.
+Simulation adapters supply typed trajectory payloads and compose scenes from
+the shared visual assets. Projectile, Pendulum, Orbit, Bumper Cars, and Thin
+Lenses form the initial polished pilot set; remaining adapters can migrate
+incrementally without changing their physics models or public entrypoints.
 
 ## Four-mode learning experience
 

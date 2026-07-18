@@ -37,6 +37,9 @@ class VectorSpec:
     @property
     def magnitude(self)->float:return math.hypot(self.dx,self.dy)
     @property
+    def display_length_px(self)->float:
+        return self.magnitude*self.pixels_per_unit if self.scale_mode is VectorScaleMode.PHYSICAL else self.fixed_length_px
+    @property
     def scale_disclosure(self)->str:
         return self.disclosure or DEFAULT_DISCLOSURES.get(self.scale_mode,"")
     def to_dict(self):

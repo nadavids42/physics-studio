@@ -6,11 +6,15 @@ import matplotlib as mpl
 from physics_playground.accessibility import AccessibilitySettings
 from physics_playground.visual.css import streamlit_css
 from physics_playground.visual.tokens import LIGHT_THEME
-from physics_playground.visual.experience import DEFAULT_PRESENTATION_LEVEL,PresentationLevel
+from physics_playground.visual.experience import DEFAULT_PRESENTATION_LEVEL,PresentationLevel,VisualPreferences,VisualTheme
 from physics_playground.presentation.chart_system import style_figure
 
 SETTINGS_KEY="accessibility_settings"
 PRESENTATION_LEVEL_KEY="presentation_level"
+VISUAL_PREFERENCES_KEY="visual_preferences"
+VISUAL_THEME_WIDGET_KEY="access_visual_theme"
+VISUAL_LEVEL_WIDGET_KEY="access_presentation_level"
+VISUAL_SESSION_KEYS=frozenset({PRESENTATION_LEVEL_KEY,VISUAL_PREFERENCES_KEY,VISUAL_THEME_WIDGET_KEY,VISUAL_LEVEL_WIDGET_KEY})
 SAFE_COLORS=LIGHT_THEME.graph_colors
 LINE_STYLES=("-","--","-.",":","-","--","-.")
 MARKERS=("o","s","^","D","v","P","X")
@@ -19,9 +23,14 @@ def get_accessibility_settings():
     if isinstance(value,AccessibilitySettings):return value
     settings=AccessibilitySettings.from_dict(value or {});st.session_state[SETTINGS_KEY]=settings;return settings
 def get_presentation_level():
+    return get_visual_preferences().presentation_level
+def get_visual_preferences():
+    stored=st.session_state.get(VISUAL_PREFERENCES_KEY)
+    if stored is not None:return stored if isinstance(stored,VisualPreferences) else VisualPreferences.from_dict(stored)
     value=st.session_state.get(PRESENTATION_LEVEL_KEY,DEFAULT_PRESENTATION_LEVEL.value)
-    try:return PresentationLevel(value)
-    except ValueError:return DEFAULT_PRESENTATION_LEVEL
+    try:level=PresentationLevel(value)
+    except ValueError:level=DEFAULT_PRESENTATION_LEVEL
+    preferences=VisualPreferences(level,VisualTheme.AUTO);st.session_state[VISUAL_PREFERENCES_KEY]=preferences.to_dict();return preferences
 def render_accessibility_panel():
     current=get_accessibility_settings()
     with st.expander("♿ Accessibility settings"):
@@ -29,11 +38,14 @@ def render_accessibility_panel():
         contrast=st.checkbox("High-contrast display",current.high_contrast,key="access_contrast")
         large=st.checkbox("Larger interface text",current.large_text,key="access_large_text")
         st.caption("Animation controls remain available in reduced-motion mode.")
-        current_level=get_presentation_level()
+        preferences=get_visual_preferences();current_level=preferences.presentation_level
         level=PresentationLevel(st.selectbox("Visual presentation",[item.value for item in PresentationLevel],
-            index=list(PresentationLevel).index(current_level),format_func=lambda value:value.title(),key="access_presentation_level",
+            index=list(PresentationLevel).index(current_level),format_func=lambda value:value.title(),key=VISUAL_LEVEL_WIDGET_KEY,
             help="Diagram maximizes clarity; Illustrated adds restrained depth; Contextual adds an optional real-world setting."))
+        theme=VisualTheme(st.selectbox("Visual theme",[item.value for item in VisualTheme],index=list(VisualTheme).index(preferences.theme),
+            format_func=lambda value:value.title(),key=VISUAL_THEME_WIDGET_KEY,help="Auto follows the browser or operating-system theme."))
         st.session_state[PRESENTATION_LEVEL_KEY]=level.value
+        st.session_state[VISUAL_PREFERENCES_KEY]=VisualPreferences(level,theme).to_dict()
     updated=AccessibilitySettings(reduced,contrast,large)
     if updated!=current:
         st.session_state[SETTINGS_KEY]=updated

@@ -1,4 +1,4 @@
-"""Presentation-level contracts and optional contextual scene layers."""
+"""Presentation-level contracts, preferences, and optional contextual layers."""
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -9,7 +9,26 @@ class PresentationLevel(StrEnum):
     CONTEXTUAL="contextual"
 
 
+class VisualTheme(StrEnum):
+    AUTO="auto";LIGHT="light";DARK="dark"
+
+
 DEFAULT_PRESENTATION_LEVEL=PresentationLevel.ILLUSTRATED
+
+
+@dataclass(frozen=True,slots=True)
+class VisualPreferences:
+    presentation_level:PresentationLevel=DEFAULT_PRESENTATION_LEVEL
+    theme:VisualTheme=VisualTheme.AUTO
+    def to_dict(self)->dict[str,str]:return {"presentation_level":self.presentation_level.value,"theme":self.theme.value}
+    @classmethod
+    def from_dict(cls,data):
+        data=data or {}
+        try:level=PresentationLevel(data.get("presentation_level",DEFAULT_PRESENTATION_LEVEL.value))
+        except (ValueError,TypeError):level=DEFAULT_PRESENTATION_LEVEL
+        try:theme=VisualTheme(data.get("theme",VisualTheme.AUTO.value))
+        except (ValueError,TypeError):theme=VisualTheme.AUTO
+        return cls(level,theme)
 
 
 @dataclass(frozen=True,slots=True)
