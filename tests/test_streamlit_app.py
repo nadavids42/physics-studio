@@ -65,6 +65,22 @@ def test_stable_query_identifiers_open_simulation_and_lesson(monkeypatch, tmp_pa
     )
 
 
+@pytest.mark.parametrize(
+    "simulation_id",
+    ("cannonball", "pendulum", "thin_lenses", "buoyancy"),
+)
+def test_representative_subject_pages_smoke_without_errors(
+    monkeypatch, tmp_path, simulation_id
+) -> None:
+    app = _app(monkeypatch, tmp_path)
+    app.query_params["simulation"] = simulation_id
+    app.run(timeout=30)
+
+    assert not app.exception
+    assert app.query_params["simulation"] == [simulation_id]
+    assert any(button.label == "← Back to discovery" for button in app.button)
+
+
 def test_cannonball_setup_is_committed_and_notes_do_not_rerun_player(monkeypatch, tmp_path) -> None:
     app = _app(monkeypatch, tmp_path)
     app.query_params["simulation"] = "cannonball"

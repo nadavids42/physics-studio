@@ -19,6 +19,8 @@ Read these guides as relevant:
 - [Adding a simulation](docs/EXPANSION_ARCHITECTURE.md)
 - [Visual system](docs/VISUAL_SYSTEM.md)
 - [Development setup and type ratchet](docs/DEVELOPMENT.md)
+- [Lesson authoring](docs/LESSON_AUTHORING.md)
+- [Accessibility verification](docs/ACCESSIBILITY_VERIFICATION.md)
 
 ## Development setup
 
@@ -74,15 +76,23 @@ The MyPy configuration is a ratchet over explicitly listed modules, not a claim 
 repository is fully typed. Add a newly typed module to `tool.mypy.files`; do not introduce global
 `ignore_errors` or blanket exclusions.
 
-The browser player currently has no separate npm toolchain. Run the focused browser-rendering
-contract checks with:
+Install and run the frontend checks whenever browser behavior or scenes change:
 
 ```bash
-pytest tests/canvas tests/test_visual_system.py tests/test_visual_regression.py
+cd frontend
+npm ci
+npm run check
 ```
 
-These tests verify payloads, geometry, lifecycle markers, and deterministic visual inputs. They
-do not replace manual browser inspection for layout, interaction, contrast, or label overlap.
+From the repository root, run Chromium-backed accessibility and perceptual checks with:
+
+```bash
+CHROMIUM_BIN=/path/to/chromium pytest -q \
+  tests/test_browser_accessibility.py tests/test_visual_screenshots.py
+```
+
+These complement, but do not replace, the assistive-technology and cross-browser manual checklist
+in `docs/ACCESSIBILITY_VERIFICATION.md`.
 
 Optional local hooks are available:
 

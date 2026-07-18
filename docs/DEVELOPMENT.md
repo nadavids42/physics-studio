@@ -34,8 +34,8 @@ ruff format .
 ruff check --fix .
 ```
 
-Ruff formats Python syntax. Shared browser runtime code is formatted separately with Prettier;
-remaining simulation-specific inline scene adapters require focused player and visual-system tests.
+Ruff formats Python syntax. Browser runtime and scene modules are formatted separately with
+Prettier and checked with ESLint, Vitest, and a deterministic build check.
 
 To run the optional local commit hooks:
 
@@ -87,8 +87,9 @@ Edit JavaScript in `frontend/src`, not the built files under `physics_playground
 
 ## Educational content
 
-Typed lessons live under `physics_playground/education` and reference simulations by validated
-registry ID without importing Streamlit pages. See `docs/LESSON_AUTHORING.md` for the lesson
-structure, activity sequencing rules, worked examples, guided derivations, and validation workflow.
+Typed lesson models live under `physics_playground/education`; authored lessons live in the
+vertical slice they anchor and reference simulations by validated registry ID without importing
+Streamlit pages. See `docs/LESSON_AUTHORING.md` for the lesson structure, activity sequencing
+rules, worked examples, guided derivations, and validation workflow.
 The delivery and persistence seam for complete pathways is documented in
 `docs/LEARNING_PATHWAYS.md`.

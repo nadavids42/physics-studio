@@ -74,4 +74,6 @@ jobs:
       - name: Run Streamlit and perceptual browser checks
         env:
           CHROMIUM_BIN: /usr/bin/google-chrome
-        run: pytest tests/test_streamlit_app.py tests/test_visual_screenshots.py
+        run: >-
+          pytest tests/test_streamlit_app.py tests/test_browser_accessibility.py
+          tests/test_visual_screenshots.py

@@ -15,9 +15,11 @@ to be childish by default.
 - A shared scientific visual system with responsive canvas rendering.
 - Prediction prompts, missions, local profiles, experiment notebooks, and lab-report exports.
 - Reduced-motion, high-contrast, large-text, keyboard, and nonvisual-description support.
+- A typed curriculum model and one complete projectile-motion learning pathway.
+- A framework-free JavaScript workspace with executable player and scene tests.
 
 Physics Studio is not yet a complete course platform. It does not currently provide accounts,
-teacher dashboards, adaptive assessment, or a sequenced curriculum.
+teacher dashboards, adaptive assessment, or a broad multi-unit curriculum.
 
 ## Run the application
 
@@ -48,12 +50,21 @@ pytest
 python -m build
 ```
 
-Browser rendering is currently implemented as JavaScript embedded in Python string literals.
-There is no separate npm or frontend build yet. Canvas, player, accessibility, geometry, and
-visual-system checks run through pytest:
+Browser rendering is authored as ES modules and assembled into packaged static assets. Install and
+verify the framework-free frontend workspace with:
 
 ```bash
-pytest tests/canvas tests/test_visual_system.py tests/test_visual_regression.py
+cd frontend
+npm ci
+npm run check
+```
+
+Built assets are committed under `physics_playground/static/js/`, so runtime deployments do not
+need Node.js. Real-browser accessibility and perceptual checks require Chromium:
+
+```bash
+CHROMIUM_BIN=/path/to/chromium pytest -q \
+  tests/test_browser_accessibility.py tests/test_visual_screenshots.py
 ```
 
 ## Architecture in brief
@@ -63,10 +74,11 @@ objects and return immutable result objects; they do not import UI, chart, or ca
 Streamlit is the current delivery platform and presentation shell, not part of the physics
 domain. A future delivery layer can reuse the model outputs without rewriting the equations.
 
-New simulations use subject-oriented vertical slices under
+All simulations use subject-oriented vertical slices under
 `physics_playground/subjects/<subject>/<simulation>/`. Each slice normally contains physics,
-missions, page composition, and package exports. Expansion manifests describe integration
-requirements, while the runtime registry drives navigation and lazy page loading.
+missions, registry metadata, page composition, and package exports. Central catalogs discover and
+validate slice metadata. Expansion manifests describe integration requirements, while the runtime
+registry drives navigation and lazy page loading.
 
 Read [the architecture guide](docs/ARCHITECTURE.md) and
 [the expansion guide](docs/EXPANSION_ARCHITECTURE.md) before adding a simulation.
@@ -76,7 +88,9 @@ Read [the architecture guide](docs/ARCHITECTURE.md) and
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow and review expectations.
 The visual vocabulary and scientific-rendering rules are documented in
 [docs/VISUAL_SYSTEM.md](docs/VISUAL_SYSTEM.md). Current migration debt is recorded in
-[docs/ARCHITECTURE_MIGRATION.md](docs/ARCHITECTURE_MIGRATION.md).
+[docs/YAGNI_SCALABILITY_AUDIT.md](docs/YAGNI_SCALABILITY_AUDIT.md); the historical migration audit
+is preserved in [docs/ARCHITECTURE_MIGRATION.md](docs/ARCHITECTURE_MIGRATION.md). The final architect
+assessment is in [docs/PRINCIPAL_ARCHITECT_AUDIT.md](docs/PRINCIPAL_ARCHITECT_AUDIT.md).
 
 ## License
 

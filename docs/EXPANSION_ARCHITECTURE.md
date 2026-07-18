@@ -12,6 +12,7 @@ physics_playground/subjects/<subject>/<simulation_id>/
   __init__.py
   physics.py
   missions.py
+  metadata.py
   page.py
   charts.py       # when charts are simulation-specific
   scene.py        # when the browser scene is simulation-specific
@@ -72,12 +73,13 @@ complete acceptance checklist.
 
 ## 6. Declare the expansion manifest
 
-Add an `ExpansionDefinition` to the relevant subject `manifests.py`. It must declare:
+Define `SIMULATION` and `MISSIONS` in the slice's `metadata.py`, then add an
+`ExpansionDefinition` to the relevant subject `manifests.py`. It must declare:
 
-- `SimulationDefinition` metadata;
+- the slice-owned `SimulationDefinition` metadata;
 - subject, parameter model, result model, and importable entrypoints;
 - `REQUIRED_MODE_REQUIREMENTS` or an equivalent complete capability declaration;
-- centralized mission definitions for the simulation;
+- the slice-owned mission definitions for the simulation;
 - assumptions and limitations;
 - honest `TestRequirements` counts and capabilities.
 
@@ -85,11 +87,11 @@ The validator is `validate_expansion_definition()` in
 `physics_playground/expansion_validation.py`. The combined catalog is
 `physics_playground/expansion_catalog.py`.
 
-## 7. Enroll it in the runtime registry
+## 7. Verify discovery and runtime enrollment
 
-Add the same stable ID and matching metadata to `SIMULATION_REGISTRY` in
-`physics_playground/registry.py`. The registry drives navigation and lazy page loading. Manifests
-currently do not generate registry entries, so both catalogs must be updated deliberately.
+The central registry discovers slice `metadata.py` modules; do not add a second definition to
+`physics_playground/registry.py`. The registry validates unique IDs and drives navigation and lazy
+page loading. The expansion manifest must reference the exact discovered `SIMULATION` object.
 
 Add or extend tests that verify:
 
@@ -123,11 +125,13 @@ pytest
 python -m build
 ```
 
-There is no separate frontend package today. Browser-rendering contract tests run under pytest; if
-you change the shared player or visuals, also run:
+If the simulation adds or changes a browser scene, edit `frontend/src`, build the packaged asset,
+and run both frontend and browser checks:
 
 ```bash
-pytest tests/canvas tests/test_visual_system.py tests/test_visual_regression.py
+npm --prefix frontend run check
+CHROMIUM_BIN=/path/to/chromium pytest -q \
+  tests/test_browser_accessibility.py tests/test_visual_screenshots.py
 ```
 
 Inspect the simulation manually in light and dark themes, Diagram and Illustrated levels, reduced

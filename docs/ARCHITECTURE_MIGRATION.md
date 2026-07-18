@@ -6,6 +6,7 @@ Repository baseline: current working tree at audit time
 > Historical audit: the vertical-slice migration and July 2026 YAGNI consolidation are complete.
 > Current ownership is documented in `docs/ARCHITECTURE.md` and
 > `docs/YAGNI_SCALABILITY_AUDIT.md`; later baseline tables below are retained as migration history.
+> Final issue dispositions and revised grades are in `docs/PRINCIPAL_ARCHITECT_AUDIT.md`.
 
 ## Migration progress
 
@@ -41,7 +42,9 @@ mission ownership, badge counts, four-mode reachability, and registry/manifest c
 
 This document is based on a repository-wide inspection of `app.py`, all Python packages under `physics_playground/`, all tests, packaging configuration, current Markdown documentation, and the supplied Principal Architect Review. The review describes an earlier repository state in several places, so every factual claim was checked against the current tree rather than accepted as a premise. Subjective grades and strategic opinions are identified as judgments rather than repository facts.
 
-No application code was changed during this audit. This file is the only intended modification.
+At the time of the original audit, no application code was changed and this file was the only
+intended modification. Subsequent migration prompts changed the repository; the baseline findings
+below are intentionally not rewritten as current claims.
 
 ## Executive assessment
 
