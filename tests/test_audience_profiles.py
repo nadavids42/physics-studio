@@ -95,6 +95,34 @@ def test_empty_depth_declaration_is_rejected():
         )
 
 
+def test_pre_audience_content_without_depth_metadata_defaults_to_all_depths():
+    source = CANNONBALL_LESSON.sections[0]
+
+    class CompatibilitySection:
+        id = source.id
+        title = source.title
+        narrative = source.narrative
+        components = source.components
+
+    lesson = replace(
+        CANNONBALL_LESSON,
+        sections=(CompatibilitySection(), *CANNONBALL_LESSON.sections[1:]),
+    )
+    unit = CURRICULUM.subjects[0].units[0]
+    subject = CURRICULUM.subjects[0]
+    manifest = replace(
+        CURRICULUM,
+        subjects=(replace(subject, units=(replace(unit, lessons=(lesson,)),)),),
+    )
+
+    validate_curriculum_manifest(
+        manifest,
+        simulation_ids={simulation.id for simulation in SIMULATION_REGISTRY},
+    )
+    selected = select_lesson_sections(lesson, MathematicalDepth.CONCEPTUAL)
+    assert selected[0].section.id == source.id
+
+
 def test_instructional_preferences_persist_through_profile_store(tmp_path):
     preferences = AUDIENCE_DEFAULTS[AudienceLevel.ADVANCED]
     store = ProfileStore(tmp_path / "profiles.sqlite3")

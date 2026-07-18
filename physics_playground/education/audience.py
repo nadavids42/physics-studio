@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Protocol, TypeVar
+from typing import TypeVar
 
 
 class AudienceLevel(StrEnum):
@@ -88,12 +88,8 @@ AUDIENCE_DEFAULTS = {
 }
 
 
-class DepthTagged(Protocol):
-    @property
-    def applicable_depths(self) -> frozenset[MathematicalDepth]: ...
-
-
-def applies_at_depth(block: DepthTagged, depth: MathematicalDepth) -> bool:
+def applies_at_depth(block: object, depth: MathematicalDepth) -> bool:
     """Return whether a tagged content block applies at the selected depth."""
 
-    return depth in block.applicable_depths
+    declared = getattr(block, "applicable_depths", frozenset(MathematicalDepth))
+    return isinstance(declared, frozenset) and depth in declared

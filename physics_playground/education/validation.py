@@ -6,6 +6,7 @@ import math
 from collections.abc import Iterable
 
 from physics_playground.education.models import (
+    ALL_MATHEMATICAL_DEPTHS,
     ActivityPhase,
     CheckpointQuestion,
     CurriculumManifest,
@@ -35,8 +36,14 @@ def _require_text(value: str, label: str) -> None:
 
 
 def _require_depths(item: object, label: str) -> None:
-    if not getattr(item, "applicable_depths", frozenset()):
-        raise PhysicsValidationError(f"{label} must apply to at least one mathematical depth.")
+    # Content authored before audience profiles had no depth field and is valid at every
+    # depth. Keep that compatibility distinct from an explicitly empty declaration.
+    declared = getattr(item, "applicable_depths", ALL_MATHEMATICAL_DEPTHS)
+    if not declared:
+        item_id = getattr(item, "id", "unknown")
+        raise PhysicsValidationError(
+            f"{label} {item_id!r} must apply to at least one mathematical depth."
+        )
 
 
 def _unique_ids(items: Iterable[object], label: str) -> set[str]:
