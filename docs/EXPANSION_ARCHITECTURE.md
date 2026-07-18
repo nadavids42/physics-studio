@@ -13,6 +13,8 @@ physics_playground/subjects/<subject>/<simulation_id>/
   physics.py
   missions.py
   page.py
+  charts.py       # when charts are simulation-specific
+  scene.py        # when the browser scene is simulation-specific
 ```
 
 Use a lowercase snake-case simulation ID. Treat it as permanent once notebook records, missions,
@@ -59,9 +61,9 @@ calculation logic in `physics.py`.
 
 ## 5. Reuse the visual system
 
-Choose an existing canvas family under `physics_playground/canvas/` or add a reusable adapter when
-the rendering pattern will serve more than one simulation. Use assets and semantic colors from
-`physics_playground/visual/`.
+Keep a simulation-specific browser adapter in the slice's `scene.py`. Use an existing shared
+adapter under `physics_playground/canvas/` when the rendering pattern serves multiple simulations.
+Use assets and semantic colors from `physics_playground/visual/` in either case.
 
 Every scene must remain understandable in Diagram presentation mode, at narrow widths, with reduced
 motion, and without color as the only identifier. Vector-like visuals must declare whether their

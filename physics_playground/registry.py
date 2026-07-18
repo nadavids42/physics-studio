@@ -292,7 +292,7 @@ SIMULATION_REGISTRY = (
         title="The Big Fall",
         icon="🕳️",
         description="Fall through a tunnel across an idealized planet.",
-        page_module="physics_playground.pages.earth_tunnel",
+        page_module="physics_playground.subjects.mechanics.earth_tunnel.page",
         mission_group="The Big Fall",
         modes=LEARNING_MODES,
         central_question="How long would it take to fall through an entire planet?",
@@ -377,7 +377,7 @@ SIMULATION_REGISTRY = (
         title="Double Pendulum of Chaos",
         icon="🌀",
         description="Watch a tiny difference grow into completely different motion.",
-        page_module="physics_playground.pages.double_pendulum",
+        page_module="physics_playground.subjects.waves_and_oscillations.double_pendulum.page",
         mission_group="Double Pendulum of Chaos",
         modes=LEARNING_MODES,
         central_question="How can nearly identical starts produce different futures?",
@@ -394,7 +394,7 @@ SIMULATION_REGISTRY = (
         title="Bumper Cars",
         icon="🚗",
         description="Crash two cars and track momentum and energy.",
-        page_module="physics_playground.pages.bumper_cars",
+        page_module="physics_playground.subjects.mechanics.bumper_cars.page",
         mission_group="Bumper Cars",
         modes=LEARNING_MODES,
         central_question="What determines how two cars move after a collision?",
@@ -413,13 +413,11 @@ SIMULATIONS_BY_ID = {definition.id: definition for definition in SIMULATION_REGI
 
 
 def load_validated_page(simulation_id: str) -> tuple[ModuleType, str]:
-    """Resolve migrated pages through manifests, with a legacy migration fallback."""
+    """Resolve a simulation page only after validating its manifest."""
 
     catalog = import_module("physics_playground.expansion_catalog")
     validation = import_module("physics_playground.expansion_validation")
-    manifest = catalog.EXPANSION_BY_ID.get(simulation_id)
-    if manifest is None:
-        return import_module(SIMULATIONS_BY_ID[simulation_id].page_module), "render"
+    manifest = catalog.EXPANSION_BY_ID[simulation_id]
     validation.validate_expansion_definition(manifest)
     module_name, function_name = manifest.page_entrypoint.rsplit(".", 1)
     return import_module(module_name), function_name

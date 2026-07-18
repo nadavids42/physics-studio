@@ -28,6 +28,26 @@ def manifest(simulation_id, parameter, result, physics, page, canvas, assumption
 
 MECHANICS_MANIFESTS = (
     manifest(
+        "earth_tunnel",
+        "TunnelParameters",
+        "TunnelResult",
+        "physics_playground.subjects.mechanics.earth_tunnel.physics.simulate_tunnel",
+        "physics_playground.subjects.mechanics.earth_tunnel.page.render",
+        "physics_playground.subjects.mechanics.earth_tunnel.scene.build_tunnel_canvas",
+        ("Spherical planet", "Frictionless straight tunnel", "Newtonian gravity"),
+        ("No rotation or atmosphere", "Idealized interior density models"),
+    ),
+    manifest(
+        "bumper_cars",
+        "CollisionParameters",
+        "CollisionResult",
+        "physics_playground.subjects.mechanics.bumper_cars.physics.simulate_collision",
+        "physics_playground.subjects.mechanics.bumper_cars.page.render",
+        "physics_playground.subjects.mechanics.bumper_cars.scene.build_bumper_canvas",
+        ("One-dimensional collision", "Constant restitution", "No external impulse"),
+        ("Rigid point-like cars", "No rotation or deformation dynamics"),
+    ),
+    manifest(
         "orbital_gravity",
         "OrbitParameters",
         "OrbitResult",

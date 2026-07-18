@@ -1,5 +1,9 @@
+"""Pure mission evidence for Double Pendulum."""
+
 from physics_playground.contracts import MissionEvaluation
-from physics_playground.models.double_pendulum import DoublePendulumResult
+from physics_playground.subjects.waves_and_oscillations.double_pendulum.physics import (
+    DoublePendulumResult,
+)
 
 
 def evaluate_double_missions(r: DoublePendulumResult):

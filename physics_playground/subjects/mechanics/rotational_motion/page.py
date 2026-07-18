@@ -13,6 +13,7 @@ from physics_playground.presentation.learning_modes import (
     mode_heading,
     mode_navigation,
 )
+from physics_playground.state_keys import simulation_key
 from physics_playground.subjects.mechanics.canvas import document
 from physics_playground.subjects.mechanics.ui import metric_table, record, show
 
@@ -20,6 +21,15 @@ from .missions import evaluate
 from .physics import BodyShape, RotationalParameters, simulate
 
 ID = "rotational_motion"
+
+
+def state_key(name: str) -> str:
+    canonical = simulation_key(ID, name)
+    if name in st.session_state and canonical not in st.session_state:
+        st.session_state[canonical] = st.session_state.pop(name)
+    return canonical
+
+
 VERSION = "rotational-motion-1.0"
 
 
@@ -56,16 +66,22 @@ def controls(key="rotation"):
     c1, c2 = st.columns(2)
     with c1:
         shape = BodyShape(
-            st.selectbox("Body shape", [x.value for x in BodyShape], index=2, key=f"{key}_shape")
+            st.selectbox(
+                "Body shape", [x.value for x in BodyShape], index=2, key=state_key(f"{key}_shape")
+            )
         )
-        mass = st.slider("Mass (kg)", 0.2, 30.0, 5.0, 0.2, key=f"{key}_mass")
-        size = st.slider("Radius or rod length (m)", 0.1, 5.0, 1.0, 0.1, key=f"{key}_size")
+        mass = st.slider("Mass (kg)", 0.2, 30.0, 5.0, 0.2, key=state_key(f"{key}_mass"))
+        size = st.slider(
+            "Radius or rod length (m)", 0.1, 5.0, 1.0, 0.1, key=state_key(f"{key}_size")
+        )
     with c2:
-        torque = st.slider("Applied torque (N·m)", -50.0, 50.0, 10.0, 1.0, key=f"{key}_torque")
-        omega = st.slider(
-            "Initial angular velocity (rad/s)", -20.0, 20.0, 0.0, 0.5, key=f"{key}_omega"
+        torque = st.slider(
+            "Applied torque (N·m)", -50.0, 50.0, 10.0, 1.0, key=state_key(f"{key}_torque")
         )
-        duration = st.slider("Duration (s)", 0.5, 10.0, 5.0, 0.5, key=f"{key}_duration")
+        omega = st.slider(
+            "Initial angular velocity (rad/s)", -20.0, 20.0, 0.0, 0.5, key=state_key(f"{key}_omega")
+        )
+        duration = st.slider("Duration (s)", 0.5, 10.0, 5.0, 0.5, key=state_key(f"{key}_duration"))
     return RotationalParameters(mass, size, shape, torque, omega, duration)
 
 
@@ -81,12 +97,12 @@ def explore():
     )
     st.caption("Text outcome: " + r.outcome)
     animation(r, 20262401)
-    obs = st.text_input("Optional notebook observation", key="rotation_obs")
+    obs = st.text_input("Optional notebook observation", key=state_key("rotation_obs"))
     if st.button("🌀 Spin body", type="primary", use_container_width=True):
         record(
             ID,
             r.parameters.to_dict(),
-            st.session_state.get("rotation_quiz_guess"),
+            st.session_state.get(state_key("rotation_quiz_guess")),
             r.outcome,
             numbers(r),
             mission_ui.process_run(ID, evaluate(r)),
@@ -184,7 +200,7 @@ def model():
 def render():
     st.header("🌀 Rotational Motion")
     revealed = mission_ui.prediction_quiz(
-        key="rotation_quiz",
+        key=state_key("rotation_quiz"),
         question="The same torque acts on a disk and hoop with equal mass and radius. Which accelerates faster?",
         options=["Solid disk", "Hoop", "They match"],
         correct_index=0,
@@ -193,7 +209,7 @@ def render():
     )
     if not revealed:
         return
-    mode = mode_navigation(key="rotation_mode")
+    mode = mode_navigation(key=state_key("rotation_mode"))
     {
         LearningMode.EXPLORE: explore,
         LearningMode.COMPARE: compare,

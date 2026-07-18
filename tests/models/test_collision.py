@@ -2,7 +2,10 @@
 
 import pytest
 
-from physics_playground.models.collision import CollisionParameters, simulate_collision
+from physics_playground.subjects.mechanics.bumper_cars.physics import (
+    CollisionParameters,
+    simulate_collision,
+)
 
 
 def assert_close(actual: float, expected: float, tolerance: float = 1e-10) -> None:

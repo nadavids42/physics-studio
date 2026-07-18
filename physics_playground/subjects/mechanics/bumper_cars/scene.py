@@ -1,8 +1,8 @@
 """Bumper Cars scene adapter for the shared browser-side animation player."""
 
 from physics_playground.canvas.player import build_player_document
-from physics_playground.models.collision import CollisionResult
 from physics_playground.serialization import to_jsonable
+from physics_playground.subjects.mechanics.bumper_cars.physics import CollisionResult
 
 CANVAS_W, CANVAS_H = 680, 260
 PLAYER_HEIGHT = 350

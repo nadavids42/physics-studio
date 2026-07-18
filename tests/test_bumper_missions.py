@@ -1,7 +1,10 @@
 """Mission rules are evaluated from launched results, independently of Streamlit."""
 
-from physics_playground.missions.bumper_cars import evaluate_bumper_missions
-from physics_playground.models.collision import CollisionParameters, simulate_collision
+from physics_playground.subjects.mechanics.bumper_cars.missions import evaluate_bumper_missions
+from physics_playground.subjects.mechanics.bumper_cars.physics import (
+    CollisionParameters,
+    simulate_collision,
+)
 
 
 def completed_ids(parameters: CollisionParameters) -> set[str]:

@@ -3,7 +3,7 @@ import math
 import numpy as np
 import pytest
 
-from physics_playground.models.double_pendulum import (
+from physics_playground.subjects.waves_and_oscillations.double_pendulum.physics import (
     DoublePendulumParameters,
     simulate_double_pendulum,
 )

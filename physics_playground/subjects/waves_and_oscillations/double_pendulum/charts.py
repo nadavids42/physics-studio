@@ -1,3 +1,5 @@
+"""Static analytical charts for Double Pendulum."""
+
 import matplotlib.pyplot as plt
 
 

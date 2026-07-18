@@ -16,11 +16,21 @@ from physics_playground.presentation.learning_modes import (
     mode_navigation,
 )
 from physics_playground.presentation.notebook_ui import add_trial
+from physics_playground.state_keys import simulation_key
 
 from .missions import evaluate
 from .physics import BuoyancyInputMode, BuoyancyParameters, simulate
 
 ID = "buoyancy"
+
+
+def state_key(name: str) -> str:
+    canonical = simulation_key(ID, name)
+    if name in st.session_state and canonical not in st.session_state:
+        st.session_state[canonical] = st.session_state.pop(name)
+    return canonical
+
+
 VERSION = "buoyancy-1.0"
 
 
@@ -39,7 +49,7 @@ def record(r, seed, obs, label=None, badges=()):
     add_trial(
         simulation_id=ID,
         parameters=r.parameters.to_dict(),
-        prediction=st.session_state.get("buoy_quiz_guess"),
+        prediction=st.session_state.get(state_key("buoy_quiz_guess")),
         result_summary=r.outcome,
         metrics=metrics(r),
         earned_badges=badges,
@@ -74,7 +84,7 @@ def controls(prefix="buoy"):
             "Define object using",
             [x.value for x in BuoyancyInputMode],
             horizontal=True,
-            key=f"{prefix}_input_basis",
+            key=state_key(f"{prefix}_input_basis"),
         )
     )
     c = st.columns(3)
@@ -84,7 +94,7 @@ def controls(prefix="buoy"):
         5000.0,
         600.0,
         25.0,
-        key=f"{prefix}_density",
+        key=state_key(f"{prefix}_density"),
         disabled=mode is BuoyancyInputMode.MASS,
     )
     mass = c[1].slider(
@@ -93,11 +103,15 @@ def controls(prefix="buoy"):
         100.0,
         6.0,
         0.1,
-        key=f"{prefix}_mass",
+        key=state_key(f"{prefix}_mass"),
         disabled=mode is BuoyancyInputMode.DENSITY,
     )
-    volume = c[2].slider("Object volume (m³)", 0.001, 0.1, 0.01, 0.001, key=f"{prefix}_volume")
-    fluid = st.slider("Fluid density (kg/m³)", 100.0, 2000.0, 1000.0, 25.0, key=f"{prefix}_fluid")
+    volume = c[2].slider(
+        "Object volume (m³)", 0.001, 0.1, 0.01, 0.001, key=state_key(f"{prefix}_volume")
+    )
+    fluid = st.slider(
+        "Fluid density (kg/m³)", 100.0, 2000.0, 1000.0, 25.0, key=state_key(f"{prefix}_fluid")
+    )
     return BuoyancyParameters(mode, density, mass, volume, fluid)
 
 
@@ -110,7 +124,7 @@ def explore():
     c[2].metric("Apparent weight", f"{r.apparent_weight_n:.2f} N")
     st.caption("Text outcome: " + r.outcome)
     diagram(r, 20263101)
-    obs = st.text_input("Optional notebook observation", key="buoy_obs")
+    obs = st.text_input("Optional notebook observation", key=state_key("buoy_obs"))
     if st.button("🛟 Test buoyancy", type="primary", use_container_width=True):
         record(r, 20263101, obs, badges=mission_ui.process_run(ID, evaluate(r)))
         st.rerun()
@@ -191,7 +205,7 @@ def model():
 def render():
     st.header("🛟 Buoyancy")
     revealed = mission_ui.prediction_quiz(
-        key="buoy_quiz",
+        key=state_key("buoy_quiz"),
         question="An object is less dense than its fluid. What happens after it settles?",
         options=["It floats partly submerged", "It sinks", "It must hover fully submerged"],
         correct_index=0,
@@ -200,7 +214,7 @@ def render():
     )
     if not revealed:
         return
-    mode = mode_navigation(key="buoy_mode")
+    mode = mode_navigation(key=state_key("buoy_mode"))
     {
         LearningMode.EXPLORE: explore,
         LearningMode.COMPARE: compare,

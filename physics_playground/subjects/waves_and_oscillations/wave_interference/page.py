@@ -18,11 +18,21 @@ from physics_playground.presentation.learning_modes import (
     mode_navigation,
 )
 from physics_playground.presentation.notebook_ui import add_trial
+from physics_playground.state_keys import simulation_key
 
 from .missions import evaluate
 from .physics import WaveInterferenceParameters, WaveSource, simulate
 
 ID = "wave_interference"
+
+
+def state_key(name: str) -> str:
+    canonical = simulation_key(ID, name)
+    if name in st.session_state and canonical not in st.session_state:
+        st.session_state[canonical] = st.session_state.pop(name)
+    return canonical
+
+
 VERSION = "wave-interference-1.0"
 
 
@@ -40,7 +50,7 @@ def record(r, seed, observation, label=None, badges=()):
     add_trial(
         simulation_id=ID,
         parameters=r.parameters.to_dict(),
-        prediction=st.session_state.get("wave_quiz_guess"),
+        prediction=st.session_state.get(state_key("wave_quiz_guess")),
         result_summary=r.outcome,
         metrics=metrics(r),
         earned_badges=badges,
@@ -90,16 +100,20 @@ def animation(r, seed, autoplay=False):
 
 
 def controls(prefix="wave"):
-    count = st.slider("Number of wave sources", 2, 4, 2, key=f"{prefix}_count")
-    speed = st.slider("Propagation speed (m/s)", 0.5, 10.0, 2.0, 0.1, key=f"{prefix}_speed")
+    count = st.slider("Number of wave sources", 2, 4, 2, key=state_key(f"{prefix}_count"))
+    speed = st.slider(
+        "Propagation speed (m/s)", 0.5, 10.0, 2.0, 0.1, key=state_key(f"{prefix}_speed")
+    )
     sources = []
     for i in range(count):
         with st.expander(f"Source {i + 1}", expanded=i < 2):
             c1, c2, c3 = st.columns(3)
-            amplitude = c1.slider("Amplitude", 0.0, 3.0, 1.0, 0.1, key=f"{prefix}_a{i}")
-            wavelength = c2.slider("Wavelength (m)", 0.25, 5.0, 2.0, 0.05, key=f"{prefix}_l{i}")
+            amplitude = c1.slider("Amplitude", 0.0, 3.0, 1.0, 0.1, key=f"{state_key(prefix)}_a{i}")
+            wavelength = c2.slider(
+                "Wavelength (m)", 0.25, 5.0, 2.0, 0.05, key=f"{state_key(prefix)}_l{i}"
+            )
             phase_deg = c3.slider(
-                "Phase (degrees)", 0, 360, 0 if i == 0 else 0, 5, key=f"{prefix}_p{i}"
+                "Phase (degrees)", 0, 360, 0 if i == 0 else 0, 5, key=f"{state_key(prefix)}_p{i}"
             )
             frequency = speed / wavelength
             st.caption(
@@ -130,7 +144,7 @@ def explore():
     st.metric(
         "Displacement at selected position and time", f"{r.displacement_at(position, time):.3f}"
     )
-    obs = st.text_input("Optional notebook observation", key="wave_obs")
+    obs = st.text_input("Optional notebook observation", key=state_key("wave_obs"))
     if st.button("🌊 Run waves", type="primary", use_container_width=True):
         record(r, 20262501, obs, badges=mission_ui.process_run(ID, evaluate(r)))
         st.rerun()
@@ -216,7 +230,7 @@ def model():
 def render():
     st.header("🌊 Wave Interference")
     revealed = mission_ui.prediction_quiz(
-        key="wave_quiz",
+        key=state_key("wave_quiz"),
         question="Two identical waves arrive in phase. What happens to their amplitudes?",
         options=["They add", "They cancel", "Frequency doubles"],
         correct_index=0,
@@ -225,7 +239,7 @@ def render():
     )
     if not revealed:
         return
-    mode = mode_navigation(key="wave_mode")
+    mode = mode_navigation(key=state_key("wave_mode"))
     {
         LearningMode.EXPLORE: explore,
         LearningMode.COMPARE: compare,

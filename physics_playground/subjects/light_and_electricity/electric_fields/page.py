@@ -16,12 +16,22 @@ from physics_playground.presentation.learning_modes import (
     mode_navigation,
 )
 from physics_playground.presentation.notebook_ui import add_trial
+from physics_playground.state_keys import simulation_key
 from physics_playground.validation import PhysicsValidationError
 
 from .missions import evaluate
 from .physics import MAX_FIELD_POINTS, ElectricFieldParameters, PointCharge, field_at, simulate
 
 ID = "electric_fields"
+
+
+def state_key(name: str) -> str:
+    canonical = simulation_key(ID, name)
+    if name in st.session_state and canonical not in st.session_state:
+        st.session_state[canonical] = st.session_state.pop(name)
+    return canonical
+
+
 VERSION = "electric-field-1.0"
 
 
@@ -40,7 +50,7 @@ def record(r, seed, obs, label=None, badges=()):
     add_trial(
         simulation_id=ID,
         parameters=r.parameters.to_dict(),
-        prediction=st.session_state.get("field_quiz_guess"),
+        prediction=st.session_state.get(state_key("field_quiz_guess")),
         result_summary=r.outcome,
         metrics=metrics(r),
         earned_badges=badges,
@@ -74,27 +84,35 @@ def diagram(r, seed):
 
 
 def controls(prefix="field"):
-    count = st.slider("Number of source charges", 1, 4, 2, key=f"{prefix}_count")
+    count = st.slider("Number of source charges", 1, 4, 2, key=state_key(f"{prefix}_count"))
     charges = []
     defaults = ((-1.0, 0.0, 1.0), (1.0, 0.0, -1.0), (0.0, -1.0, 1.0), (0.0, 1.0, -1.0))
     for i in range(count):
         with st.expander(f"Charge {i + 1}", expanded=i < 2):
             c = st.columns(3)
-            x = c[0].slider("x position (m)", -3.0, 3.0, defaults[i][0], 0.1, key=f"{prefix}_x{i}")
-            y = c[1].slider("y position (m)", -3.0, 3.0, defaults[i][1], 0.1, key=f"{prefix}_y{i}")
-            micro = c[2].slider("Charge (µC)", -5.0, 5.0, defaults[i][2], 0.1, key=f"{prefix}_q{i}")
+            x = c[0].slider(
+                "x position (m)", -3.0, 3.0, defaults[i][0], 0.1, key=f"{state_key(prefix)}_x{i}"
+            )
+            y = c[1].slider(
+                "y position (m)", -3.0, 3.0, defaults[i][1], 0.1, key=f"{state_key(prefix)}_y{i}"
+            )
+            micro = c[2].slider(
+                "Charge (µC)", -5.0, 5.0, defaults[i][2], 0.1, key=f"{state_key(prefix)}_q{i}"
+            )
             if micro == 0:
                 st.warning("A source charge cannot be zero; choose a positive or negative value.")
             charges.append(PointCharge(micro * 1e-6, x, y))
     c1, c2, c3 = st.columns(3)
-    tx = c1.slider("Test-charge x (m)", -3.5, 3.5, 0.0, 0.1, key=f"{prefix}_tx")
-    ty = c2.slider("Test-charge y (m)", -3.5, 3.5, 1.0, 0.1, key=f"{prefix}_ty")
-    test_micro = c3.slider("Test charge (µC)", -2.0, 2.0, 0.001, 0.001, key=f"{prefix}_tq")
+    tx = c1.slider("Test-charge x (m)", -3.5, 3.5, 0.0, 0.1, key=state_key(f"{prefix}_tx"))
+    ty = c2.slider("Test-charge y (m)", -3.5, 3.5, 1.0, 0.1, key=state_key(f"{prefix}_ty"))
+    test_micro = c3.slider(
+        "Test charge (µC)", -2.0, 2.0, 0.001, 0.001, key=state_key(f"{prefix}_tq")
+    )
     grid = st.select_slider(
         "Field-grid density",
         options=[17, 21, 25, 29, 33, 37, 41, 45, 49],
         value=25,
-        key=f"{prefix}_grid",
+        key=state_key(f"{prefix}_grid"),
     )
     st.caption(
         f"Performance budget: {grid**2:,} of {MAX_FIELD_POINTS:,} maximum field points. Points within 0.12 m of a source are excluded."
@@ -111,7 +129,7 @@ def explore():
     c[2].metric("Force", f"{r.force_magnitude_n:.3g} N")
     st.caption("Text outcome: " + r.outcome)
     diagram(r, 20262901)
-    obs = st.text_input("Optional notebook observation", key="field_obs")
+    obs = st.text_input("Optional notebook observation", key=state_key("field_obs"))
     if st.button("⚡ Map electric field", type="primary", use_container_width=True):
         record(r, 20262901, obs, badges=mission_ui.process_run(ID, evaluate(r)))
         st.rerun()
@@ -207,7 +225,7 @@ def model():
 def render():
     st.header("⚡ Electric Fields")
     revealed = mission_ui.prediction_quiz(
-        key="field_quiz",
+        key=state_key("field_quiz"),
         question="Which direction does the electric field point near a positive source charge?",
         options=["Away from it", "Toward it", "Clockwise around it"],
         correct_index=0,
@@ -216,7 +234,7 @@ def render():
     )
     if not revealed:
         return
-    mode = mode_navigation(key="field_mode")
+    mode = mode_navigation(key=state_key("field_mode"))
     {
         LearningMode.EXPLORE: explore,
         LearningMode.COMPARE: compare,

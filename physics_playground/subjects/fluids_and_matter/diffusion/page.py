@@ -18,11 +18,21 @@ from physics_playground.presentation.learning_modes import (
     mode_navigation,
 )
 from physics_playground.presentation.notebook_ui import add_trial
+from physics_playground.state_keys import simulation_key
 
 from .missions import evaluate
 from .physics import MAX_PARTICLES, MAX_UPDATES, DiffusionParameters, WalkDimension, simulate
 
 ID = "diffusion"
+
+
+def state_key(name: str) -> str:
+    canonical = simulation_key(ID, name)
+    if name in st.session_state and canonical not in st.session_state:
+        st.session_state[canonical] = st.session_state.pop(name)
+    return canonical
+
+
 VERSION = "diffusion-1.0"
 
 
@@ -40,7 +50,7 @@ def record(r, obs, label=None, badges=()):
     add_trial(
         simulation_id=ID,
         parameters=r.parameters.to_dict(),
-        prediction=st.session_state.get("diffusion_quiz_guess"),
+        prediction=st.session_state.get(state_key("diffusion_quiz_guess")),
         result_summary=r.outcome,
         metrics=metrics(r),
         earned_badges=badges,
@@ -99,24 +109,26 @@ def controls(prefix="diffusion"):
             [1, 2],
             format_func=lambda x: f"{x}D",
             horizontal=True,
-            key=f"{prefix}_dimensions",
+            key=state_key(f"{prefix}_dimensions"),
         )
     )
-    particles = c[1].slider("Particle count", 10, MAX_PARTICLES, 500, 10, key=f"{prefix}_particles")
-    steps = c[2].slider("Number of steps", 10, 200, 100, 10, key=f"{prefix}_steps")
+    particles = c[1].slider(
+        "Particle count", 10, MAX_PARTICLES, 500, 10, key=state_key(f"{prefix}_particles")
+    )
+    steps = c[2].slider("Number of steps", 10, 200, 100, 10, key=state_key(f"{prefix}_steps"))
     c = st.columns(3)
-    step = c[0].slider("Step size (m)", 0.01, 1.0, 0.1, 0.01, key=f"{prefix}_step_size")
-    dt = c[1].slider("Timestep (s)", 0.001, 1.0, 0.05, 0.001, key=f"{prefix}_dt")
-    seed = c[2].number_input("Random seed", value=20263401, step=1, key=f"{prefix}_seed")
+    step = c[0].slider("Step size (m)", 0.01, 1.0, 0.1, 0.01, key=state_key(f"{prefix}_step_size"))
+    dt = c[1].slider("Timestep (s)", 0.001, 1.0, 0.05, 0.001, key=state_key(f"{prefix}_dt"))
+    seed = c[2].number_input("Random seed", value=20263401, step=1, key=state_key(f"{prefix}_seed"))
     c = st.columns(2)
-    bx = c[0].slider("Horizontal bias", -1.0, 1.0, 0.0, 0.05, key=f"{prefix}_bias_x")
+    bx = c[0].slider("Horizontal bias", -1.0, 1.0, 0.0, 0.05, key=state_key(f"{prefix}_bias_x"))
     by = c[1].slider(
         "Vertical bias",
         -1.0,
         1.0,
         0.0,
         0.05,
-        key=f"{prefix}_bias_y",
+        key=state_key(f"{prefix}_bias_y"),
         disabled=dimensions is WalkDimension.ONE_D,
     )
     updates = particles * steps
@@ -149,7 +161,7 @@ def explore():
     r = simulate(p)
     summary(r)
     diagram(r)
-    obs = st.text_input("Optional notebook observation", key="diffusion_obs")
+    obs = st.text_input("Optional notebook observation", key=state_key("diffusion_obs"))
     if st.button("🟣 Run random walks", type="primary", use_container_width=True):
         record(r, obs, badges=mission_ui.process_run(ID, evaluate(r)))
         st.rerun()
@@ -228,7 +240,7 @@ def model():
 def render():
     st.header("🟣 Diffusion and Random Walks")
     revealed = mission_ui.prediction_quiz(
-        key="diffusion_quiz",
+        key=state_key("diffusion_quiz"),
         question="For many unbiased walkers, what happens to the mean-squared displacement as time increases?",
         options=["It grows roughly linearly", "It stays exactly zero", "It always decreases"],
         correct_index=0,
@@ -237,7 +249,7 @@ def render():
     )
     if not revealed:
         return
-    mode = mode_navigation(key="diffusion_mode")
+    mode = mode_navigation(key=state_key("diffusion_mode"))
     {
         LearningMode.EXPLORE: explore,
         LearningMode.COMPARE: compare,

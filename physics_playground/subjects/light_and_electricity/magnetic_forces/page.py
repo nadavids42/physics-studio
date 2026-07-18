@@ -16,11 +16,21 @@ from physics_playground.presentation.learning_modes import (
     mode_navigation,
 )
 from physics_playground.presentation.notebook_ui import add_trial
+from physics_playground.state_keys import simulation_key
 
 from .missions import evaluate
 from .physics import ForceMode, MagneticForceParameters, simulate
 
 ID = "magnetic_forces"
+
+
+def state_key(name: str) -> str:
+    canonical = simulation_key(ID, name)
+    if name in st.session_state and canonical not in st.session_state:
+        st.session_state[canonical] = st.session_state.pop(name)
+    return canonical
+
+
 VERSION = "magnetic-force-1.0"
 
 
@@ -40,7 +50,7 @@ def record(r, seed, obs, label=None, badges=()):
     add_trial(
         simulation_id=ID,
         parameters=r.parameters.to_dict(),
-        prediction=st.session_state.get("magnetic_quiz_guess"),
+        prediction=st.session_state.get(state_key("magnetic_quiz_guess")),
         result_summary=r.outcome,
         metrics=metrics(r),
         earned_badges=badges,
@@ -73,7 +83,10 @@ def diagram(r, seed):
 def controls(prefix="magnetic"):
     mode = ForceMode(
         st.radio(
-            "Experiment", [x.value for x in ForceMode], horizontal=True, key=f"{prefix}_experiment"
+            "Experiment",
+            [x.value for x in ForceMode],
+            horizontal=True,
+            key=state_key(f"{prefix}_experiment"),
         )
     )
     c1, c2 = st.columns(2)
@@ -84,7 +97,7 @@ def controls(prefix="magnetic"):
             10.0,
             1.0,
             0.1,
-            key=f"{prefix}_q",
+            key=state_key(f"{prefix}_q"),
             disabled=mode is ForceMode.CURRENT_WIRE,
         )
         speed = st.slider(
@@ -93,7 +106,7 @@ def controls(prefix="magnetic"):
             500.0,
             100.0,
             5.0,
-            key=f"{prefix}_speed",
+            key=state_key(f"{prefix}_speed"),
             disabled=mode is ForceMode.CURRENT_WIRE,
         )
         current = st.slider(
@@ -102,7 +115,7 @@ def controls(prefix="magnetic"):
             20.0,
             2.0,
             0.5,
-            key=f"{prefix}_current",
+            key=state_key(f"{prefix}_current"),
             disabled=mode is ForceMode.POINT_CHARGE,
         )
         length = st.slider(
@@ -111,16 +124,18 @@ def controls(prefix="magnetic"):
             5.0,
             0.5,
             0.05,
-            key=f"{prefix}_length",
+            key=state_key(f"{prefix}_length"),
             disabled=mode is ForceMode.POINT_CHARGE,
         )
     with c2:
         motion = st.slider(
-            "Velocity/current direction (°)", -180, 180, 0, 5, key=f"{prefix}_motion"
+            "Velocity/current direction (°)", -180, 180, 0, 5, key=state_key(f"{prefix}_motion")
         )
-        field = st.slider("Magnetic field (T)", 0.0, 5.0, 0.2, 0.05, key=f"{prefix}_field")
+        field = st.slider(
+            "Magnetic field (T)", 0.0, 5.0, 0.2, 0.05, key=state_key(f"{prefix}_field")
+        )
         field_angle = st.slider(
-            "Magnetic-field direction (°)", -180, 180, 90, 5, key=f"{prefix}_field_angle"
+            "Magnetic-field direction (°)", -180, 180, 90, 5, key=state_key(f"{prefix}_field_angle")
         )
     return MagneticForceParameters(
         mode, charge_micro * 1e-6, speed, current, length, motion, field, field_angle
@@ -137,7 +152,7 @@ def explore():
     st.caption("Text outcome: " + r.outcome)
     st.info("Right-hand rule: " + r.right_hand_guidance)
     diagram(r, 20263001)
-    obs = st.text_input("Optional notebook observation", key="magnetic_obs")
+    obs = st.text_input("Optional notebook observation", key=state_key("magnetic_obs"))
     if st.button("🧲 Calculate magnetic force", type="primary", use_container_width=True):
         record(r, 20263001, obs, badges=mission_ui.process_run(ID, evaluate(r)))
         st.rerun()
@@ -212,7 +227,7 @@ def model():
 def render():
     st.header("🧲 Magnetic Forces")
     revealed = mission_ui.prediction_quiz(
-        key="magnetic_quiz",
+        key=state_key("magnetic_quiz"),
         question="A positive charge moves exactly parallel to a magnetic field. What magnetic force acts on it?",
         options=["Zero", "Maximum", "It accelerates along the field"],
         correct_index=0,
@@ -221,7 +236,7 @@ def render():
     )
     if not revealed:
         return
-    mode = mode_navigation(key="magnetic_mode")
+    mode = mode_navigation(key=state_key("magnetic_mode"))
     {
         LearningMode.EXPLORE: explore,
         LearningMode.COMPARE: compare,

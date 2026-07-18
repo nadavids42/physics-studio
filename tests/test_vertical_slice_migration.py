@@ -2,12 +2,15 @@ from pathlib import Path
 
 import pytest
 
-from physics_playground.expansion_catalog import EXPANSION_BY_ID
+from physics_playground.expansion_catalog import EXPANSION_BY_ID, EXPANSION_MANIFESTS
 from physics_playground.expansion_validation import validate_expansion_definition
 from physics_playground.registry import load_validated_page
 from physics_playground.state_keys import simulation_key
 
 MIGRATED = {
+    "earth_tunnel": "mechanics",
+    "double_pendulum": "waves_and_oscillations",
+    "bumper_cars": "mechanics",
     "orbital_gravity": "mechanics",
     "boing": "waves_and_oscillations",
     "cannonball": "mechanics",
@@ -68,5 +71,44 @@ def test_obsolete_horizontal_files_are_removed() -> None:
         "physics_playground/missions/boing.py",
         "physics_playground/canvas/boing.py",
         "physics_playground/presentation/spring_charts.py",
+        "physics_playground/models/earth_tunnel.py",
+        "physics_playground/pages/earth_tunnel.py",
+        "physics_playground/missions/earth_tunnel.py",
+        "physics_playground/canvas/earth_tunnel.py",
+        "physics_playground/presentation/tunnel_charts.py",
+        "physics_playground/models/double_pendulum.py",
+        "physics_playground/pages/double_pendulum.py",
+        "physics_playground/missions/double_pendulum.py",
+        "physics_playground/canvas/double_pendulum.py",
+        "physics_playground/presentation/double_pendulum_charts.py",
+        "physics_playground/models/collision.py",
+        "physics_playground/pages/bumper_cars.py",
+        "physics_playground/missions/bumper_cars.py",
+        "physics_playground/canvas/bumper_cars.py",
+        "physics_playground/presentation/bumper_cars.py",
+        "physics_playground/presentation/bumper_learning.py",
     )
     assert not any(Path(path).exists() for path in old_paths)
+    assert not Path("physics_playground/pages/__init__.py").exists()
+
+
+def test_every_registered_simulation_uses_a_presentation_independent_slice() -> None:
+    assert len(EXPANSION_MANIFESTS) == 22
+    for manifest in EXPANSION_MANIFESTS:
+        physics_module = manifest.physics_entrypoint.rsplit(".", 1)[0]
+        page_module = manifest.page_entrypoint.rsplit(".", 1)[0]
+        assert ".subjects." in physics_module and physics_module.endswith(".physics")
+        assert ".subjects." in page_module and page_module.endswith(".page")
+        physics_source = Path(physics_module.replace(".", "/") + ".py").read_text()
+        assert not any(
+            forbidden in physics_source
+            for forbidden in ("streamlit", "matplotlib", "physics_playground.presentation")
+        )
+
+
+def test_every_page_uses_namespaced_simulation_state() -> None:
+    for manifest in EXPANSION_MANIFESTS:
+        page_path = Path(manifest.page_entrypoint.rsplit(".", 1)[0].replace(".", "/") + ".py")
+        source = page_path.read_text()
+        assert "from physics_playground.state_keys import" in source
+        assert "simulation_key" in source and "def state_key" in source

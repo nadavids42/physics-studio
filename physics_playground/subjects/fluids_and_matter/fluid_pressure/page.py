@@ -16,12 +16,22 @@ from physics_playground.presentation.learning_modes import (
     mode_navigation,
 )
 from physics_playground.presentation.notebook_ui import add_trial
+from physics_playground.state_keys import simulation_key
 from physics_playground.units import EARTH_GRAVITY_M_S2, STANDARD_ATMOSPHERE_PA
 
 from .missions import evaluate
 from .physics import FluidPressureParameters, simulate
 
 ID = "fluid_pressure"
+
+
+def state_key(name: str) -> str:
+    canonical = simulation_key(ID, name)
+    if name in st.session_state and canonical not in st.session_state:
+        st.session_state[canonical] = st.session_state.pop(name)
+    return canonical
+
+
 VERSION = "fluid-pressure-1.0"
 
 
@@ -38,7 +48,7 @@ def record(r, seed, obs, label=None, badges=()):
     add_trial(
         simulation_id=ID,
         parameters=r.parameters.to_dict(),
-        prediction=st.session_state.get("pressure_quiz_guess"),
+        prediction=st.session_state.get(state_key("pressure_quiz_guess")),
         result_summary=r.outcome,
         metrics=metrics(r),
         earned_badges=badges,
@@ -72,19 +82,21 @@ def diagram(r, seed):
 def controls(prefix="pressure"):
     c = st.columns(3)
     density = c[0].slider(
-        "Fluid density (kg/m³)", 100.0, 2000.0, 1000.0, 25.0, key=f"{prefix}_density"
+        "Fluid density (kg/m³)", 100.0, 2000.0, 1000.0, 25.0, key=state_key(f"{prefix}_density")
     )
-    maximum = c[1].slider("Container depth (m)", 1.0, 50.0, 10.0, 1.0, key=f"{prefix}_max")
+    maximum = c[1].slider(
+        "Container depth (m)", 1.0, 50.0, 10.0, 1.0, key=state_key(f"{prefix}_max")
+    )
     depth = c[2].slider(
         "Measurement depth (m)",
         0.0,
         float(maximum),
         min(5.0, float(maximum)),
         0.1,
-        key=f"{prefix}_depth",
+        key=state_key(f"{prefix}_depth"),
     )
     gravity = st.slider(
-        "Gravity (m/s²)", 1.0, 25.0, EARTH_GRAVITY_M_S2, 0.01, key=f"{prefix}_gravity"
+        "Gravity (m/s²)", 1.0, 25.0, EARTH_GRAVITY_M_S2, 0.01, key=state_key(f"{prefix}_gravity")
     )
     surface = st.number_input(
         "Surface pressure (Pa)",
@@ -92,7 +104,7 @@ def controls(prefix="pressure"):
         max_value=200000.0,
         value=STANDARD_ATMOSPHERE_PA,
         step=100.0,
-        key=f"{prefix}_surface",
+        key=state_key(f"{prefix}_surface"),
     )
     return FluidPressureParameters(density, depth, gravity, surface, maximum)
 
@@ -106,7 +118,7 @@ def explore():
     c[2].metric("Increase per meter", f"{r.pressure_increase_per_meter_pa / 1000:.2f} kPa/m")
     st.caption("Text outcome: " + r.outcome)
     diagram(r, 20263201)
-    obs = st.text_input("Optional notebook observation", key="pressure_obs")
+    obs = st.text_input("Optional notebook observation", key=state_key("pressure_obs"))
     if st.button("🌊 Measure pressure", type="primary", use_container_width=True):
         record(r, 20263201, obs, badges=mission_ui.process_run(ID, evaluate(r)))
         st.rerun()
@@ -172,7 +184,7 @@ def model():
 def render():
     st.header("🌊 Fluid Pressure")
     revealed = mission_ui.prediction_quiz(
-        key="pressure_quiz",
+        key=state_key("pressure_quiz"),
         question="In a resting fluid, what happens to pressure as depth increases?",
         options=["It increases", "It decreases", "Container width decides"],
         correct_index=0,
@@ -181,7 +193,7 @@ def render():
     )
     if not revealed:
         return
-    mode = mode_navigation(key="pressure_mode")
+    mode = mode_navigation(key=state_key("pressure_mode"))
     {
         LearningMode.EXPLORE: explore,
         LearningMode.COMPARE: compare,

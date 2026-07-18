@@ -5,19 +5,33 @@ Repository baseline: current working tree at audit time
 
 ## Migration progress
 
-Stage 3 is underway. Two dependency-ordered waves have been completed after the audit:
+Stage 3 is complete. All dependency-ordered waves have been completed after the audit:
 
 - **Completed:** `cannonball` moved to `subjects/mechanics/cannonball/`.
 - **Completed:** `pendulum` moved to `subjects/waves_and_oscillations/pendulum/`.
 - **Completed:** `orbital_gravity` moved to `subjects/mechanics/orbital_gravity/`.
 - **Completed:** `boing` moved to `subjects/waves_and_oscillations/boing/`.
-- **Remaining horizontal simulations, in planned order:** `earth_tunnel`, `double_pendulum`, and
-  `bumper_cars`.
+- **Completed:** `earth_tunnel` moved to `subjects/mechanics/earth_tunnel/`.
+- **Completed:** `double_pendulum` moved to
+  `subjects/waves_and_oscillations/double_pendulum/`.
+- **Completed:** `bumper_cars` moved to `subjects/mechanics/bumper_cars/`.
+- **Remaining horizontal simulations:** none.
 
 Each completed slice owns `physics.py`, `page.py`, `missions.py`, `charts.py`, and `scene.py`, is
-enrolled in the expansion manifest catalog, is loaded through registry manifest validation, and
-uses namespaced simulation state with compatibility migration reads. The inventory and counts
+enrolled in the expansion manifest catalog and is loaded through registry manifest validation.
+All pages use namespaced simulation state; the seven moved slices retain compatibility migration
+reads for their former raw keys. The inventory and counts
 below describe the original audit baseline and are retained as historical evidence.
+
+### Completion audit
+
+The post-migration repository has 22 vertical slices and no live horizontal simulation modules.
+Every registry ID has exactly one validated manifest; runtime loading has no legacy page fallback.
+The former `physics_playground/pages` package was removed after repository-wide import checks.
+Shared `models`, `missions`, `canvas`, and `presentation` packages remain because they own active
+cross-cutting contracts and infrastructure. All slice physics modules are presentation-independent,
+all pages use namespaced simulation state, and integration tests cover notebook restoration,
+mission ownership, badge counts, four-mode reachability, and registry/manifest consistency.
 
 ## Scope and evidence
 
@@ -408,9 +422,9 @@ Migrate one simulation at a time in this order:
 2. Pendulum — **completed**
 3. Orbit — **completed**
 4. Boing — **completed**
-5. Earth Tunnel — remaining
-6. Double Pendulum — remaining
-7. Bumper Cars — remaining
+5. Earth Tunnel — **completed**
+6. Double Pendulum — **completed**
+7. Bumper Cars — **completed**
 
 For each simulation:
 

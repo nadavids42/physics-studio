@@ -2,17 +2,19 @@
 
 import streamlit as st
 
-from physics_playground.models.collision import CollisionParameters, simulate_collision
-from physics_playground.models.double_pendulum import (
-    DoublePendulumParameters,
-    simulate_double_pendulum,
-)
-from physics_playground.models.earth_tunnel import TunnelParameters, simulate_tunnel
 from physics_playground.performance import timed
+from physics_playground.subjects.mechanics.bumper_cars.physics import (
+    CollisionParameters,
+    simulate_collision,
+)
 from physics_playground.subjects.mechanics.cannonball.physics import (
     ProjectileParameters,
     simulate_no_drag,
     simulate_projectile,
+)
+from physics_playground.subjects.mechanics.earth_tunnel.physics import (
+    TunnelParameters,
+    simulate_tunnel,
 )
 from physics_playground.subjects.mechanics.orbital_gravity.physics import (
     OrbitParameters,
@@ -21,6 +23,10 @@ from physics_playground.subjects.mechanics.orbital_gravity.physics import (
 from physics_playground.subjects.waves_and_oscillations.boing.physics import (
     SpringParameters,
     simulate_spring,
+)
+from physics_playground.subjects.waves_and_oscillations.double_pendulum.physics import (
+    DoublePendulumParameters,
+    simulate_double_pendulum,
 )
 from physics_playground.subjects.waves_and_oscillations.pendulum.physics import (
     PendulumParameters,

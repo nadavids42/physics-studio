@@ -1,6 +1,7 @@
+from physics_playground.expansion_catalog import EXPANSION_BY_ID
 from physics_playground.missions.definitions import MISSION_DEFINITIONS
 from physics_playground.models.simulations import Difficulty
-from physics_playground.registry import SIMULATION_REGISTRY, SIMULATIONS_BY_ID
+from physics_playground.registry import SIMULATION_REGISTRY, SIMULATIONS_BY_ID, load_validated_page
 
 
 def test_registry_has_twenty_two_stable_unique_ids():
@@ -14,9 +15,10 @@ def test_every_definition_has_complete_home_metadata():
         assert item.concepts and isinstance(item.difficulty, Difficulty)
         assert item.badge_count > 0 and item.renderer and item.model_version and item.visual
         assert item.page_module.startswith("physics_playground.")
-        assert item.page_module.endswith(".page") or item.page_module.startswith(
-            "physics_playground.pages."
-        )
+        assert item.page_module.endswith(".page")
+        assert item.id in EXPANSION_BY_ID
+        module, entrypoint = load_validated_page(item.id)
+        assert module.__name__ == item.page_module and entrypoint == "render"
 
 
 def test_badge_counts_match_mission_catalog():

@@ -16,11 +16,21 @@ from physics_playground.presentation.learning_modes import (
     mode_navigation,
 )
 from physics_playground.presentation.notebook_ui import add_trial
+from physics_playground.state_keys import simulation_key
 
 from .missions import evaluate
 from .physics import ThinLensParameters, simulate
 
 ID = "thin_lenses"
+
+
+def state_key(name: str) -> str:
+    canonical = simulation_key(ID, name)
+    if name in st.session_state and canonical not in st.session_state:
+        st.session_state[canonical] = st.session_state.pop(name)
+    return canonical
+
+
 VERSION = "thin-lens-1.0"
 
 
@@ -40,7 +50,7 @@ def record(r, seed, obs, label=None, badges=()):
     add_trial(
         simulation_id=ID,
         parameters=r.parameters.to_dict(),
-        prediction=st.session_state.get("lens_quiz_guess"),
+        prediction=st.session_state.get(state_key("lens_quiz_guess")),
         result_summary=r.outcome,
         metrics=metrics(r),
         earned_badges=badges,
@@ -68,9 +78,11 @@ def diagram(r, seed):
 
 def controls(prefix="lens"):
     c = st.columns(3)
-    do = c[0].slider("Object distance (m)", 0.1, 10.0, 3.0, 0.05, key=f"{prefix}_do")
-    kind = c[1].radio("Lens type", ["Converging", "Diverging"], key=f"{prefix}_kind")
-    magnitude = c[2].slider("Focal-length magnitude (m)", 0.1, 5.0, 1.0, 0.05, key=f"{prefix}_f")
+    do = c[0].slider("Object distance (m)", 0.1, 10.0, 3.0, 0.05, key=state_key(f"{prefix}_do"))
+    kind = c[1].radio("Lens type", ["Converging", "Diverging"], key=state_key(f"{prefix}_kind"))
+    magnitude = c[2].slider(
+        "Focal-length magnitude (m)", 0.1, 5.0, 1.0, 0.05, key=state_key(f"{prefix}_f")
+    )
     return ThinLensParameters(do, magnitude if kind == "Converging" else -magnitude, 1.0)
 
 
@@ -90,7 +102,7 @@ def explore():
     )
     st.caption("Text outcome: " + r.outcome)
     diagram(r, 20262801)
-    obs = st.text_input("Optional notebook observation", key="lens_obs")
+    obs = st.text_input("Optional notebook observation", key=state_key("lens_obs"))
     if st.button("🔍 Trace principal rays", type="primary", use_container_width=True):
         record(r, 20262801, obs, badges=mission_ui.process_run(ID, evaluate(r)))
         st.rerun()
@@ -158,7 +170,7 @@ def model():
 def render():
     st.header("🔍 Thin Lenses")
     revealed = mission_ui.prediction_quiz(
-        key="lens_quiz",
+        key=state_key("lens_quiz"),
         question="A converging lens has an object beyond its focal point. What kind of image can it form?",
         options=["Real and inverted", "Always virtual", "No image"],
         correct_index=0,
@@ -167,7 +179,7 @@ def render():
     )
     if not revealed:
         return
-    mode = mode_navigation(key="lens_mode")
+    mode = mode_navigation(key=state_key("lens_mode"))
     {
         LearningMode.EXPLORE: explore,
         LearningMode.COMPARE: compare,

@@ -7,17 +7,16 @@ analytical meaning. Presentation code turns immutable results into learning mode
 browser scenes. Streamlit is the current presentation shell; it is replaceable and is not part of
 the physics domain.
 
-The repository currently contains two simulation layouts. Seven established simulations use a
-horizontal technical-layer layout, while 15 newer simulations use subject-oriented vertical
-slices. Both are active and tested. New work should use vertical slices; existing horizontal
-simulations should move only through compatibility-preserving migrations.
+All 22 simulations use subject-oriented vertical slices. Shared packages provide contracts,
+rendering infrastructure, persistence, missions, and presentation helpers; they do not own
+simulation-specific pages or physics.
 
 ## Runtime map
 
 ```text
 app.py
   -> physics_playground/registry.py
-       -> lazy import of SimulationDefinition.page_module
+       -> validated manifest and lazy page-entrypoint import
             -> Streamlit page and four learning modes
                  -> pure physics model
                  -> mission evaluator
@@ -50,7 +49,8 @@ canonical modules above.
 
 ## Pure physics-model boundary
 
-Pure models live in either `physics_playground/models/` or a vertical slice's `physics.py`.
+Simulation models live in a vertical slice's `physics.py`; shared architecture models remain in
+`physics_playground/models/`.
 They may depend on contracts, validation, numerical helpers, NumPy, and Python's standard library.
 They must not import Streamlit, Matplotlib, presentation modules, or canvas modules.
 
@@ -80,7 +80,7 @@ inspection is still required for appearance and interaction quality.
 
 ## Vertical slices
 
-New simulations live at:
+Simulations live at:
 
 ```text
 physics_playground/subjects/<subject>/<simulation>/
@@ -88,6 +88,8 @@ physics_playground/subjects/<subject>/<simulation>/
   physics.py
   missions.py
   page.py
+  charts.py       # when simulation-specific
+  scene.py        # when simulation-specific
 ```
 
 A subject may share canvas or UI helpers at its package root. A slice should own simulation-specific
@@ -100,7 +102,7 @@ The supported subject identifiers are defined by `SubjectArea` in
 ## Manifests, validation, and registry
 
 Subject `manifests.py` modules create `ExpansionDefinition` records. The combined catalog in
-`physics_playground/expansion_catalog.py` covers the 15 vertical-slice simulations. Validation in
+`physics_playground/expansion_catalog.py` covers all 22 simulations. Validation in
 `physics_playground/expansion_validation.py` requires:
 
 - complete metadata and stable IDs;
@@ -111,11 +113,11 @@ Subject `manifests.py` modules create `ExpansionDefinition` records. The combine
 - declared physics-invariant and validation-test coverage;
 - a prediction capability in Explore mode.
 
-`physics_playground/registry.py` is the runtime source for navigation, cards, stable page IDs, lazy
-page imports, and visual metadata. Today the registry and expansion catalog are parallel explicit
-catalogs: validation tests ensure consistency, but manifests do not generate registry entries.
-Contributors adding a simulation must update both and run the integration tests. Do not describe a
-simulation as enrolled until it is present in the runtime registry and all validation tests pass.
+`physics_playground/registry.py` is the metadata source for navigation, cards, and stable IDs.
+Runtime loading goes through `load_validated_page()`, which requires a manifest, validates it, and
+then lazily imports its page entrypoint. Registry and manifest catalogs remain parallel explicit
+declarations, with tests enforcing exact ID and metadata consistency. Contributors must update
+both catalogs and pass validation before a simulation is reachable.
 
 ## Compatibility and state
 

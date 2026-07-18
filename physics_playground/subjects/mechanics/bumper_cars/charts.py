@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
 from physics_playground.contracts import PlotData
-from physics_playground.models.collision import CollisionParameters
+from physics_playground.subjects.mechanics.bumper_cars.physics import CollisionParameters
 
 
 def position_figure(plot: PlotData, collision_time_s: float | None) -> Figure:
@@ -22,7 +22,7 @@ def position_figure(plot: PlotData, collision_time_s: float | None) -> Figure:
 
 
 def energy_retention_figure(parameters: CollisionParameters) -> Figure:
-    from physics_playground.models.collision import collision_energy_scan
+    from physics_playground.subjects.mechanics.bumper_cars.physics import collision_energy_scan
 
     restitutions, retained = collision_energy_scan(
         parameters.mass_a_kg,

@@ -26,6 +26,7 @@ from physics_playground.performance import (
     validate_finite_parameters,
 )
 from physics_playground.serialization import to_jsonable
+from physics_playground.units import EARTH_GRAVITY_M_S2, EARTH_RADIUS_M
 from physics_playground.validation import PhysicsValidationError, require_positive
 
 
@@ -36,8 +37,8 @@ class TunnelModel(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class TunnelParameters:
-    radius_m: float
-    surface_gravity_m_s2: float
+    radius_m: float = EARTH_RADIUS_M
+    surface_gravity_m_s2: float = EARTH_GRAVITY_M_S2
     start_fraction: float = 1.0
     model: TunnelModel = TunnelModel.UNIFORM
     density_gradient: float = 0.75

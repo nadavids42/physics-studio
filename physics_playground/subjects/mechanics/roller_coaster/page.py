@@ -13,6 +13,7 @@ from physics_playground.presentation.learning_modes import (
     mode_heading,
     mode_navigation,
 )
+from physics_playground.state_keys import simulation_key
 from physics_playground.subjects.mechanics.canvas import document
 from physics_playground.subjects.mechanics.ui import metric_table, record, show
 
@@ -20,6 +21,15 @@ from .missions import evaluate
 from .physics import RollerCoasterParameters, simulate
 
 ID = "roller_coaster"
+
+
+def state_key(name: str) -> str:
+    canonical = simulation_key(ID, name)
+    if name in st.session_state and canonical not in st.session_state:
+        st.session_state[canonical] = st.session_state.pop(name)
+    return canonical
+
+
 VERSION = "roller-coaster-1.0"
 
 
@@ -68,13 +78,21 @@ def animation(r, seed):
 def controls(key="coaster"):
     c1, c2 = st.columns(2)
     with c1:
-        start = st.slider("Starting height (m)", 1.0, 50.0, 20.0, 1.0, key=f"{key}_start")
-        hill = st.slider("Middle hill height (m)", 0.0, 60.0, 12.0, 1.0, key=f"{key}_hill")
-        finish = st.slider("Final height (m)", 0.0, 40.0, 2.0, 1.0, key=f"{key}_finish")
+        start = st.slider(
+            "Starting height (m)", 1.0, 50.0, 20.0, 1.0, key=state_key(f"{key}_start")
+        )
+        hill = st.slider(
+            "Middle hill height (m)", 0.0, 60.0, 12.0, 1.0, key=state_key(f"{key}_hill")
+        )
+        finish = st.slider("Final height (m)", 0.0, 40.0, 2.0, 1.0, key=state_key(f"{key}_finish"))
     with c2:
-        speed = st.slider("Starting speed (m/s)", 0.0, 25.0, 0.0, 0.5, key=f"{key}_speed")
-        loss = st.slider("Energy loss per meter (J/m)", 0.0, 500.0, 0.0, 10.0, key=f"{key}_loss")
-        mass = st.slider("Car mass (kg)", 50.0, 1000.0, 200.0, 25.0, key=f"{key}_mass")
+        speed = st.slider(
+            "Starting speed (m/s)", 0.0, 25.0, 0.0, 0.5, key=state_key(f"{key}_speed")
+        )
+        loss = st.slider(
+            "Energy loss per meter (J/m)", 0.0, 500.0, 0.0, 10.0, key=state_key(f"{key}_loss")
+        )
+        mass = st.slider("Car mass (kg)", 50.0, 1000.0, 200.0, 25.0, key=state_key(f"{key}_mass"))
     return RollerCoasterParameters(mass, start, speed, hill, finish, 80, loss)
 
 
@@ -90,12 +108,12 @@ def explore():
     )
     st.caption("Text outcome: " + r.outcome)
     animation(r, 20262301)
-    obs = st.text_input("Optional notebook observation", key="coaster_obs")
+    obs = st.text_input("Optional notebook observation", key=state_key("coaster_obs"))
     if st.button("🎢 Run coaster", type="primary", use_container_width=True):
         record(
             ID,
             r.parameters.to_dict(),
-            st.session_state.get("coaster_quiz_guess"),
+            st.session_state.get(state_key("coaster_quiz_guess")),
             r.outcome,
             numbers(r),
             mission_ui.process_run(ID, evaluate(r)),
@@ -191,7 +209,7 @@ def model():
 def render():
     st.header("🎢 Roller-Coaster Energy")
     revealed = mission_ui.prediction_quiz(
-        key="coaster_quiz",
+        key=state_key("coaster_quiz"),
         question="As a coaster rolls downhill without losses, what happens to its gravitational potential energy?",
         options=["It becomes kinetic energy", "It disappears", "It stays unchanged"],
         correct_index=0,
@@ -200,7 +218,7 @@ def render():
     )
     if not revealed:
         return
-    mode = mode_navigation(key="coaster_mode")
+    mode = mode_navigation(key=state_key("coaster_mode"))
     {
         LearningMode.EXPLORE: explore,
         LearningMode.COMPARE: compare,

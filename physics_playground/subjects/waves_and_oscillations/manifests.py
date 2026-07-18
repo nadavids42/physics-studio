@@ -76,9 +76,27 @@ BOING_MANIFEST = ExpansionDefinition(
     ("No spring mass", "Linear damping and sinusoidal drive only"),
     tests=TestRequirements(numerical_convergence_test=True),
 )
+DOUBLE_PENDULUM_MANIFEST = ExpansionDefinition(
+    SIMULATIONS_BY_ID["double_pendulum"],
+    SubjectArea.WAVES_AND_OSCILLATIONS,
+    "DoublePendulumParameters",
+    "DoublePendulumResult",
+    "physics_playground.subjects.waves_and_oscillations.double_pendulum.physics.simulate_double_pendulum",
+    "physics_playground.subjects.waves_and_oscillations.double_pendulum.page.render",
+    "physics_playground.subjects.waves_and_oscillations.double_pendulum.scene.build_double_canvas",
+    REQUIRED_MODE_REQUIREMENTS,
+    MISSIONS_BY_SIMULATION["double_pendulum"],
+    (
+        ModelAssumption("point_masses", "Point masses joined by massless rigid links"),
+        ModelAssumption("planar", "Planar motion in uniform gravity"),
+    ),
+    ("No damping or pivot friction", "Classical rigid-link model"),
+    tests=TestRequirements(numerical_convergence_test=True),
+)
 WAVES_MANIFESTS = (
     WAVE_INTERFERENCE_MANIFEST,
     DOPPLER_EFFECT_MANIFEST,
     PENDULUM_MANIFEST,
     BOING_MANIFEST,
+    DOUBLE_PENDULUM_MANIFEST,
 )

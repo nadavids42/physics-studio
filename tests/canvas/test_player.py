@@ -1,11 +1,14 @@
 """Contract tests for the browser-side player document."""
 
-from physics_playground.canvas.bumper_cars import (
+from physics_playground.canvas.player import build_player_document
+from physics_playground.subjects.mechanics.bumper_cars.physics import (
+    CollisionParameters,
+    simulate_collision,
+)
+from physics_playground.subjects.mechanics.bumper_cars.scene import (
     build_bumper_canvas,
     build_bumper_comparison_canvas,
 )
-from physics_playground.canvas.player import build_player_document
-from physics_playground.models.collision import CollisionParameters, simulate_collision
 
 
 def test_shared_player_contains_required_controls_and_accessibility() -> None:

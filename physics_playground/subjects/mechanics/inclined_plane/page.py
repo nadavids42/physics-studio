@@ -15,6 +15,7 @@ from physics_playground.presentation.learning_modes import (
     mode_heading,
     mode_navigation,
 )
+from physics_playground.state_keys import simulation_key
 from physics_playground.subjects.mechanics.canvas import document
 from physics_playground.subjects.mechanics.ui import metric_table, record, show
 
@@ -22,23 +23,34 @@ from .missions import evaluate
 from .physics import InclinedPlaneParameters, simulate
 
 ID = "inclined_plane"
+
+
+def state_key(name: str) -> str:
+    canonical = simulation_key(ID, name)
+    if name in st.session_state and canonical not in st.session_state:
+        st.session_state[canonical] = st.session_state.pop(name)
+    return canonical
+
+
 VERSION = "inclined-plane-1.0"
 
 
 def params(prefix="incline"):
     c1, c2 = st.columns(2)
     with c1:
-        m = st.slider("Block mass (kg)", 0.2, 20.0, 2.0, 0.2, key=f"{prefix}_mass")
-        a = st.slider("Ramp angle (degrees)", 0, 75, 30, key=f"{prefix}_angle")
+        m = st.slider("Block mass (kg)", 0.2, 20.0, 2.0, 0.2, key=state_key(f"{prefix}_mass"))
+        a = st.slider("Ramp angle (degrees)", 0, 75, 30, key=state_key(f"{prefix}_angle"))
     with c2:
-        mus = st.slider("Static friction coefficient", 0.0, 1.5, 0.3, 0.05, key=f"{prefix}_mus")
+        mus = st.slider(
+            "Static friction coefficient", 0.0, 1.5, 0.3, 0.05, key=state_key(f"{prefix}_mus")
+        )
         ratio = st.slider(
             "Kinetic friction as a fraction of static friction",
             0.0,
             1.0,
             0.67,
             0.01,
-            key=f"{prefix}_muk_ratio",
+            key=state_key(f"{prefix}_muk_ratio"),
         )
         muk = mus * ratio
     return InclinedPlaneParameters(m, a, mus, muk)
@@ -137,13 +149,13 @@ def explore():
     metric_table(metrics(r))
     st.caption("Text outcome: " + r.outcome)
     animate(r, 20262001, False)
-    obs = st.text_input("Optional notebook observation", key="incline_obs")
+    obs = st.text_input("Optional notebook observation", key=state_key("incline_obs"))
     if st.button("▶ Run ramp", type="primary", use_container_width=True):
         badges = mission_ui.process_run(ID, evaluate(r))
         record(
             ID,
             r.parameters.to_dict(),
-            st.session_state.get("incline_quiz_guess"),
+            st.session_state.get(state_key("incline_quiz_guess")),
             r.outcome,
             numeric(r),
             badges,
@@ -232,7 +244,7 @@ def model():
 def render():
     st.header("📐 Inclined Plane with Friction")
     revealed = mission_ui.prediction_quiz(
-        key="incline_quiz",
+        key=state_key("incline_quiz"),
         question="If a ramp gets steeper while friction stays the same, is the block more likely to slide?",
         options=["Yes", "No", "Mass alone decides"],
         correct_index=0,
@@ -241,7 +253,7 @@ def render():
     )
     if not revealed:
         return
-    mode = mode_navigation(key="incline_mode")
+    mode = mode_navigation(key=state_key("incline_mode"))
     {
         LearningMode.EXPLORE: explore,
         LearningMode.COMPARE: compare,

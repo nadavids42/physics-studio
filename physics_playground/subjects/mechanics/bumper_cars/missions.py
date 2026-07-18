@@ -1,7 +1,7 @@
 """Side-effect-free mission rules for completed Bumper Cars trials."""
 
 from physics_playground.contracts import MissionEvaluation
-from physics_playground.models.collision import CollisionResult
+from physics_playground.subjects.mechanics.bumper_cars.physics import CollisionResult
 
 
 def evaluate_bumper_missions(result: CollisionResult) -> tuple[MissionEvaluation, ...]:

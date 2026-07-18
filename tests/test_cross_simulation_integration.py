@@ -15,6 +15,9 @@ from physics_playground.registry import SIMULATIONS_BY_ID
 from physics_playground.serialization import dataclass_from_dict, to_jsonable
 
 EXPANSION_IDS = {
+    "earth_tunnel",
+    "double_pendulum",
+    "bumper_cars",
     "orbital_gravity",
     "boing",
     "cannonball",
@@ -102,8 +105,8 @@ def test_pages_expose_all_modes_notebook_assumptions_and_safe_keys() -> None:
             start = source.index(marker) + len(marker)
             key = source[start : source.index('"', start)]
         else:
-            assert 'mode_navigation(key=state_key("learning_mode"))' in source
-            key = f"{manifest.metadata.id}.learning_mode"
+            assert "mode_navigation(key=state_key(" in source
+            key = f"{manifest.metadata.id}.namespaced_mode"
         assert key not in seen_mode_keys
         seen_mode_keys.add(key)
 

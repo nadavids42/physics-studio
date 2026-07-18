@@ -1,6 +1,6 @@
 """Bumper-specific formatting shared by its Analyze and Compare modes."""
 
-from physics_playground.models.collision import CollisionResult
+from physics_playground.subjects.mechanics.bumper_cars.physics import CollisionResult
 
 
 def comparison_measurements(result: CollisionResult) -> dict[str, tuple[str, float]]:

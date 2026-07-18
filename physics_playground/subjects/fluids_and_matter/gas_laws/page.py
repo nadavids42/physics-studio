@@ -16,6 +16,7 @@ from physics_playground.presentation.learning_modes import (
     mode_navigation,
 )
 from physics_playground.presentation.notebook_ui import add_trial
+from physics_playground.state_keys import simulation_key
 
 from .missions import evaluate
 from .physics import (
@@ -27,6 +28,15 @@ from .physics import (
 )
 
 ID = "gas_laws"
+
+
+def state_key(name: str) -> str:
+    canonical = simulation_key(ID, name)
+    if name in st.session_state and canonical not in st.session_state:
+        st.session_state[canonical] = st.session_state.pop(name)
+    return canonical
+
+
 VERSION = "gas-laws-1.0"
 
 
@@ -46,7 +56,7 @@ def record(r, seed, obs, label=None, badges=()):
     add_trial(
         simulation_id=ID,
         parameters=r.parameters.to_dict(),
-        prediction=st.session_state.get("gas_quiz_guess"),
+        prediction=st.session_state.get(state_key("gas_quiz_guess")),
         result_summary=r.outcome,
         metrics=metrics(r),
         earned_badges=badges,
@@ -78,29 +88,35 @@ def diagram(r, seed):
 def controls(prefix="gas"):
     scenario = GasLawScenario(
         st.selectbox(
-            "Gas-law scenario", [x.value for x in GasLawScenario], key=f"{prefix}_scenario"
+            "Gas-law scenario",
+            [x.value for x in GasLawScenario],
+            key=state_key(f"{prefix}_scenario"),
         )
     )
     c = st.columns(4)
-    n = c[0].slider("Amount (mol)", 0.1, 5.0, 1.0, 0.1, key=f"{prefix}_n")
+    n = c[0].slider("Amount (mol)", 0.1, 5.0, 1.0, 0.1, key=state_key(f"{prefix}_n"))
     pressure_kpa = c[1].slider(
         "Constant pressure (kPa)",
         20.0,
         500.0,
         101.325,
         0.5,
-        key=f"{prefix}_p",
+        key=state_key(f"{prefix}_p"),
         disabled=scenario not in (GasLawScenario.CHARLES,),
     )
-    volume_l = c[2].slider("Initial/constant volume (L)", 1.0, 100.0, 24.0, 1.0, key=f"{prefix}_v")
-    temp_c = c[3].slider("Initial temperature (°C)", -250.0, 500.0, 20.0, 1.0, key=f"{prefix}_t")
+    volume_l = c[2].slider(
+        "Initial/constant volume (L)", 1.0, 100.0, 24.0, 1.0, key=state_key(f"{prefix}_v")
+    )
+    temp_c = c[3].slider(
+        "Initial temperature (°C)", -250.0, 500.0, 20.0, 1.0, key=state_key(f"{prefix}_t")
+    )
     target_volume_l = st.slider(
         "Target volume for Boyle's law (L)",
         1.0,
         100.0,
         12.0,
         1.0,
-        key=f"{prefix}_target_v",
+        key=state_key(f"{prefix}_target_v"),
         disabled=scenario is not GasLawScenario.BOYLE,
     )
     target_temp_c = st.slider(
@@ -109,7 +125,7 @@ def controls(prefix="gas"):
         500.0,
         100.0,
         1.0,
-        key=f"{prefix}_target_t",
+        key=state_key(f"{prefix}_target_t"),
         disabled=scenario not in (GasLawScenario.CHARLES, GasLawScenario.GAY_LUSSAC),
     )
     st.caption(
@@ -141,7 +157,7 @@ def explore():
     st.metric(r.invariant_name + " difference", f"{r.invariant_b - r.invariant_a:.3g}")
     st.caption("Text outcome: " + r.outcome)
     diagram(r, 20263301)
-    obs = st.text_input("Optional notebook observation", key="gas_obs")
+    obs = st.text_input("Optional notebook observation", key=state_key("gas_obs"))
     if st.button("🎈 Run gas experiment", type="primary", use_container_width=True):
         record(r, 20263301, obs, badges=mission_ui.process_run(ID, evaluate(r)))
         st.rerun()
@@ -241,7 +257,7 @@ def model():
 def render():
     st.header("🎈 Gas Laws")
     revealed = mission_ui.prediction_quiz(
-        key="gas_quiz",
+        key=state_key("gas_quiz"),
         question="At constant temperature, what happens to ideal-gas pressure when volume is cut in half?",
         options=["It doubles", "It halves", "It stays fixed"],
         correct_index=0,
@@ -250,7 +266,7 @@ def render():
     )
     if not revealed:
         return
-    mode = mode_navigation(key="gas_mode")
+    mode = mode_navigation(key=state_key("gas_mode"))
     {
         LearningMode.EXPLORE: explore,
         LearningMode.COMPARE: compare,

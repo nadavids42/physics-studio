@@ -1,5 +1,7 @@
+"""Pure mission evidence for Big Fall."""
+
 from physics_playground.contracts import MissionEvaluation
-from physics_playground.models.earth_tunnel import TunnelResult
+from physics_playground.subjects.mechanics.earth_tunnel.physics import TunnelResult
 from physics_playground.units import EARTH_RADIUS_M, MARS_RADIUS_M, MOON_RADIUS_M
 
 

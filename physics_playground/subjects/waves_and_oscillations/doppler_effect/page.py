@@ -16,12 +16,22 @@ from physics_playground.presentation.learning_modes import (
     mode_navigation,
 )
 from physics_playground.presentation.notebook_ui import add_trial
+from physics_playground.state_keys import simulation_key
 from physics_playground.units import ROOM_TEMPERATURE_SOUND_SPEED_M_S
 
 from .missions import evaluate
 from .physics import DopplerParameters, simulate
 
 ID = "doppler_effect"
+
+
+def state_key(name: str) -> str:
+    canonical = simulation_key(ID, name)
+    if name in st.session_state and canonical not in st.session_state:
+        st.session_state[canonical] = st.session_state.pop(name)
+    return canonical
+
+
 VERSION = "doppler-1.0"
 
 
@@ -40,7 +50,7 @@ def record(r, seed, obs, label=None, badges=()):
     add_trial(
         simulation_id=ID,
         parameters=r.parameters.to_dict(),
-        prediction=st.session_state.get("doppler_quiz_guess"),
+        prediction=st.session_state.get(state_key("doppler_quiz_guess")),
         result_summary=r.outcome,
         metrics=values(r),
         earned_badges=badges,
@@ -86,18 +96,25 @@ def animation(r, seed):
 def controls(prefix="doppler"):
     c1, c2 = st.columns(2)
     with c1:
-        f = st.slider("Source frequency (Hz)", 50.0, 1200.0, 440.0, 10.0, key=f"{prefix}_f")
+        f = st.slider(
+            "Source frequency (Hz)", 50.0, 1200.0, 440.0, 10.0, key=state_key(f"{prefix}_f")
+        )
         c = st.slider(
             "Speed of sound (m/s)",
             250.0,
             400.0,
             ROOM_TEMPERATURE_SOUND_SPEED_M_S,
             1.0,
-            key=f"{prefix}_c",
+            key=state_key(f"{prefix}_c"),
         )
     with c2:
         vs = st.slider(
-            "Source velocity (m/s; right is positive)", -200.0, 200.0, 30.0, 5.0, key=f"{prefix}_vs"
+            "Source velocity (m/s; right is positive)",
+            -200.0,
+            200.0,
+            30.0,
+            5.0,
+            key=state_key(f"{prefix}_vs"),
         )
         vo = st.slider(
             "Observer velocity (m/s; right is positive)",
@@ -105,7 +122,7 @@ def controls(prefix="doppler"):
             200.0,
             0.0,
             5.0,
-            key=f"{prefix}_vo",
+            key=state_key(f"{prefix}_vo"),
         )
     return DopplerParameters(f, c, vs, vo)
 
@@ -121,7 +138,7 @@ def explore():
     cols[2].metric("Motion", r.motion.value)
     st.caption("Text outcome: " + r.outcome)
     animation(r, 20262601)
-    obs = st.text_input("Optional notebook observation", key="doppler_obs")
+    obs = st.text_input("Optional notebook observation", key=state_key("doppler_obs"))
     if st.button("🔊 Run sound experiment", type="primary", use_container_width=True):
         record(r, 20262601, obs, badges=mission_ui.process_run(ID, evaluate(r)))
         st.rerun()
@@ -199,7 +216,7 @@ def model():
 def render():
     st.header("🔊 Sound and Doppler Effect")
     revealed = mission_ui.prediction_quiz(
-        key="doppler_quiz",
+        key=state_key("doppler_quiz"),
         question="An ambulance approaches you while its siren emits a steady frequency. What pitch do you hear?",
         options=["Higher", "Lower", "Unchanged"],
         correct_index=0,
@@ -208,7 +225,7 @@ def render():
     )
     if not revealed:
         return
-    mode = mode_navigation(key="doppler_mode")
+    mode = mode_navigation(key=state_key("doppler_mode"))
     {
         LearningMode.EXPLORE: explore,
         LearningMode.COMPARE: compare,

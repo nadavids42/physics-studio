@@ -13,6 +13,7 @@ from physics_playground.presentation.learning_modes import (
     mode_heading,
     mode_navigation,
 )
+from physics_playground.state_keys import simulation_key
 from physics_playground.subjects.mechanics.canvas import document
 from physics_playground.subjects.mechanics.ui import metric_table, record, show
 
@@ -20,6 +21,15 @@ from .missions import evaluate
 from .physics import LeverParameters, simulate
 
 ID = "torque_levers"
+
+
+def state_key(name: str) -> str:
+    canonical = simulation_key(ID, name)
+    if name in st.session_state and canonical not in st.session_state:
+        st.session_state[canonical] = st.session_state.pop(name)
+    return canonical
+
+
 VERSION = "lever-1.0"
 
 
@@ -74,12 +84,12 @@ def explore():
     )
     st.caption("Text outcome: " + r.outcome)
     animation(r, 20262101)
-    obs = st.text_input("Optional notebook observation", key="lever_obs")
+    obs = st.text_input("Optional notebook observation", key=state_key("lever_obs"))
     if st.button("▶ Test lever", type="primary", use_container_width=True):
         record(
             ID,
             r.parameters.to_dict(),
-            st.session_state.get("lever_quiz_guess"),
+            st.session_state.get(state_key("lever_quiz_guess")),
             r.outcome,
             values(r),
             mission_ui.process_run(ID, evaluate(r)),
@@ -152,7 +162,7 @@ def model():
 def render():
     st.header("⚖️ Torque and Levers")
     revealed = mission_ui.prediction_quiz(
-        key="lever_quiz",
+        key=state_key("lever_quiz"),
         question="With the same force, where should you push to create more turning effect?",
         options=["Near the pivot", "Far from the pivot", "Distance does not matter"],
         correct_index=1,
@@ -161,7 +171,7 @@ def render():
     )
     if not revealed:
         return
-    mode = mode_navigation(key="lever_mode")
+    mode = mode_navigation(key=state_key("lever_mode"))
     {
         LearningMode.EXPLORE: explore,
         LearningMode.COMPARE: compare,

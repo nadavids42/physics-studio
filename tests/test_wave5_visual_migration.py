@@ -2,24 +2,28 @@ from pathlib import Path
 
 import pytest
 
-from physics_playground.canvas.double_pendulum import SCENE as DOUBLE_SCENE
-from physics_playground.canvas.double_pendulum import build_double_canvas
-from physics_playground.canvas.earth_tunnel import (
-    SCENE as TUNNEL_SCENE,
-)
-from physics_playground.canvas.earth_tunnel import (
-    build_tunnel_canvas,
-    build_tunnel_comparison_canvas,
-)
-from physics_playground.models.double_pendulum import (
-    DoublePendulumParameters,
-    simulate_double_pendulum,
-)
-from physics_playground.models.earth_tunnel import (
+from physics_playground.subjects.mechanics.earth_tunnel.physics import (
     TunnelModel,
     TunnelParameters,
     simulate_tunnel,
     uniform_acceleration,
+)
+from physics_playground.subjects.mechanics.earth_tunnel.scene import (
+    SCENE as TUNNEL_SCENE,
+)
+from physics_playground.subjects.mechanics.earth_tunnel.scene import (
+    build_tunnel_canvas,
+    build_tunnel_comparison_canvas,
+)
+from physics_playground.subjects.waves_and_oscillations.double_pendulum.physics import (
+    DoublePendulumParameters,
+    simulate_double_pendulum,
+)
+from physics_playground.subjects.waves_and_oscillations.double_pendulum.scene import (
+    SCENE as DOUBLE_SCENE,
+)
+from physics_playground.subjects.waves_and_oscillations.double_pendulum.scene import (
+    build_double_canvas,
 )
 
 
@@ -123,7 +127,10 @@ def test_tunnel_comparison_retains_one_synchronized_player_timeline_and_noncolor
 
 
 def test_wave5_chart_pages_use_shared_accessible_chart_renderer():
-    root = Path(__file__).parents[1] / "physics_playground" / "pages"
-    for name in ("double_pendulum.py", "earth_tunnel.py"):
+    root = Path(__file__).parents[1] / "physics_playground" / "subjects"
+    for name in (
+        "waves_and_oscillations/double_pendulum/page.py",
+        "mechanics/earth_tunnel/page.py",
+    ):
         source = (root / name).read_text(encoding="utf-8")
         assert "render_chart" in source and "st.line_chart" not in source

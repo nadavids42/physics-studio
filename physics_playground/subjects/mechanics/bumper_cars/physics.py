@@ -41,11 +41,11 @@ from physics_playground.validation import (
 class CollisionParameters:
     """Inputs for two cars moving along one dimension."""
 
-    mass_a_kg: float
-    mass_b_kg: float
-    velocity_a_m_s: float
-    velocity_b_m_s: float
-    restitution: float
+    mass_a_kg: float = 2.0
+    mass_b_kg: float = 3.0
+    velocity_a_m_s: float = 4.0
+    velocity_b_m_s: float = 0.0
+    restitution: float = 1.0
     initial_position_a_m: float = -6.0
     initial_position_b_m: float = 6.0
     contact_distance_m: float = 0.8

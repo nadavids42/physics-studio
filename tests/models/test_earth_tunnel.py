@@ -3,7 +3,7 @@ import math
 import numpy as np
 import pytest
 
-from physics_playground.models.earth_tunnel import (
+from physics_playground.subjects.mechanics.earth_tunnel.physics import (
     TunnelModel,
     TunnelParameters,
     simulate_radial,

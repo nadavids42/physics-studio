@@ -1,3 +1,5 @@
+"""Static analytical charts for Earth Tunnel."""
+
 import matplotlib.pyplot as plt
 
 

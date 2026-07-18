@@ -6,15 +6,8 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 from physics_playground.canvas import embed as canvas_embed
-from physics_playground.canvas.double_pendulum import PLAYER_HEIGHT, build_double_canvas
 from physics_playground.missions import ui as mission_ui
-from physics_playground.missions.double_pendulum import evaluate_double_missions
-from physics_playground.models.double_pendulum import (
-    DoublePendulumParameters,
-    convergence_warning,
-)
 from physics_playground.presentation.accessibility_ui import render_chart
-from physics_playground.presentation.double_pendulum_charts import plot_figure
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
     LearningMode,
@@ -26,17 +19,57 @@ from physics_playground.presentation.learning_modes import (
 )
 from physics_playground.presentation.notebook_ui import REUSE_REQUEST_KEY, add_trial
 from physics_playground.simulation_cache import cached_double_pendulum
+from physics_playground.state_keys import migrate_simulation_keys, simulation_key
+from physics_playground.subjects.waves_and_oscillations.double_pendulum.charts import plot_figure
+from physics_playground.subjects.waves_and_oscillations.double_pendulum.missions import (
+    evaluate_double_missions,
+)
+from physics_playground.subjects.waves_and_oscillations.double_pendulum.physics import (
+    DoublePendulumParameters,
+    convergence_warning,
+)
+from physics_playground.subjects.waves_and_oscillations.double_pendulum.scene import (
+    PLAYER_HEIGHT,
+    build_double_canvas,
+)
 from physics_playground.validation import PhysicsValidationError
 
 VERSION = "double-pendulum-rk4-2.0"
+ID = "double_pendulum"
+
+
+def state_key(name: str) -> str:
+    return simulation_key(ID, name)
 
 
 def _init():
+    migrate_simulation_keys(
+        st.session_state,
+        ID,
+        {
+            "chaos_nonce": "nonce",
+            "chaos_launched": "launched",
+            "chaos_compare_nonce": "compare_nonce",
+            "chaos_compare_signature": "compare_signature",
+            "chaos_quiz_guess": "quiz_guess",
+            "chaos_quiz_revealed": "quiz_revealed",
+            "chaos_quiz_lock": "quiz_lock",
+            "chaos_angle1": "angle_1",
+            "chaos_angle2": "angle_2",
+            "chaos_perturb": "perturbation",
+            "chaos_dt": "time_step",
+            "chaos_show_separation": "show_separation",
+            "chaos_inspect": "inspect",
+            "chaos_learning_mode": "learning_mode",
+            "chaos_observation": "observation",
+            "chaos_compare_observation": "compare_observation",
+        },
+    )
     for k, v in (
-        ("chaos_nonce", 0),
-        ("chaos_launched", None),
-        ("chaos_compare_nonce", 0),
-        ("chaos_compare_signature", None),
+        (state_key("nonce"), 0),
+        (state_key("launched"), None),
+        (state_key("compare_nonce"), 0),
+        (state_key("compare_signature"), None),
     ):
         st.session_state.setdefault(k, v)
 
@@ -68,7 +101,7 @@ def _record(r, seed, obs, label=None, badges=()):
     add_trial(
         simulation_id="double_pendulum",
         parameters=r.parameters.to_dict(),
-        prediction=st.session_state.get("chaos_quiz_guess"),
+        prediction=st.session_state.get(state_key("quiz_guess")),
         result_summary=f"Final separation {r.final_cartesian_separation_m:.3f} m",
         metrics=_metrics(r),
         earned_badges=badges,
@@ -89,13 +122,13 @@ def _reuse():
         return
     p = q["parameters"]
     for key, name in (
-        ("chaos_angle1", "angle_1_deg"),
-        ("chaos_angle2", "angle_2_deg"),
-        ("chaos_perturb", "perturbation_deg"),
-        ("chaos_dt", "time_step_s"),
+        (state_key("angle_1"), "angle_1_deg"),
+        (state_key("angle_2"), "angle_2_deg"),
+        (state_key("perturbation"), "perturbation_deg"),
+        (state_key("time_step"), "time_step_s"),
     ):
         st.session_state[key] = float(p[name])
-    st.session_state["chaos_learning_mode"] = "Explore"
+    st.session_state[state_key("learning_mode")] = "Explore"
     del st.session_state[REUSE_REQUEST_KEY]
 
 
@@ -103,13 +136,15 @@ def render_explore():
     mode_heading(LearningMode.EXPLORE, "Release two almost-identical systems")
     c1, c2 = st.columns(2)
     with c1:
-        a1 = st.slider("First arm angle", -170.0, 170.0, 110.0, 1.0, key="chaos_angle1")
-        a2 = st.slider("Second arm angle", -170.0, 170.0, -20.0, 1.0, key="chaos_angle2")
+        a1 = st.slider("First arm angle", -170.0, 170.0, 110.0, 1.0, key=state_key("angle_1"))
+        a2 = st.slider("Second arm angle", -170.0, 170.0, -20.0, 1.0, key=state_key("angle_2"))
     with c2:
         perturb = st.number_input(
-            "Perturbation size (degrees)", 0.0, 10.0, 0.1, 0.01, key="chaos_perturb"
+            "Perturbation size (degrees)", 0.0, 10.0, 0.1, 0.01, key=state_key("perturbation")
         )
-        dt = st.number_input("Integration time step", 0.001, 0.05, 0.005, 0.001, key="chaos_dt")
+        dt = st.number_input(
+            "Integration time step", 0.001, 0.05, 0.005, 0.001, key=state_key("time_step")
+        )
     p = DoublePendulumParameters(
         angle_1_deg=a1, angle_2_deg=a2, perturbation_deg=perturb, time_step_s=dt
     )
@@ -119,31 +154,31 @@ def render_explore():
     r = cached_double_pendulum(p)
     _summary(r)
     show_separation = st.checkbox(
-        "Show recorded separation callout", value=True, key="chaos_show_separation"
+        "Show recorded separation callout", value=True, key=state_key("show_separation")
     )
     inspect = st.selectbox(
         "Optional visual inspection focus",
         ["Fixed camera (both systems)", "Baseline A", "Perturbed B"],
-        key="chaos_inspect",
+        key=state_key("inspect"),
     )
     inspect_system = {"Baseline A": "a", "Perturbed B": "b"}.get(inspect)
-    autoplay = st.session_state.chaos_launched == p.to_dict()
+    autoplay = st.session_state[state_key("launched")] == p.to_dict()
     canvas_embed.show(
         build_double_canvas(
             r,
-            seed=20262600 + st.session_state.chaos_nonce,
+            seed=20262600 + st.session_state[state_key("nonce")],
             autoplay=autoplay,
             show_separation=show_separation,
             inspect_system=inspect_system,
         ),
         height=PLAYER_HEIGHT,
     )
-    obs = st.text_input("Optional notebook observation", key="chaos_observation")
+    obs = st.text_input("Optional notebook observation", key=state_key("observation"))
     if st.button("🌀 RELEASE!", type="primary", use_container_width=True):
-        st.session_state.chaos_nonce += 1
-        st.session_state.chaos_launched = p.to_dict()
+        st.session_state[state_key("nonce")] += 1
+        st.session_state[state_key("launched")] = p.to_dict()
         badges = _award(r)
-        _record(r, 20262600 + st.session_state.chaos_nonce, obs, badges=badges)
+        _record(r, 20262600 + st.session_state[state_key("nonce")], obs, badges=badges)
         st.rerun()
     mission_ui.mission_checklist("Double Pendulum of Chaos")
 
@@ -182,19 +217,19 @@ def render_compare():
     a, b, change = _pair(kind)
     changed_variable_banner(change)
     sig = {"kind": kind}
-    obs = st.text_input("Optional comparison observation", key="chaos_compare_observation")
+    obs = st.text_input("Optional comparison observation", key=state_key("compare_observation"))
     if st.button("▶ Run comparison", type="primary", use_container_width=True):
-        st.session_state.chaos_compare_nonce += 1
-        st.session_state.chaos_compare_signature = sig
-        n = st.session_state.chaos_compare_nonce
+        st.session_state[state_key("compare_nonce")] += 1
+        st.session_state[state_key("compare_signature")] = sig
+        n = st.session_state[state_key("compare_nonce")]
         _record(a, 20262700 + n, obs, "Run A")
         _record(b, 20262800 + n, obs, "Run B")
     st.markdown("#### Run A")
     canvas_embed.show(
         build_double_canvas(
             a,
-            seed=20262900 + st.session_state.chaos_compare_nonce,
-            autoplay=st.session_state.chaos_compare_signature == sig,
+            seed=20262900 + st.session_state[state_key("compare_nonce")],
+            autoplay=st.session_state[state_key("compare_signature")] == sig,
         ),
         height=PLAYER_HEIGHT,
     )
@@ -202,8 +237,8 @@ def render_compare():
     canvas_embed.show(
         build_double_canvas(
             b,
-            seed=20263000 + st.session_state.chaos_compare_nonce,
-            autoplay=st.session_state.chaos_compare_signature == sig,
+            seed=20263000 + st.session_state[state_key("compare_nonce")],
+            autoplay=st.session_state[state_key("compare_signature")] == sig,
         ),
         height=PLAYER_HEIGHT,
     )
@@ -214,8 +249,8 @@ def render_compare():
 
 def _latest():
     return (
-        DoublePendulumParameters(**st.session_state.chaos_launched)
-        if st.session_state.chaos_launched
+        DoublePendulumParameters(**st.session_state[state_key("launched")])
+        if st.session_state[state_key("launched")]
         else DoublePendulumParameters()
     )
 
@@ -256,7 +291,7 @@ def render():
     st.header("🌀 Double Pendulum of Chaos")
     st.markdown("Release two nearly identical double pendulums and watch predictability disappear.")
     revealed = mission_ui.prediction_quiz(
-        key="chaos_quiz",
+        key=state_key("quiz"),
         question="Two double pendulums start almost—but not exactly—the same. What happens?",
         options=[
             "They remain nearly identical",
@@ -270,7 +305,7 @@ def render():
     if not revealed:
         st.caption("🔬 Make your prediction before results are shown.")
         return
-    mode = mode_navigation(key="chaos_learning_mode")
+    mode = mode_navigation(key=state_key("learning_mode"))
     st.divider()
     try:
         {

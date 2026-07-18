@@ -6,20 +6,8 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 from physics_playground.canvas import embed as canvas_embed
-from physics_playground.canvas.bumper_cars import (
-    PLAYER_HEIGHT,
-    build_bumper_canvas,
-    build_bumper_comparison_canvas,
-)
 from physics_playground.missions import ui as mission_ui
-from physics_playground.missions.bumper_cars import evaluate_bumper_missions
-from physics_playground.models.collision import (
-    CollisionParameters,
-    CollisionResult,
-)
 from physics_playground.presentation.accessibility_ui import render_chart
-from physics_playground.presentation.bumper_cars import energy_retention_figure, position_figure
-from physics_playground.presentation.bumper_learning import comparison_measurements
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
     LearningMode,
@@ -31,16 +19,62 @@ from physics_playground.presentation.learning_modes import (
 )
 from physics_playground.presentation.notebook_ui import REUSE_REQUEST_KEY, add_trial, get_notebook
 from physics_playground.simulation_cache import cached_collision
+from physics_playground.state_keys import migrate_simulation_keys, simulation_key
+from physics_playground.subjects.mechanics.bumper_cars.charts import (
+    energy_retention_figure,
+    position_figure,
+)
+from physics_playground.subjects.mechanics.bumper_cars.learning import comparison_measurements
+from physics_playground.subjects.mechanics.bumper_cars.missions import evaluate_bumper_missions
+from physics_playground.subjects.mechanics.bumper_cars.physics import (
+    CollisionParameters,
+    CollisionResult,
+)
+from physics_playground.subjects.mechanics.bumper_cars.scene import (
+    PLAYER_HEIGHT,
+    build_bumper_canvas,
+    build_bumper_comparison_canvas,
+)
 from physics_playground.validation import PhysicsValidationError
 
-LAUNCH_NONCE_KEY = "bumper_launch_nonce"
-LAUNCHED_PARAMETERS_KEY = "bumper_launched_parameters"
-COMPARE_NONCE_KEY = "bumper_compare_nonce"
-COMPARE_SIGNATURE_KEY = "bumper_compare_signature"
+ID = "bumper_cars"
+
+
+def state_key(name: str) -> str:
+    return simulation_key(ID, name)
+
+
+LAUNCH_NONCE_KEY = state_key("launch_nonce")
+LAUNCHED_PARAMETERS_KEY = state_key("launched_parameters")
+COMPARE_NONCE_KEY = state_key("compare_nonce")
+COMPARE_SIGNATURE_KEY = state_key("compare_signature")
 BUMPER_MODEL_VERSION = "collision-1.0"
 
 
 def _initialize_state() -> None:
+    migrate_simulation_keys(
+        st.session_state,
+        ID,
+        {
+            "bumper_launch_nonce": "launch_nonce",
+            "bumper_launched_parameters": "launched_parameters",
+            "bumper_compare_nonce": "compare_nonce",
+            "bumper_compare_signature": "compare_signature",
+            "collision_quiz_guess": "quiz_guess",
+            "collision_quiz_revealed": "quiz_revealed",
+            "collision_quiz_lock": "quiz_lock",
+            "explore_mass_a": "mass_a",
+            "explore_mass_b": "mass_b",
+            "explore_speed_a": "speed_a",
+            "explore_speed_b": "speed_b",
+            "explore_bumper_kind": "bumper_kind",
+            "bumper_learning_mode": "learning_mode",
+            "bumper_explore_launch": "explore_launch",
+            "bumper_explore_observation": "explore_observation",
+            "bumper_compare_observation": "compare_observation",
+            "analyze_e": "analyze_restitution",
+        },
+    )
     st.session_state.setdefault(LAUNCH_NONCE_KEY, 0)
     st.session_state.setdefault(LAUNCHED_PARAMETERS_KEY, None)
     st.session_state.setdefault(COMPARE_NONCE_KEY, 0)
@@ -85,7 +119,7 @@ def _record_trial(
     add_trial(
         simulation_id="bumper_cars",
         parameters=result.parameters.to_dict(),
-        prediction=st.session_state.get("collision_quiz_guess"),
+        prediction=st.session_state.get(state_key("quiz_guess")),
         result_summary=_outcome_message(result),
         metrics=_notebook_metrics(result),
         earned_badges=badges,
@@ -101,14 +135,16 @@ def _apply_reuse_request() -> None:
     if not request or request.get("simulation_id") != "bumper_cars":
         return
     parameters = request["parameters"]
-    st.session_state["explore_mass_a"] = min(5.0, max(0.5, float(parameters["mass_a_kg"])))
-    st.session_state["explore_mass_b"] = min(5.0, max(0.5, float(parameters["mass_b_kg"])))
-    st.session_state["explore_speed_a"] = min(8.0, max(1.0, float(parameters["velocity_a_m_s"])))
-    st.session_state["explore_speed_b"] = min(8.0, max(0.0, -float(parameters["velocity_b_m_s"])))
-    st.session_state["explore_bumper_kind"] = (
+    st.session_state[state_key("mass_a")] = min(5.0, max(0.5, float(parameters["mass_a_kg"])))
+    st.session_state[state_key("mass_b")] = min(5.0, max(0.5, float(parameters["mass_b_kg"])))
+    st.session_state[state_key("speed_a")] = min(8.0, max(1.0, float(parameters["velocity_a_m_s"])))
+    st.session_state[state_key("speed_b")] = min(
+        8.0, max(0.0, -float(parameters["velocity_b_m_s"]))
+    )
+    st.session_state[state_key("bumper_kind")] = (
         "Sticky 🧲" if float(parameters["restitution"]) == 0 else "Bouncy 🏀"
     )
-    st.session_state["bumper_learning_mode"] = LearningMode.EXPLORE.value
+    st.session_state[state_key("learning_mode")] = LearningMode.EXPLORE.value
     del st.session_state[REUSE_REQUEST_KEY]
     st.toast(f"Reused setup from Trial #{request['source_trial']}.")
 
@@ -167,7 +203,7 @@ def _show_canvas(result: CollisionResult) -> None:
 
 def _launch(result: CollisionResult, observation: str) -> None:
     if st.button(
-        "💥 CRASH!", type="primary", use_container_width=True, key="bumper_explore_launch"
+        "💥 CRASH!", type="primary", use_container_width=True, key=state_key("explore_launch")
     ):
         if not result.collided:
             st.warning(
@@ -185,7 +221,7 @@ def _launch(result: CollisionResult, observation: str) -> None:
 def render_explore() -> None:
     mode_heading(LearningMode.EXPLORE, "Predict it, then crash it")
     revealed = mission_ui.prediction_quiz(
-        key="collision_quiz",
+        key=state_key("quiz"),
         question=(
             "Two IDENTICAL bumper cars, bouncy bumpers, no energy lost. One is zooming, "
             "one is standing still. They crash. What happens to the moving car?"
@@ -207,20 +243,20 @@ def render_explore() -> None:
         return
     c1, c2 = st.columns(2)
     with c1:
-        mass_a = st.slider("How heavy is Car A? (kg)", 0.5, 5.0, 2.0, 0.1, key="explore_mass_a")
+        mass_a = st.slider("How heavy is Car A? (kg)", 0.5, 5.0, 2.0, 0.1, key=state_key("mass_a"))
         speed_a = st.slider(
-            "How fast is Car A zooming right? (m/s)", 1.0, 8.0, 4.0, 0.1, key="explore_speed_a"
+            "How fast is Car A zooming right? (m/s)", 1.0, 8.0, 4.0, 0.1, key=state_key("speed_a")
         )
     with c2:
-        mass_b = st.slider("How heavy is Car B? (kg)", 0.5, 5.0, 3.0, 0.1, key="explore_mass_b")
+        mass_b = st.slider("How heavy is Car B? (kg)", 0.5, 5.0, 3.0, 0.1, key=state_key("mass_b"))
         speed_b = st.slider(
-            "Is Car B moving too? (toward Car A, m/s)", 0.0, 8.0, 0.0, 0.1, key="explore_speed_b"
+            "Is Car B moving too? (toward Car A, m/s)", 0.0, 8.0, 0.0, 0.1, key=state_key("speed_b")
         )
     kind = st.radio(
         "What kind of bumpers do they have?",
         ["Bouncy 🏀", "Sticky 🧲"],
         horizontal=True,
-        key="explore_bumper_kind",
+        key=state_key("bumper_kind"),
     )
     result = cached_collision(
         CollisionParameters(
@@ -233,7 +269,7 @@ def render_explore() -> None:
     observation = st.text_input(
         "Optional notebook observation",
         placeholder="What did you notice?",
-        key="bumper_explore_observation",
+        key=state_key("explore_observation"),
     )
     _launch(result, observation)
     st.divider()
@@ -295,7 +331,7 @@ def render_compare() -> None:
     compare_observation = st.text_input(
         "Optional comparison observation",
         placeholder="What changed between A and B?",
-        key="bumper_compare_observation",
+        key=state_key("compare_observation"),
     )
     signature = {
         "baseline": baseline_parameters.to_dict(),
@@ -357,7 +393,12 @@ def render_analyze() -> None:
     plt.close(energy_figure)
     st.markdown("#### Trial comparison")
     comparison_e = st.slider(
-        "Compare latest trial with restitution e", 0.0, 1.0, 0.5, 0.05, key="analyze_e"
+        "Compare latest trial with restitution e",
+        0.0,
+        1.0,
+        0.5,
+        0.05,
+        key=state_key("analyze_restitution"),
     )
     p = result.parameters
     comparison = cached_collision(
@@ -412,7 +453,7 @@ def render() -> None:
     st.markdown(
         "Two cars, one track, one crash—explore it, compare trials, analyze the evidence, or inspect the model."
     )
-    mode = mode_navigation(key="bumper_learning_mode")
+    mode = mode_navigation(key=state_key("learning_mode"))
     st.divider()
     try:
         if mode is LearningMode.EXPLORE:

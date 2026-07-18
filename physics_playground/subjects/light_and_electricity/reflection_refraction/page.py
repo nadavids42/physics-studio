@@ -16,11 +16,21 @@ from physics_playground.presentation.learning_modes import (
     mode_navigation,
 )
 from physics_playground.presentation.notebook_ui import add_trial
+from physics_playground.state_keys import simulation_key
 
 from .missions import evaluate
 from .physics import ReflectionRefractionParameters, simulate
 
 ID = "reflection_refraction"
+
+
+def state_key(name: str) -> str:
+    canonical = simulation_key(ID, name)
+    if name in st.session_state and canonical not in st.session_state:
+        st.session_state[canonical] = st.session_state.pop(name)
+    return canonical
+
+
 VERSION = "reflection-refraction-1.0"
 
 
@@ -38,7 +48,7 @@ def record(r, seed, obs, label=None, badges=()):
     add_trial(
         simulation_id=ID,
         parameters=r.parameters.to_dict(),
-        prediction=st.session_state.get("optics_quiz_guess"),
+        prediction=st.session_state.get(state_key("optics_quiz_guess")),
         result_summary=r.outcome,
         metrics=metrics(r),
         earned_badges=badges,
@@ -70,10 +80,14 @@ def diagram(r, seed):
 def controls(prefix="optics"):
     c = st.columns(3)
     angle = c[0].slider(
-        "Incident angle from normal (°)", 0.0, 89.0, 35.0, 1.0, key=f"{prefix}_angle"
+        "Incident angle from normal (°)", 0.0, 89.0, 35.0, 1.0, key=state_key(f"{prefix}_angle")
     )
-    n1 = c[1].slider("Medium 1 refractive index", 1.0, 2.5, 1.0, 0.01, key=f"{prefix}_n1")
-    n2 = c[2].slider("Medium 2 refractive index", 1.0, 2.5, 1.5, 0.01, key=f"{prefix}_n2")
+    n1 = c[1].slider(
+        "Medium 1 refractive index", 1.0, 2.5, 1.0, 0.01, key=state_key(f"{prefix}_n1")
+    )
+    n2 = c[2].slider(
+        "Medium 2 refractive index", 1.0, 2.5, 1.5, 0.01, key=state_key(f"{prefix}_n2")
+    )
     return ReflectionRefractionParameters(angle, n1, n2)
 
 
@@ -91,7 +105,7 @@ def explore():
     )
     st.caption("Text outcome: " + r.outcome)
     diagram(r, 20262701)
-    obs = st.text_input("Optional notebook observation", key="optics_obs")
+    obs = st.text_input("Optional notebook observation", key=state_key("optics_obs"))
     if st.button("🔦 Trace ray", type="primary", use_container_width=True):
         record(r, 20262701, obs, badges=mission_ui.process_run(ID, evaluate(r)))
         st.rerun()
@@ -166,7 +180,7 @@ def model():
 def render():
     st.header("🔦 Reflection and Refraction")
     revealed = mission_ui.prediction_quiz(
-        key="optics_quiz",
+        key=state_key("optics_quiz"),
         question="A light ray strikes a mirror at 30° from the normal. What is its reflection angle?",
         options=["30°", "60°", "It depends on refractive index"],
         correct_index=0,
@@ -175,7 +189,7 @@ def render():
     )
     if not revealed:
         return
-    mode = mode_navigation(key="optics_mode")
+    mode = mode_navigation(key=state_key("optics_mode"))
     {
         LearningMode.EXPLORE: explore,
         LearningMode.COMPARE: compare,

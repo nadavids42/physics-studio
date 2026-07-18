@@ -6,17 +6,7 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 from physics_playground.canvas import embed as canvas_embed
-from physics_playground.canvas.earth_tunnel import (
-    PLAYER_HEIGHT,
-    build_tunnel_canvas,
-    build_tunnel_comparison_canvas,
-)
 from physics_playground.missions import ui as mission_ui
-from physics_playground.missions.earth_tunnel import evaluate_tunnel_missions
-from physics_playground.models.earth_tunnel import (
-    TunnelModel,
-    TunnelParameters,
-)
 from physics_playground.presentation.accessibility_ui import render_chart
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
@@ -28,8 +18,19 @@ from physics_playground.presentation.learning_modes import (
     mode_navigation,
 )
 from physics_playground.presentation.notebook_ui import REUSE_REQUEST_KEY, add_trial
-from physics_playground.presentation.tunnel_charts import plot_figure
 from physics_playground.simulation_cache import cached_tunnel
+from physics_playground.state_keys import migrate_simulation_keys, simulation_key
+from physics_playground.subjects.mechanics.earth_tunnel.charts import plot_figure
+from physics_playground.subjects.mechanics.earth_tunnel.missions import evaluate_tunnel_missions
+from physics_playground.subjects.mechanics.earth_tunnel.physics import (
+    TunnelModel,
+    TunnelParameters,
+)
+from physics_playground.subjects.mechanics.earth_tunnel.scene import (
+    PLAYER_HEIGHT,
+    build_tunnel_canvas,
+    build_tunnel_comparison_canvas,
+)
 from physics_playground.units import (
     EARTH_GRAVITY_M_S2,
     EARTH_RADIUS_M,
@@ -46,14 +47,40 @@ PLANETS = {
     "Mars 🔴": (MARS_RADIUS_M, MARS_GRAVITY_M_S2),
 }
 VERSION = "tunnel-2.0"
+ID = "earth_tunnel"
+
+
+def state_key(name: str) -> str:
+    return simulation_key(ID, name)
 
 
 def _init():
+    migrate_simulation_keys(
+        st.session_state,
+        ID,
+        {
+            "tunnel_nonce": "nonce",
+            "tunnel_launched": "launched",
+            "tunnel_compare_nonce": "compare_nonce",
+            "tunnel_compare_signature": "compare_signature",
+            "tunnel_quiz_guess": "quiz_guess",
+            "tunnel_quiz_revealed": "quiz_revealed",
+            "tunnel_quiz_lock": "quiz_lock",
+            "tunnel_custom_radius": "custom_radius",
+            "tunnel_custom_g": "custom_gravity",
+            "tunnel_start": "start",
+            "tunnel_model": "model",
+            "tunnel_planet": "planet",
+            "tunnel_learning_mode": "learning_mode",
+            "tunnel_observation": "observation",
+            "tunnel_compare_observation": "compare_observation",
+        },
+    )
     for k, v in (
-        ("tunnel_nonce", 0),
-        ("tunnel_launched", None),
-        ("tunnel_compare_nonce", 0),
-        ("tunnel_compare_signature", None),
+        (state_key("nonce"), 0),
+        (state_key("launched"), None),
+        (state_key("compare_nonce"), 0),
+        (state_key("compare_signature"), None),
     ):
         st.session_state.setdefault(k, v)
 
@@ -81,7 +108,7 @@ def _record(r, seed, obs, label=None, badges=()):
     add_trial(
         simulation_id="earth_tunnel",
         parameters=r.parameters.to_dict(),
-        prediction=st.session_state.get("tunnel_quiz_guess"),
+        prediction=st.session_state.get(state_key("quiz_guess")),
         result_summary=f"{r.parameters.model.value}: {r.opposite_time_s / 60:.1f} min to opposite point",
         metrics=_metrics(r),
         earned_badges=badges,
@@ -101,40 +128,49 @@ def _reuse():
     if not q or q.get("simulation_id") != "earth_tunnel":
         return
     p = q["parameters"]
-    st.session_state["tunnel_custom_radius"] = int(round(float(p["radius_m"]) / 1000 / 100) * 100)
-    st.session_state["tunnel_custom_g"] = float(p["surface_gravity_m_s2"])
-    st.session_state["tunnel_start"] = (
+    st.session_state[state_key("custom_radius")] = int(
+        round(float(p["radius_m"]) / 1000 / 100) * 100
+    )
+    st.session_state[state_key("custom_gravity")] = float(p["surface_gravity_m_s2"])
+    st.session_state[state_key("start")] = (
         "Halfway down" if float(p["start_fraction"]) < 1 else "Surface"
     )
-    st.session_state["tunnel_model"] = p["model"]
-    st.session_state["tunnel_planet"] = "Custom planet 🪐"
-    st.session_state["tunnel_learning_mode"] = "Explore"
+    st.session_state[state_key("model")] = p["model"]
+    st.session_state[state_key("planet")] = "Custom planet 🪐"
+    st.session_state[state_key("learning_mode")] = "Explore"
     del st.session_state[REUSE_REQUEST_KEY]
 
 
 def render_explore():
     mode_heading(LearningMode.EXPLORE, "Fall through a planet")
     planet = st.radio(
-        "Planet", [*PLANETS, "Custom planet 🪐"], horizontal=True, key="tunnel_planet"
+        "Planet", [*PLANETS, "Custom planet 🪐"], horizontal=True, key=state_key("planet")
     )
     if planet.startswith("Custom"):
         c1, c2 = st.columns(2)
         with c1:
             radius_km = st.slider(
-                "Custom radius (km)", 500, 8000, 3000, 100, key="tunnel_custom_radius"
+                "Custom radius (km)", 500, 8000, 3000, 100, key=state_key("custom_radius")
             )
         with c2:
             g = st.slider(
-                "Custom surface gravity", 1.0, 20.0, EARTH_GRAVITY_M_S2, 0.01, key="tunnel_custom_g"
+                "Custom surface gravity",
+                1.0,
+                20.0,
+                EARTH_GRAVITY_M_S2,
+                0.01,
+                key=state_key("custom_gravity"),
             )
         radius = radius_km * 1000
     else:
         radius, g = PLANETS[planet]
     start = st.radio(
-        "Starting point", ["Surface", "Halfway down"], horizontal=True, key="tunnel_start"
+        "Starting point", ["Surface", "Halfway down"], horizontal=True, key=state_key("start")
     )
     model = TunnelModel(
-        st.selectbox("Planet interior model", [m.value for m in TunnelModel], key="tunnel_model")
+        st.selectbox(
+            "Planet interior model", [m.value for m in TunnelModel], key=state_key("model")
+        )
     )
     gradient = 0.75
     if model == TunnelModel.RADIAL:
@@ -142,17 +178,19 @@ def render_explore():
     p = TunnelParameters(radius, g, 1 if start == "Surface" else 0.5, model, gradient)
     r = cached_tunnel(p)
     _summary(r)
-    autoplay = st.session_state.tunnel_launched == p.to_dict()
+    autoplay = st.session_state[state_key("launched")] == p.to_dict()
     canvas_embed.show(
-        build_tunnel_canvas(r, seed=20262300 + st.session_state.tunnel_nonce, autoplay=autoplay),
+        build_tunnel_canvas(
+            r, seed=20262300 + st.session_state[state_key("nonce")], autoplay=autoplay
+        ),
         height=PLAYER_HEIGHT,
     )
-    obs = st.text_input("Optional notebook observation", key="tunnel_observation")
+    obs = st.text_input("Optional notebook observation", key=state_key("observation"))
     if st.button("🕳️ JUMP IN!", type="primary", use_container_width=True):
-        st.session_state.tunnel_nonce += 1
-        st.session_state.tunnel_launched = p.to_dict()
+        st.session_state[state_key("nonce")] += 1
+        st.session_state[state_key("launched")] = p.to_dict()
         badges = _award(r)
-        _record(r, 20262300 + st.session_state.tunnel_nonce, obs, badges=badges)
+        _record(r, 20262300 + st.session_state[state_key("nonce")], obs, badges=badges)
         st.rerun()
     mission_ui.mission_checklist("The Big Fall")
 
@@ -217,18 +255,18 @@ def render_compare():
     items, change = _pair(kind)
     changed_variable_banner(change)
     sig = {"kind": kind}
-    obs = st.text_input("Optional comparison observation", key="tunnel_compare_observation")
+    obs = st.text_input("Optional comparison observation", key=state_key("compare_observation"))
     if st.button("▶ Run comparison", type="primary", use_container_width=True):
-        st.session_state.tunnel_compare_nonce += 1
-        st.session_state.tunnel_compare_signature = sig
-        n = st.session_state.tunnel_compare_nonce
+        st.session_state[state_key("compare_nonce")] += 1
+        st.session_state[state_key("compare_signature")] = sig
+        n = st.session_state[state_key("compare_nonce")]
         for i, (label, r, _) in enumerate(items):
             _record(r, 20262400 + n + i, obs, f"Run {chr(65 + i)} — {label}")
     canvas_embed.show(
         build_tunnel_comparison_canvas(
             items,
-            seed=20262500 + st.session_state.tunnel_compare_nonce,
-            autoplay=st.session_state.tunnel_compare_signature == sig,
+            seed=20262500 + st.session_state[state_key("compare_nonce")],
+            autoplay=st.session_state[state_key("compare_signature")] == sig,
         ),
         height=PLAYER_HEIGHT,
     )
@@ -240,9 +278,9 @@ def render_compare():
 
 
 def _latest():
-    if not st.session_state.tunnel_launched:
+    if not st.session_state[state_key("launched")]:
         return TunnelParameters(EARTH_RADIUS_M, EARTH_GRAVITY_M_S2)
-    d = dict(st.session_state.tunnel_launched)
+    d = dict(st.session_state[state_key("launched")])
     d["model"] = TunnelModel(d["model"])
     return TunnelParameters(**d)
 
@@ -285,7 +323,7 @@ def render():
         "Default model: **uniform-density planet**. An advanced radial-density profile is also available."
     )
     revealed = mission_ui.prediction_quiz(
-        key="tunnel_quiz",
+        key=state_key("quiz"),
         question="About how long does the ideal uniform-density Earth fall take from one surface to the other?",
         options=["5 minutes", "42 minutes", "3 hours", "Forever"],
         correct_index=1,
@@ -295,7 +333,7 @@ def render():
     if not revealed:
         st.caption("🔬 Make your prediction before results are shown.")
         return
-    mode = mode_navigation(key="tunnel_learning_mode")
+    mode = mode_navigation(key=state_key("learning_mode"))
     st.divider()
     try:
         {
