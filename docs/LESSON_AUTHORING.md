@@ -79,12 +79,27 @@ Checkpoint questions reference lesson-objective IDs. Multiple-choice questions n
 IDs and a valid correct choice. Numeric questions need an answer, unit where appropriate, and a
 nonnegative tolerance. Explanations should address the reasoning, not simply identify an answer.
 
-## Depth and voice
+## Audience, depth, voice, and density
 
-`ContentProfile` represents pedagogical depth and writing voice independently. A renderer can offer
-a foundational, standard, or advanced treatment in an approachable, academic, or concise voice
-without changing simulation results or physics contracts. Section-level profiles can override the
-lesson default. Do not encode different physical truths as differences in voice.
+The shared presentation preference has four independent dimensions. `AudienceLevel` supplies a
+restrained preset, while learners may override its other dimensions independently:
+
+| Audience preset | Voice | Mathematical depth | Information density |
+| --- | --- | --- | --- |
+| Explorer | Concrete | Conceptual | Focused |
+| Core (default) | Approachable | Standard | Balanced |
+| Advanced | Academic | Extended | Detailed |
+
+Tag a `LessonSection` or supported component with `applicable_depths`. Selection happens in the
+presentation layer; the immutable lesson and simulation payload are unchanged. Prefer a shared
+core narrative plus a small tagged extension over three copies of a lesson. Every tag must contain
+at least one depth, and activities required for completion must remain coherent at each supported
+depth.
+
+Voice controls phrasing, mathematical depth controls which derivations and extensions are shown,
+and information density controls expansion and supporting detail. None may branch physics code,
+change parameters, or alter numerical results. The Cannonball pathway demonstrates a standard and
+extended derivation plus an Advanced-only numerical-method section.
 
 ## Validation and tests
 

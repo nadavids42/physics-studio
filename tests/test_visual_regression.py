@@ -177,6 +177,6 @@ def _existing_session_keys() -> set[str]:
 
 
 def test_visual_session_state_keys_are_unique_and_do_not_collide_with_existing_keys():
-    assert len(VISUAL_SESSION_KEYS) == 4
+    assert len(VISUAL_SESSION_KEYS) == 8
     assert SETTINGS_KEY not in VISUAL_SESSION_KEYS
     assert VISUAL_SESSION_KEYS.isdisjoint(_existing_session_keys())

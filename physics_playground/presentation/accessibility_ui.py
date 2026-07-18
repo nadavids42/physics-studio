@@ -12,6 +12,14 @@ from physics_playground.application_callbacks import (
     PlayerPreferences,
     publish,
 )
+from physics_playground.education.audience import (
+    AUDIENCE_DEFAULTS,
+    AudienceLevel,
+    AudiencePreferences,
+    InstructionalVoice,
+    MathematicalDepth,
+    VisualDensity,
+)
 from physics_playground.presentation.chart_system import style_figure
 from physics_playground.state_keys import SHARED_STATE_KEYS, feature_key, migrate_legacy_keys
 from physics_playground.visual.css import streamlit_css
@@ -28,12 +36,20 @@ PRESENTATION_LEVEL_KEY = SHARED_STATE_KEYS.accessibility_presentation_level
 VISUAL_PREFERENCES_KEY = SHARED_STATE_KEYS.accessibility_visual_preferences
 VISUAL_THEME_WIDGET_KEY = feature_key("accessibility", "visual_theme_widget")
 VISUAL_LEVEL_WIDGET_KEY = feature_key("accessibility", "presentation_level_widget")
+AUDIENCE_WIDGET_KEY = feature_key("accessibility", "audience_widget")
+VOICE_WIDGET_KEY = feature_key("accessibility", "voice_widget")
+MATH_DEPTH_WIDGET_KEY = feature_key("accessibility", "mathematical_depth_widget")
+VISUAL_DENSITY_WIDGET_KEY = feature_key("accessibility", "visual_density_widget")
 VISUAL_SESSION_KEYS = frozenset(
     {
         PRESENTATION_LEVEL_KEY,
         VISUAL_PREFERENCES_KEY,
         VISUAL_THEME_WIDGET_KEY,
         VISUAL_LEVEL_WIDGET_KEY,
+        AUDIENCE_WIDGET_KEY,
+        VOICE_WIDGET_KEY,
+        MATH_DEPTH_WIDGET_KEY,
+        VISUAL_DENSITY_WIDGET_KEY,
     }
 )
 SAFE_COLORS = LIGHT_THEME.graph_colors
@@ -73,7 +89,7 @@ def get_visual_preferences():
 
 def render_accessibility_panel():
     current = get_accessibility_settings()
-    with st.expander("♿ Accessibility settings"):
+    with st.expander("Accessibility and presentation"):
         reduced = st.checkbox(
             "Reduce animation and disable autoplay",
             current.reduced_motion,
@@ -90,6 +106,53 @@ def render_accessibility_panel():
             key=feature_key("accessibility", "large_text_widget"),
         )
         st.caption("Animation controls remain available in reduced-motion mode.")
+        st.markdown("**Instructional profile**")
+
+        def apply_audience_defaults() -> None:
+            defaults = AUDIENCE_DEFAULTS[AudienceLevel(st.session_state[AUDIENCE_WIDGET_KEY])]
+            st.session_state[VOICE_WIDGET_KEY] = defaults.voice.value
+            st.session_state[MATH_DEPTH_WIDGET_KEY] = defaults.mathematical_depth.value
+            st.session_state[VISUAL_DENSITY_WIDGET_KEY] = defaults.visual_density.value
+
+        instruction = current.instructional
+        audience = AudienceLevel(
+            st.selectbox(
+                "Audience",
+                [item.value for item in AudienceLevel],
+                index=list(AudienceLevel).index(instruction.audience),
+                format_func=lambda value: value.title(),
+                key=AUDIENCE_WIDGET_KEY,
+                on_change=apply_audience_defaults,
+                help="Explorer adds concrete scaffolding; Core is the default; Advanced emphasizes derivations, limitations, and numerical methods.",
+            )
+        )
+        voice = InstructionalVoice(
+            st.selectbox(
+                "Voice",
+                [item.value for item in InstructionalVoice],
+                index=list(InstructionalVoice).index(instruction.voice),
+                format_func=lambda value: value.title(),
+                key=VOICE_WIDGET_KEY,
+            )
+        )
+        mathematical_depth = MathematicalDepth(
+            st.selectbox(
+                "Mathematical depth",
+                [item.value for item in MathematicalDepth],
+                index=list(MathematicalDepth).index(instruction.mathematical_depth),
+                format_func=lambda value: value.title(),
+                key=MATH_DEPTH_WIDGET_KEY,
+            )
+        )
+        visual_density = VisualDensity(
+            st.selectbox(
+                "Information density",
+                [item.value for item in VisualDensity],
+                index=list(VisualDensity).index(instruction.visual_density),
+                format_func=lambda value: value.title(),
+                key=VISUAL_DENSITY_WIDGET_KEY,
+            )
+        )
         preferences = get_visual_preferences()
         current_level = preferences.presentation_level
         level = PresentationLevel(
@@ -114,10 +177,15 @@ def render_accessibility_panel():
         )
         st.session_state[PRESENTATION_LEVEL_KEY] = level.value
         st.session_state[VISUAL_PREFERENCES_KEY] = VisualPreferences(level, theme).to_dict()
-    updated = AccessibilitySettings(reduced, contrast, large)
+    updated = AccessibilitySettings(
+        reduced,
+        contrast,
+        large,
+        AudiencePreferences(audience, voice, mathematical_depth, visual_density),
+    )
     if updated != current:
         st.session_state[SETTINGS_KEY] = updated
-        publish(AccessibilityChanged(reduced, contrast, large))
+        publish(AccessibilityChanged(reduced, contrast, large, updated.instructional.to_dict()))
     return updated
 
 

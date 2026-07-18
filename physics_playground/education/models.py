@@ -7,7 +7,10 @@ from datetime import datetime
 from enum import StrEnum
 from typing import TypeAlias
 
+from physics_playground.education.audience import MathematicalDepth
 from physics_playground.models.simulations import InteractiveMode
+
+ALL_MATHEMATICAL_DEPTHS = frozenset(MathematicalDepth)
 
 
 class ContentDepth(StrEnum):
@@ -123,6 +126,7 @@ class WorkedExample:
     unit_check: str
     final_answer: str
     final_interpretation: str
+    applicable_depths: frozenset[MathematicalDepth] = ALL_MATHEMATICAL_DEPTHS
 
 
 @dataclass(frozen=True, slots=True)
@@ -143,6 +147,7 @@ class GuidedDerivation:
     assumptions: tuple[str, ...]
     steps: tuple[DerivationStep, ...]
     conclusion: str
+    applicable_depths: frozenset[MathematicalDepth] = ALL_MATHEMATICAL_DEPTHS
 
 
 @dataclass(frozen=True, slots=True)
@@ -151,6 +156,7 @@ class MisconceptionCallout:
     misconception: str
     correction: str
     diagnostic_prompt: str = ""
+    applicable_depths: frozenset[MathematicalDepth] = ALL_MATHEMATICAL_DEPTHS
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,6 +176,7 @@ class CheckpointQuestion:
     explanation: str = ""
     tolerance: float | None = None
     unit: str = ""
+    applicable_depths: frozenset[MathematicalDepth] = ALL_MATHEMATICAL_DEPTHS
 
 
 @dataclass(frozen=True, slots=True)
@@ -183,6 +190,7 @@ class SimulationActivity:
     parameter_preset: dict[str, float | int | str | bool] = field(default_factory=dict)
     observation_prompt: str = ""
     completion_evidence: str = ""
+    applicable_depths: frozenset[MathematicalDepth] = ALL_MATHEMATICAL_DEPTHS
 
 
 SectionComponent: TypeAlias = (
@@ -201,6 +209,7 @@ class LessonSection:
     narrative: str
     components: tuple[SectionComponent, ...] = ()
     profile: ContentProfile | None = None
+    applicable_depths: frozenset[MathematicalDepth] = ALL_MATHEMATICAL_DEPTHS
 
 
 @dataclass(frozen=True, slots=True)

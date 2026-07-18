@@ -363,7 +363,7 @@ def render_model() -> None:
 def render() -> None:
     _init()
     _apply_reuse()
-    st.header("🎯 Cannonball Launcher")
+    st.header("Cannonball Launcher — Projectile Motion")
     st.markdown(
         "Launch a cannonball, compare trajectories, analyze the measurements, or inspect the model."
     )

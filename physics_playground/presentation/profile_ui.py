@@ -58,6 +58,13 @@ def load_into_session(profile: LocalProfile):
     st.session_state[SHARED_STATE_KEYS.accessibility_settings] = AccessibilitySettings.from_dict(
         profile.accessibility_settings
     )
+    for name in (
+        "audience_widget",
+        "voice_widget",
+        "mathematical_depth_widget",
+        "visual_density_widget",
+    ):
+        st.session_state.pop(feature_key("accessibility", name), None)
     st.session_state[SHARED_STATE_KEYS.education_progress] = {
         lesson_id: PathwayProgress.from_dict(payload, lesson_id=lesson_id)
         for lesson_id, payload in profile.educational_progress.items()
@@ -132,7 +139,7 @@ def current_scientist_name():
 
 def render_profile_sidebar():
     store = get_store()
-    st.subheader("👩‍🔬 Local scientist profile")
+    st.subheader("Local learning profile")
     if not store:
         st.caption("Session-only mode: local persistence is unavailable.")
         if st.session_state.get(PERSISTENCE_ERROR_KEY):
@@ -140,9 +147,7 @@ def render_profile_sidebar():
         return
     profiles = store.list_profiles()
     if not profiles:
-        name = st.text_input(
-            "Scientist display name", key=feature_key("profiles", "new_name_widget")
-        )
+        name = st.text_input("Display name", key=feature_key("profiles", "new_name_widget"))
         if st.button("Create local profile", disabled=not name.strip(), use_container_width=True):
             profile = store.create(name)
             load_into_session(profile)
@@ -200,7 +205,7 @@ def render_profile_sidebar():
         st.rerun()
     with st.expander("Create another profile"):
         new_name = st.text_input(
-            "New scientist display name", key=feature_key("profiles", "additional_name_widget")
+            "New display name", key=feature_key("profiles", "additional_name_widget")
         )
         if st.button(
             "Create profile",

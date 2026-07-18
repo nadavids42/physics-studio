@@ -33,6 +33,7 @@ class AccessibilityChanged:
     reduced_motion: bool
     high_contrast: bool
     large_text: bool
+    instructional_preferences: dict[str, str] | None = None
 
 
 ApplicationEvent = (

@@ -34,7 +34,7 @@ class LocalProfile:
     learner_observations: tuple[str, ...] = ()
     application_version: str = APPLICATION_VERSION
     profile_schema_version: int = SCHEMA_VERSION
-    accessibility_settings: Mapping[str, bool] = field(default_factory=dict)
+    accessibility_settings: Mapping[str, object] = field(default_factory=dict)
     educational_progress: Mapping[str, Mapping[str, object]] = field(default_factory=dict)
 
     def to_dict(self):

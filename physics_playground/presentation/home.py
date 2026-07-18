@@ -1,4 +1,4 @@
-"""Registry-driven Physics Mission Control home screen."""
+"""Registry-driven Physics Studio home screen."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ import streamlit as st
 
 from physics_playground.missions.definitions import MISSION_DEFINITIONS
 from physics_playground.models.simulations import Difficulty, SimulationDefinition
+from physics_playground.presentation.titles import scientific_title
 from physics_playground.registry import SIMULATION_REGISTRY
 from physics_playground.state_keys import SHARED_STATE_KEYS
 
@@ -56,7 +57,7 @@ def _card(item: SimulationDefinition) -> None:
     earned, total, fraction = _progress(item)
     visual = item.visual
     with st.container(border=True):
-        st.markdown(f"### {item.icon} {item.title}")
+        st.markdown(f"### {scientific_title(item)}")
         st.markdown(f"**{item.central_question}**")
         st.write(item.description)
         st.caption(f"{item.difficulty.value} · {item.simulation_type} · {item.renderer}")
@@ -71,7 +72,7 @@ def _card(item: SimulationDefinition) -> None:
             st.session_state[SHARED_STATE_KEYS.navigation_selector] = item.id
 
         st.button(
-            f"{label} {item.title}",
+            f"{label} {scientific_title(item)}",
             key=f"home_open_{item.id}",
             type="primary",
             use_container_width=True,
@@ -80,11 +81,12 @@ def _card(item: SimulationDefinition) -> None:
 
 
 def render_home() -> None:
-    st.title("🚀 Physics Mission Control")
+    st.title("Physics Studio")
     st.caption(
-        f"{len(SIMULATION_REGISTRY)} missions. Big questions. Guess first—then find out. You're the scientist."
+        f"{len(SIMULATION_REGISTRY)} interactive simulations and a guided learning pathway "
+        "for building physical intuition."
     )
-    st.markdown("## Choose your next experiment")
+    st.markdown("## Choose a simulation")
     items = _filtered()
     if not items:
         st.info("No missions match those filters.")

@@ -45,7 +45,7 @@ def init_missions():
 
 def _celebrate(mission_id, celebrate=True):
     mission = MISSION_DEFINITIONS[mission_id]
-    prefix = "🤫 Secret achievement unlocked" if mission.hidden else "🏅 Badge earned"
+    prefix = "Hidden achievement earned" if mission.hidden else "Achievement earned"
     st.toast(f"{prefix}: {mission.title}!")
     if celebrate:
         st.balloons()
@@ -98,13 +98,14 @@ def mission_checklist(group: str):
     init_missions()
     simulation_id = GROUP_TO_SIMULATION[group]
     status = summary(st.session_state[SHARED_STATE_KEYS.missions_progress], simulation_id)
-    st.markdown(f"#### 🏅 Missions — {status.earned}/{status.total} ({status.percentage:.0%})")
+    st.markdown(f"#### Progress — {status.earned}/{status.total} ({status.percentage:.0%})")
     for mission in MISSIONS_BY_SIMULATION[simulation_id]:
         done = mission.id in st.session_state[SHARED_STATE_KEYS.missions_progress].completed
         if mission.hidden and not done:
             continue
-        title = mission.title if not mission.hidden else f"🤫 {mission.title}"
-        st.markdown(f"{'✅' if done else '⬜'} **{title}** — {mission.description}")
+        title = mission.title if not mission.hidden else f"Hidden: {mission.title}"
+        state = "Complete" if done else "Not complete"
+        st.markdown(f"**{state}: {title}** — {mission.description}")
         if not done:
             blocked = [
                 MISSION_DEFINITIONS[item].title
@@ -112,11 +113,11 @@ def mission_checklist(group: str):
                 if item not in st.session_state[SHARED_STATE_KEYS.missions_progress].completed
             ]
             if blocked:
-                st.caption(f"🔒 First complete: {', '.join(blocked)}")
+                st.caption(f"First complete: {', '.join(blocked)}")
             else:
                 hint = hint_for(st.session_state[SHARED_STATE_KEYS.missions_progress], mission.id)
                 if hint:
-                    st.caption(f"💡 Hint: {hint}")
+                    st.caption(f"Hint: {hint}")
 
 
 def sidebar_badges():
@@ -136,13 +137,13 @@ def prediction_quiz(key, question, options, correct_index, reveal_text, mission_
     init_missions()
     guess_key = f"{key}_guess"
     revealed_key = f"{key}_revealed"
-    st.markdown(f"### 🤔 First — make your guess!\n**{question}**")
+    st.markdown(f"### Make a prediction\n**{question}**")
     guess = st.radio(
         "Your guess:", options, index=None, key=guess_key, label_visibility="collapsed"
     )
     if not st.session_state.get(revealed_key, False):
         if st.button(
-            "🔒 Lock in my guess!", key=f"{key}_lock", disabled=guess is None, type="primary"
+            "Submit prediction", key=f"{key}_lock", disabled=guess is None, type="primary"
         ):
             st.session_state[revealed_key] = True
             if mission_id:
@@ -151,7 +152,7 @@ def prediction_quiz(key, question, options, correct_index, reveal_text, mission_
                 )
             st.rerun()
         if guess is None:
-            st.caption("Pick an answer to lock it in. No peeking!")
+            st.caption("Select an answer before submitting your prediction.")
         return False
     if (
         mission_id
@@ -159,9 +160,9 @@ def prediction_quiz(key, question, options, correct_index, reveal_text, mission_
     ):
         st.session_state[SHARED_STATE_KEYS.missions_progress].pending_explanations.add(mission_id)
     if guess == options[correct_index]:
-        st.success(f"🎉 **You got it!** {reveal_text}")
+        st.success(f"**Correct.** {reveal_text}")
     else:
-        st.warning(f"**Good guess — but surprise!** {reveal_text}")
+        st.warning(f"**Compare your prediction with the result.** {reveal_text}")
     if (
         mission_id
         and mission_id not in st.session_state[SHARED_STATE_KEYS.missions_progress].completed
@@ -175,7 +176,7 @@ SPEED_THINGS = [
     ("a jet plane", 250.0),
     ("a race car", 90.0),
     ("a cheetah at full sprint", 30.0),
-    ("a kid sprinting", 7.0),
+    ("a runner", 7.0),
     ("a grown-up walking", 1.4),
 ]
 
@@ -196,11 +197,11 @@ def fun_time_minutes(minutes):
     if minutes < 2:
         return "shorter than brushing your teeth"
     if minutes < 12:
-        return "about one recess"
+        return "about ten minutes"
     if minutes < 35:
-        return "about one episode of a cartoon"
+        return "about half an hour"
     if minutes < 70:
-        return "about one soccer game half... plus snacks"
+        return "about one hour"
     if minutes < 150:
         return "about one whole movie"
     return "longer than a movie — bring a book"

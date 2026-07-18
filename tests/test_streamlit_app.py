@@ -10,12 +10,12 @@ def test_app_renders_home_and_a_simulation_page(monkeypatch, tmp_path) -> None:
     app = AppTest.from_file("app.py").run(timeout=30)
     assert not app.exception
     assert len(app.radio) == 1
-    assert "🏠 Mission Control" in app.radio[0].options
+    assert "Physics Studio" in app.radio[0].options
 
     app.radio[0].set_value("cannonball").run(timeout=30)
     assert not app.exception
-    assert any(header.value == "🎯 Cannonball Launcher" for header in app.header)
-    assert any(button.label == "🔒 Lock in my guess!" for button in app.button)
+    assert any(header.value == "Cannonball Launcher — Projectile Motion" for header in app.header)
+    assert any(button.label == "Submit prediction" for button in app.button)
     assert any(
         expander.label == "Learning pathway: Projectile motion from components"
         for expander in app.expander

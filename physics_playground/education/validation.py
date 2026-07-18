@@ -34,6 +34,11 @@ def _require_text(value: str, label: str) -> None:
         raise PhysicsValidationError(f"{label} cannot be blank.")
 
 
+def _require_depths(item: object, label: str) -> None:
+    if not getattr(item, "applicable_depths", frozenset()):
+        raise PhysicsValidationError(f"{label} must apply to at least one mathematical depth.")
+
+
 def _unique_ids(items: Iterable[object], label: str) -> set[str]:
     ids = []
     for item in items:
@@ -147,8 +152,10 @@ def _validate_lesson(lesson: Lesson, concept_ids: set[str], simulation_ids: set[
     component_activities = []
     component_ids = set()
     for section in lesson.sections:
+        _require_depths(section, "Lesson section")
         _require_text(section.narrative, "Lesson section narrative")
         for component in section.components:
+            _require_depths(component, "Lesson component")
             if component.id in component_ids:
                 raise PhysicsValidationError("Lesson component IDs must be unique.")
             component_ids.add(component.id)

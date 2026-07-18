@@ -5,7 +5,7 @@ SPEED_REFERENCES = (
     ("a jet plane", 250.0),
     ("a race car", 90.0),
     ("a cheetah at full sprint", 30.0),
-    ("a kid sprinting", 7.0),
+    ("a runner", 7.0),
     ("a grown-up walking", 1.4),
 )
 
@@ -26,9 +26,9 @@ def friendly_minutes(minutes: float) -> str:
     if minutes < 2:
         return "shorter than brushing your teeth"
     if minutes < 12:
-        return "about one recess"
+        return "about ten minutes"
     if minutes < 35:
-        return "about one episode of a cartoon"
+        return "about half an hour"
     if minutes < 70:
         return "about one soccer game half... plus snacks"
     if minutes < 150:

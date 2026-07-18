@@ -1,4 +1,11 @@
 from physics_playground.accessibility_settings import AccessibilitySettings
+from physics_playground.education.audience import (
+    AudienceLevel,
+    AudiencePreferences,
+    InstructionalVoice,
+    MathematicalDepth,
+    VisualDensity,
+)
 from physics_playground.profiles import LocalProfile
 
 
@@ -21,3 +28,15 @@ def test_profile_preserves_accessibility_preferences():
     )
     assert profile.accessibility_settings["reduced_motion"] is True
     assert profile.accessibility_settings["high_contrast"] is True
+
+
+def test_accessibility_settings_preserve_instructional_dimensions():
+    preferences = AudiencePreferences(
+        AudienceLevel.ADVANCED,
+        InstructionalVoice.CONCRETE,
+        MathematicalDepth.EXTENDED,
+        VisualDensity.FOCUSED,
+    )
+    settings = AccessibilitySettings(instructional=preferences)
+
+    assert AccessibilitySettings.from_dict(settings.to_dict()).instructional == preferences

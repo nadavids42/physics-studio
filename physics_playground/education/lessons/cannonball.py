@@ -1,5 +1,6 @@
 """Complete example lesson built around the Cannonball Launcher simulation."""
 
+from physics_playground.education.audience import MathematicalDepth
 from physics_playground.education.models import (
     ActivityPhase,
     AnswerChoice,
@@ -205,6 +206,7 @@ RANGE_DERIVATION = GuidedDerivation(
         ),
     ),
     "For this idealized geometry, R=v_0^2 sin(2theta)/g and complementary angles have equal range.",
+    frozenset({MathematicalDepth.STANDARD, MathematicalDepth.EXTENDED}),
 )
 
 RANGE_EXAMPLE = WorkedExample(
@@ -309,6 +311,14 @@ CANNONBALL_LESSON = Lesson(
                 ACTIVITIES[4],
                 ACTIVITIES[5],
             ),
+        ),
+        LessonSection(
+            "numerical-extension",
+            "Advanced extension: from equations to numerical trajectories",
+            "With quadratic drag, acceleration depends on velocity, so the ideal closed-form range relation no longer describes the full path. The simulation advances the coupled state in small time steps, checks landing as an event, and exposes time-step and maximum-time limits. Compare smaller time steps to test numerical convergence before interpreting a difference as physical.",
+            (),
+            ContentProfile(ContentDepth.ADVANCED, ContentVoice.ACADEMIC),
+            frozenset({MathematicalDepth.EXTENDED}),
         ),
     ),
     ACTIVITIES,

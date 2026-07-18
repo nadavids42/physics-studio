@@ -2,12 +2,20 @@
 
 from __future__ import annotations
 
+from contextlib import nullcontext
 from datetime import UTC, datetime
 from uuid import uuid4
 
 import streamlit as st
 
 from physics_playground.application_callbacks import NotebookChanged, publish
+from physics_playground.education.audience import (
+    AudienceLevel,
+    AudiencePreferences,
+    MathematicalDepth,
+    VisualDensity,
+    applies_at_depth,
+)
 from physics_playground.education.models import (
     ActivityPhase,
     CheckpointQuestion,
@@ -20,17 +28,31 @@ from physics_playground.education.models import (
     WorkedExample,
 )
 from physics_playground.education.progress import PathwayProgress
+from physics_playground.presentation.accessibility_ui import get_accessibility_settings
 from physics_playground.presentation.profile_ui import get_notebook
 from physics_playground.state_keys import SHARED_STATE_KEYS, feature_key, simulation_key
 
 
-def _requirements(lesson: Lesson) -> tuple[tuple[str, ...], tuple[str, ...]]:
-    activities = tuple(activity.id for activity in lesson.activity_sequence)
+def _requirements(
+    lesson: Lesson, depth: MathematicalDepth
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    visible_sections = tuple(
+        section for section in lesson.sections if applies_at_depth(section, depth)
+    )
+    visible_activity_ids = {
+        component.id
+        for section in visible_sections
+        for component in section.components
+        if isinstance(component, SimulationActivity) and applies_at_depth(component, depth)
+    }
+    activities = tuple(
+        activity.id for activity in lesson.activity_sequence if activity.id in visible_activity_ids
+    )
     checkpoints = tuple(
         component.id
-        for section in lesson.sections
+        for section in visible_sections
         for component in section.components
-        if isinstance(component, CheckpointQuestion)
+        if isinstance(component, CheckpointQuestion) and applies_at_depth(component, depth)
     )
     return activities, checkpoints
 
@@ -73,7 +95,7 @@ def _save_progress(
     )
 
 
-def _render_worked_example(example: WorkedExample) -> None:
+def _render_worked_example(example: WorkedExample, preferences: AudiencePreferences) -> None:
     st.markdown(f"#### Worked example: {example.title}")
     st.write(example.prompt)
     st.markdown("**Known values**")
@@ -84,7 +106,12 @@ def _render_worked_example(example: WorkedExample) -> None:
         f"**Unknown:** {example.unknown.symbol}, {example.unknown.name} ({example.unknown.unit})"
     )
     st.markdown("**Symbolic reasoning**")
-    for step in example.symbolic_reasoning:
+    reasoning = (
+        example.symbolic_reasoning[:1]
+        if preferences.mathematical_depth is MathematicalDepth.CONCEPTUAL
+        else example.symbolic_reasoning
+    )
+    for step in reasoning:
         st.latex(step.expression)
         st.caption(step.explanation)
     st.markdown("**Substitute only after the symbolic setup**")
@@ -93,6 +120,10 @@ def _render_worked_example(example: WorkedExample) -> None:
     st.info(f"Unit check: {example.unit_check}")
     st.success(example.final_answer)
     st.write(example.final_interpretation)
+    if preferences.mathematical_depth is MathematicalDepth.EXTENDED:
+        st.caption(
+            "Extension: compare this analytic value with progressively smaller numerical time steps before attributing a discrepancy to the physical model."
+        )
 
 
 def _render_derivation(derivation: GuidedDerivation) -> None:
@@ -114,6 +145,7 @@ def _render_checkpoint(
     lesson: Lesson,
     question: CheckpointQuestion,
     progress: PathwayProgress,
+    preferences: AudiencePreferences,
 ) -> PathwayProgress:
     st.markdown(f"#### Checkpoint: {question.prompt}")
     if question.id in progress.completed_checkpoint_ids:
@@ -129,7 +161,7 @@ def _render_checkpoint(
     )
     if st.button("Check answer", key=feature_key("education", f"{question.id}.submit")):
         if answer == question.correct_answer:
-            activities, checkpoints = _requirements(lesson)
+            activities, checkpoints = _requirements(lesson, preferences.mathematical_depth)
             updated = progress.complete_checkpoint(
                 question.id,
                 required_activity_ids=activities,
@@ -152,14 +184,18 @@ def _render_activity(
     lesson: Lesson,
     activity: SimulationActivity,
     progress: PathwayProgress,
+    preferences: AudiencePreferences,
 ) -> PathwayProgress:
     complete = activity.id in progress.completed_activity_ids
     st.markdown(f"#### {activity.phase.value.title()}: {activity.title}")
-    for instruction in activity.instructions:
-        st.markdown(f"- {instruction}")
+    for index, instruction in enumerate(activity.instructions, start=1):
+        prefix = f"{index}." if preferences.audience is AudienceLevel.EXPLORER else "-"
+        st.markdown(f"{prefix} {instruction}")
     if activity.observation_prompt:
         st.info(activity.observation_prompt)
-    activities, checkpoints = _requirements(lesson)
+    if preferences.visual_density is VisualDensity.DETAILED and activity.completion_evidence:
+        st.caption(f"Evidence to record: {activity.completion_evidence}")
+    activities, checkpoints = _requirements(lesson, preferences.mathematical_depth)
     if activity.phase is ActivityPhase.PREDICTION:
         if progress.prediction is not None:
             st.success(f"Saved prediction: {progress.prediction}")
@@ -259,37 +295,60 @@ def render_learning_pathway(lesson: Lesson) -> None:
     """Render a complete pathway while leaving simulation modes directly accessible."""
 
     progress = get_pathway_progress(lesson)
-    activities, checkpoints = _requirements(lesson)
+    preferences = get_accessibility_settings().instructional
+    activities, checkpoints = _requirements(lesson, preferences.mathematical_depth)
     total = len(activities) + len(checkpoints)
     completed = len(progress.completed_activity_ids) + len(progress.completed_checkpoint_ids)
     with st.expander(f"Learning pathway: {lesson.title}", expanded=False):
         st.caption(f"About {lesson.estimated_minutes} minutes · {lesson.profile.depth.value}")
-        st.write(lesson.summary)
+        introduction = {
+            AudienceLevel.EXPLORER: "Begin with the path you can observe. Change one quantity at a time, record what changes, and use the equation to explain that evidence.",
+            AudienceLevel.CORE: lesson.summary,
+            AudienceLevel.ADVANCED: "Connect the measured trajectory and graphs to the analytic model, then test its assumptions and numerical limits.",
+        }[preferences.audience]
+        st.write(introduction)
+        st.caption(
+            f"{preferences.audience.value.title()} audience · {preferences.voice.value} voice · "
+            f"{preferences.mathematical_depth.value} mathematics · {preferences.visual_density.value} density"
+        )
         st.progress(completed / total if total else 0, text=f"{completed}/{total} steps complete")
         st.markdown("### Learning objectives")
         for objective in lesson.objectives:
             st.markdown(f"- {objective.statement}")
+            if preferences.visual_density is VisualDensity.DETAILED:
+                st.caption(f"Evidence: {objective.evidence}")
         st.markdown("### Prerequisites")
         for prerequisite in lesson.prerequisites:
             st.markdown(f"- {prerequisite.rationale}")
         for section in lesson.sections:
+            if not applies_at_depth(section, preferences.mathematical_depth):
+                continue
             st.divider()
-            st.markdown(f"### {section.title}")
-            st.write(section.narrative)
-            for component in section.components:
-                if isinstance(component, SimulationActivity):
-                    progress = _render_activity(lesson, component, progress)
-                elif isinstance(component, GuidedDerivation):
-                    _render_derivation(component)
-                elif isinstance(component, WorkedExample):
-                    _render_worked_example(component)
-                elif isinstance(component, MisconceptionCallout):
-                    st.warning(
-                        f"Common misconception: {component.misconception}\n\n"
-                        f"Correction: {component.correction}"
-                    )
-                elif isinstance(component, CheckpointQuestion):
-                    progress = _render_checkpoint(lesson, component, progress)
+            context = (
+                st.expander(section.title)
+                if preferences.visual_density is VisualDensity.FOCUSED
+                else nullcontext()
+            )
+            with context:
+                if preferences.visual_density is not VisualDensity.FOCUSED:
+                    st.markdown(f"### {section.title}")
+                st.write(section.narrative)
+                for component in section.components:
+                    if not applies_at_depth(component, preferences.mathematical_depth):
+                        continue
+                    if isinstance(component, SimulationActivity):
+                        progress = _render_activity(lesson, component, progress, preferences)
+                    elif isinstance(component, GuidedDerivation):
+                        _render_derivation(component)
+                    elif isinstance(component, WorkedExample):
+                        _render_worked_example(component, preferences)
+                    elif isinstance(component, MisconceptionCallout):
+                        st.warning(
+                            f"Common misconception: {component.misconception}\n\n"
+                            f"Correction: {component.correction}"
+                        )
+                    elif isinstance(component, CheckpointQuestion):
+                        progress = _render_checkpoint(lesson, component, progress, preferences)
         if progress.completed:
             st.success("Pathway complete. Your progress is saved with your active profile.")
         st.markdown(f"### Next lesson: {lesson.next_lesson_title}")

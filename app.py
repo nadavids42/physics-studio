@@ -22,11 +22,12 @@ from physics_playground.presentation.profile_ui import (
     persist_application_event,
     render_profile_sidebar,
 )
+from physics_playground.presentation.titles import scientific_title
 from physics_playground.registry import SIMULATION_REGISTRY, SIMULATIONS_BY_ID, load_validated_page
 from physics_playground.state_keys import SHARED_STATE_KEYS, migrate_legacy_keys
 from physics_playground.validation import PhysicsValidationError
 
-st.set_page_config(page_title="Physics Mission Control", page_icon="🚀", layout="wide")
+st.set_page_config(page_title="Physics Studio", page_icon="⚛", layout="wide")
 configure_application_callbacks(
     ApplicationCallbacks(
         on_event=persist_application_event,
@@ -41,7 +42,7 @@ with st.sidebar:
     st.divider()
     accessibility_settings = render_accessibility_panel()
     st.divider()
-    st.header("🎮 Mission navigation")
+    st.header("Navigation")
     navigation = ["home", *[item.id for item in SIMULATION_REGISTRY]]
     current = st.session_state[SHARED_STATE_KEYS.navigation_active] or "home"
     if SHARED_STATE_KEYS.navigation_selector not in st.session_state:
@@ -52,18 +53,18 @@ with st.sidebar:
         "Destination",
         navigation,
         format_func=lambda value: (
-            "🏠 Mission Control" if value == "home" else SIMULATIONS_BY_ID[value].navigation_label
+            "Physics Studio" if value == "home" else scientific_title(SIMULATIONS_BY_ID[value])
         ),
         label_visibility="collapsed",
         key=SHARED_STATE_KEYS.navigation_selector,
     )
     st.session_state[SHARED_STATE_KEYS.navigation_active] = None if selected == "home" else selected
     st.divider()
-    st.subheader("🏅 Badge collection")
+    st.subheader("Achievements")
     mission_ui.sidebar_badges()
     total = len(mission_ui.MISSION_LABELS)
     if len(st.session_state[SHARED_STATE_KEYS.missions_completed]) == total:
-        st.success("🏆 ALL BADGES EARNED! You are officially a Physics Champion!")
+        st.success("All achievements completed.")
     st.divider()
     render_notebook_sidebar()
     render_developer_diagnostics()
