@@ -12,6 +12,7 @@ from physics_playground.education.lessons.cannonball import CANNONBALL_LESSON
 from physics_playground.missions import ui as mission_ui
 from physics_playground.model_metadata import PROJECTILE_MODEL_METADATA
 from physics_playground.presentation.accessibility_ui import render_chart
+from physics_playground.presentation.interactive_charts import render_interactive_chart
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
     LearningMode,
@@ -31,7 +32,8 @@ from physics_playground.simulation_cache import (
 from physics_playground.state_keys import migrate_simulation_keys, simulation_key
 from physics_playground.subjects.mechanics.cannonball.charts import (
     plot_figure,
-    range_by_angle_figure,
+    range_by_angle_chart,
+    trajectory_comparison_chart,
 )
 from physics_playground.subjects.mechanics.cannonball.missions import evaluate_cannonball_missions
 from physics_playground.subjects.mechanics.cannonball.physics import (
@@ -302,6 +304,7 @@ def render_compare() -> None:
         autoplay=st.session_state[state_key("compare_signature")] == signature,
     )
     canvas_embed.show(doc, height=PLAYER_HEIGHT)
+    render_interactive_chart(trajectory_comparison_chart(a, b, labels), height=520)
     _compare_commit_controls(a, b, target, signature)
     comparison_metrics(
         {k: (k, v) for k, v in _metrics(a).items()}, {k: (k, v) for k, v in _metrics(b).items()}
@@ -339,9 +342,9 @@ def render_analyze() -> None:
         fig = plot_figure(plot)
         render_chart(fig, f"{plot.title}; axes are {plot.x_label} and {plot.y_label}.")
         plt.close(fig)
-    fig = range_by_angle_figure(result.parameters.launch_speed_m_s, result.parameters.gravity_m_s2)
-    render_chart(fig, "Range rises toward 45 degrees and then falls symmetrically.")
-    plt.close(fig)
+    render_interactive_chart(
+        range_by_angle_chart(result.parameters.launch_speed_m_s, result.parameters.gravity_m_s2)
+    )
 
 
 def render_model() -> None:

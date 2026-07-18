@@ -1,5 +1,6 @@
 """High-value Streamlit application navigation and rendering tests."""
 
+import pytest
 from streamlit.testing.v1 import AppTest
 
 from physics_playground.state_keys import simulation_key
@@ -92,3 +93,21 @@ def test_cannonball_setup_is_committed_and_notes_do_not_rerun_player(monkeypatch
     assert app.session_state[simulation_key("cannonball", "observation")] == (
         "The range stayed fixed."
     )
+
+
+@pytest.mark.parametrize(
+    ("mode", "chart_title"),
+    [("Compare", "Trajectory comparison"), ("Analyze", "Range versus launch angle")],
+)
+def test_cannonball_interactive_chart_examples_render_in_page(
+    monkeypatch, tmp_path, mode, chart_title
+) -> None:
+    app = _app(monkeypatch, tmp_path)
+    app.query_params["simulation"] = "cannonball"
+    app.session_state[simulation_key("cannonball", "quiz_revealed")] = True
+    app.session_state[simulation_key("cannonball", "quiz_guess")] = "45°"
+    app.session_state[simulation_key("cannonball", "learning_mode")] = mode
+    app.run(timeout=30)
+
+    assert not app.exception
+    assert any(chart_title in iframe.proto.srcdoc for iframe in app.get("iframe"))

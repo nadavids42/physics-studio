@@ -10,6 +10,7 @@ from physics_playground.performance import (
     MAX_TRAJECTORY_SAMPLES,
     timing_snapshot,
 )
+from physics_playground.presentation.interactive_charts import interactive_chart_cache_info
 from physics_playground.presentation.notebook_ui import get_notebook
 
 
@@ -29,6 +30,11 @@ def render_developer_diagnostics():
         st.caption(
             f"Frontend asset cache: {assets.hits} hits, {assets.misses} misses, "
             f"{assets.currsize}/{assets.maxsize} entries"
+        )
+        charts = interactive_chart_cache_info()
+        st.caption(
+            f"Interactive chart cache: {charts.hits} hits, {charts.misses} misses, "
+            f"{charts.currsize}/{charts.maxsize} entries"
         )
         if not timings:
             st.info("No simulation timing samples have been recorded yet.")
