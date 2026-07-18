@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 from physics_playground.canvas import embed as canvas_embed
+from physics_playground.education.lessons.cannonball import CANNONBALL_LESSON
 from physics_playground.missions import ui as mission_ui
 from physics_playground.model_metadata import PROJECTILE_MODEL_METADATA
 from physics_playground.presentation.accessibility_ui import render_chart
@@ -21,6 +22,7 @@ from physics_playground.presentation.learning_modes import (
     mode_navigation,
 )
 from physics_playground.presentation.notebook_ui import add_trial
+from physics_playground.presentation.pathway_ui import render_learning_pathway
 from physics_playground.setup_handoff import consume_setup_request
 from physics_playground.simulation_cache import (
     cached_projectile,
@@ -365,6 +367,7 @@ def render() -> None:
     st.markdown(
         "Launch a cannonball, compare trajectories, analyze the measurements, or inspect the model."
     )
+    render_learning_pathway(CANNONBALL_LESSON)
     revealed = mission_ui.prediction_quiz(
         key=state_key("quiz"),
         question="For maximum no-drag range on level ground, which angle wins?",

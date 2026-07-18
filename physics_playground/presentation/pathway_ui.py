@@ -1,0 +1,298 @@
+"""Streamlit renderer for typed educational pathways."""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime
+from uuid import uuid4
+
+import streamlit as st
+
+from physics_playground.application_callbacks import NotebookChanged, publish
+from physics_playground.education.models import (
+    ActivityPhase,
+    CheckpointQuestion,
+    EducationEventKind,
+    EducationProgressEvent,
+    GuidedDerivation,
+    Lesson,
+    MisconceptionCallout,
+    SimulationActivity,
+    WorkedExample,
+)
+from physics_playground.education.progress import PathwayProgress
+from physics_playground.presentation.profile_ui import get_notebook
+from physics_playground.state_keys import SHARED_STATE_KEYS, feature_key, simulation_key
+
+
+def _requirements(lesson: Lesson) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    activities = tuple(activity.id for activity in lesson.activity_sequence)
+    checkpoints = tuple(
+        component.id
+        for section in lesson.sections
+        for component in section.components
+        if isinstance(component, CheckpointQuestion)
+    )
+    return activities, checkpoints
+
+
+def _progress_map() -> dict[str, PathwayProgress]:
+    value = st.session_state.setdefault(SHARED_STATE_KEYS.education_progress, {})
+    if not isinstance(value, dict):
+        value = {}
+        st.session_state[SHARED_STATE_KEYS.education_progress] = value
+    return value
+
+
+def get_pathway_progress(lesson: Lesson) -> PathwayProgress:
+    progress = _progress_map().get(lesson.id)
+    if not isinstance(progress, PathwayProgress):
+        progress = PathwayProgress(lesson.id)
+        _progress_map()[lesson.id] = progress
+    return progress
+
+
+def _save_progress(
+    progress: PathwayProgress,
+    *,
+    kind: EducationEventKind,
+    activity_id: str | None = None,
+    checkpoint_id: str | None = None,
+) -> None:
+    _progress_map()[progress.lesson_id] = progress
+    publish(
+        EducationProgressEvent(
+            id=uuid4().hex,
+            kind=EducationEventKind.LESSON_COMPLETED if progress.completed else kind,
+            learner_id=str(st.session_state.get(SHARED_STATE_KEYS.profiles_active_id, "session")),
+            lesson_id=progress.lesson_id,
+            occurred_at=datetime.now(UTC),
+            activity_id=activity_id,
+            checkpoint_id=checkpoint_id,
+            completed=progress.completed,
+        )
+    )
+
+
+def _render_worked_example(example: WorkedExample) -> None:
+    st.markdown(f"#### Worked example: {example.title}")
+    st.write(example.prompt)
+    st.markdown("**Known values**")
+    for known in example.known_values:
+        value = known.display_value or f"{known.value:g} {known.quantity.unit}"
+        st.markdown(f"- {known.quantity.symbol} ({known.quantity.name}) = {value}")
+    st.markdown(
+        f"**Unknown:** {example.unknown.symbol}, {example.unknown.name} ({example.unknown.unit})"
+    )
+    st.markdown("**Symbolic reasoning**")
+    for step in example.symbolic_reasoning:
+        st.latex(step.expression)
+        st.caption(step.explanation)
+    st.markdown("**Substitute only after the symbolic setup**")
+    for substitution in example.substitutions:
+        st.code(f"{substitution.expression}\n{substitution.result}")
+    st.info(f"Unit check: {example.unit_check}")
+    st.success(example.final_answer)
+    st.write(example.final_interpretation)
+
+
+def _render_derivation(derivation: GuidedDerivation) -> None:
+    st.markdown(f"#### Guided derivation: {derivation.title}")
+    st.write(derivation.goal)
+    st.markdown("**Assumptions used in this derivation**")
+    for assumption in derivation.assumptions:
+        st.markdown(f"- {assumption}")
+    for step in derivation.steps:
+        with st.expander(f"Reveal step {step.reveal_order}: {step.prompt}"):
+            if step.hint:
+                st.caption(f"Hint: {step.hint}")
+            st.latex(step.expression)
+            st.write(step.explanation)
+    st.info(derivation.conclusion)
+
+
+def _render_checkpoint(
+    lesson: Lesson,
+    question: CheckpointQuestion,
+    progress: PathwayProgress,
+) -> PathwayProgress:
+    st.markdown(f"#### Checkpoint: {question.prompt}")
+    if question.id in progress.completed_checkpoint_ids:
+        st.success("Checkpoint complete.")
+        st.write(question.explanation)
+        return progress
+    answer_key = feature_key("education", f"{lesson.id}.{question.id}.answer")
+    answer = st.radio(
+        "Choose an answer",
+        [choice.id for choice in question.choices],
+        format_func={choice.id: choice.text for choice in question.choices}.get,
+        key=answer_key,
+    )
+    if st.button("Check answer", key=feature_key("education", f"{question.id}.submit")):
+        if answer == question.correct_answer:
+            activities, checkpoints = _requirements(lesson)
+            updated = progress.complete_checkpoint(
+                question.id,
+                required_activity_ids=activities,
+                required_checkpoint_ids=checkpoints,
+            )
+            _save_progress(
+                updated,
+                kind=EducationEventKind.CHECKPOINT_ATTEMPTED,
+                checkpoint_id=question.id,
+            )
+            st.success(question.explanation)
+            return updated
+        st.error(
+            "Not yet. Revisit the graph and the complementary-angle comparison, then try again."
+        )
+    return progress
+
+
+def _render_activity(
+    lesson: Lesson,
+    activity: SimulationActivity,
+    progress: PathwayProgress,
+) -> PathwayProgress:
+    complete = activity.id in progress.completed_activity_ids
+    st.markdown(f"#### {activity.phase.value.title()}: {activity.title}")
+    for instruction in activity.instructions:
+        st.markdown(f"- {instruction}")
+    if activity.observation_prompt:
+        st.info(activity.observation_prompt)
+    activities, checkpoints = _requirements(lesson)
+    if activity.phase is ActivityPhase.PREDICTION:
+        if progress.prediction is not None:
+            st.success(f"Saved prediction: {progress.prediction}")
+            if st.button(
+                "Reset prediction",
+                key=feature_key("education", f"{lesson.id}.reset_prediction"),
+            ):
+                updated = progress.reset_prediction(activity.id)
+                _save_progress(
+                    updated,
+                    kind=EducationEventKind.ACTIVITY_COMPLETED,
+                    activity_id=activity.id,
+                )
+                return updated
+            return progress
+        prediction_key = feature_key("education", f"{lesson.id}.prediction")
+        prediction = st.text_area("Record your prediction and physical reason", key=prediction_key)
+        if st.button(
+            "Save prediction",
+            disabled=not prediction.strip(),
+            key=feature_key("education", f"{lesson.id}.save_prediction"),
+        ):
+            updated = progress.save_prediction(
+                prediction,
+                activity.id,
+                required_activity_ids=activities,
+                required_checkpoint_ids=checkpoints,
+            )
+            _save_progress(
+                updated,
+                kind=EducationEventKind.ACTIVITY_COMPLETED,
+                activity_id=activity.id,
+            )
+            return updated
+        return progress
+    if activity.phase is ActivityPhase.REFLECTION:
+        reflection_key = feature_key("education", f"{lesson.id}.reflection")
+        initial = progress.reflection or ""
+        if reflection_key not in st.session_state:
+            st.session_state[reflection_key] = initial
+        response = st.text_area("Notebook reflection", key=reflection_key)
+        if complete:
+            st.success("Reflection saved to your notebook.")
+        if st.button(
+            "Save notebook reflection",
+            disabled=not response.strip(),
+            key=feature_key("education", f"{lesson.id}.save_reflection"),
+        ):
+            updated = progress.save_reflection(
+                response,
+                activity.id,
+                required_activity_ids=activities,
+                required_checkpoint_ids=checkpoints,
+            )
+            reflection = get_notebook().save_lesson_reflection(
+                lesson_id=lesson.id,
+                prompt=activity.observation_prompt,
+                response=response,
+            )
+            _save_progress(
+                updated,
+                kind=EducationEventKind.ACTIVITY_COMPLETED,
+                activity_id=activity.id,
+            )
+            publish(NotebookChanged(reflection.id))
+            return updated
+        return progress
+    if activity.mode is not None and st.button(
+        f"Open {activity.mode.value} mode",
+        key=feature_key("education", f"{activity.id}.open_mode"),
+    ):
+        st.session_state[simulation_key(activity.simulation_id, "learning_mode")] = (
+            activity.mode.value
+        )
+        st.toast(f"{activity.mode.value} mode selected below.")
+    if complete:
+        st.success("Activity complete.")
+    elif st.button(
+        "Mark activity complete",
+        key=feature_key("education", f"{activity.id}.complete"),
+    ):
+        updated = progress.complete_activity(
+            activity.id,
+            required_activity_ids=activities,
+            required_checkpoint_ids=checkpoints,
+        )
+        _save_progress(
+            updated,
+            kind=EducationEventKind.ACTIVITY_COMPLETED,
+            activity_id=activity.id,
+        )
+        return updated
+    return progress
+
+
+def render_learning_pathway(lesson: Lesson) -> None:
+    """Render a complete pathway while leaving simulation modes directly accessible."""
+
+    progress = get_pathway_progress(lesson)
+    activities, checkpoints = _requirements(lesson)
+    total = len(activities) + len(checkpoints)
+    completed = len(progress.completed_activity_ids) + len(progress.completed_checkpoint_ids)
+    with st.expander(f"Learning pathway: {lesson.title}", expanded=False):
+        st.caption(f"About {lesson.estimated_minutes} minutes · {lesson.profile.depth.value}")
+        st.write(lesson.summary)
+        st.progress(completed / total if total else 0, text=f"{completed}/{total} steps complete")
+        st.markdown("### Learning objectives")
+        for objective in lesson.objectives:
+            st.markdown(f"- {objective.statement}")
+        st.markdown("### Prerequisites")
+        for prerequisite in lesson.prerequisites:
+            st.markdown(f"- {prerequisite.rationale}")
+        for section in lesson.sections:
+            st.divider()
+            st.markdown(f"### {section.title}")
+            st.write(section.narrative)
+            for component in section.components:
+                if isinstance(component, SimulationActivity):
+                    progress = _render_activity(lesson, component, progress)
+                elif isinstance(component, GuidedDerivation):
+                    _render_derivation(component)
+                elif isinstance(component, WorkedExample):
+                    _render_worked_example(component)
+                elif isinstance(component, MisconceptionCallout):
+                    st.warning(
+                        f"Common misconception: {component.misconception}\n\n"
+                        f"Correction: {component.correction}"
+                    )
+                elif isinstance(component, CheckpointQuestion):
+                    progress = _render_checkpoint(lesson, component, progress)
+        if progress.completed:
+            st.success("Pathway complete. Your progress is saved with your active profile.")
+        st.markdown(f"### Next lesson: {lesson.next_lesson_title}")
+        st.caption(
+            "Continue when you are ready; Explore, Compare, Analyze, and Model remain available below at any time."
+        )

@@ -8,6 +8,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from physics_playground.education.models import EducationProgressEvent
+
 
 @dataclass(frozen=True, slots=True)
 class ProgressChanged:
@@ -33,7 +35,9 @@ class AccessibilityChanged:
     large_text: bool
 
 
-ApplicationEvent = ProgressChanged | BadgeEarned | NotebookChanged | AccessibilityChanged
+ApplicationEvent = (
+    ProgressChanged | BadgeEarned | NotebookChanged | AccessibilityChanged | EducationProgressEvent
+)
 
 
 @dataclass(frozen=True, slots=True)

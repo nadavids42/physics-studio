@@ -216,6 +216,8 @@ class Lesson:
     activity_sequence: tuple[SimulationActivity, ...]
     profile: ContentProfile = ContentProfile()
     estimated_minutes: int = 45
+    next_lesson_id: str | None = None
+    next_lesson_title: str = ""
 
 
 @dataclass(frozen=True, slots=True)

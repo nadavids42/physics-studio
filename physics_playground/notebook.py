@@ -48,9 +48,19 @@ class TrialComparison:
     changed_parameters: Mapping[str, tuple[JsonValue, JsonValue]]
 
 
+@dataclass(frozen=True, slots=True)
+class LessonReflection:
+    id: str
+    lesson_id: str
+    timestamp: str
+    prompt: str
+    response: str
+
+
 @dataclass(slots=True)
 class ExperimentNotebook:
     trials: list[TrialRecord] = field(default_factory=list)
+    lesson_reflections: list[LessonReflection] = field(default_factory=list)
     pinned_run_a_id: str | None = None
     next_trial_number: int = 1
 
@@ -93,6 +103,25 @@ class ExperimentNotebook:
         self.next_trial_number += 1
         return trial
 
+    def save_lesson_reflection(
+        self, *, lesson_id: str, prompt: str, response: str
+    ) -> LessonReflection:
+        text = response.strip()
+        if not text:
+            raise ValueError("Lesson reflection cannot be blank.")
+        reflection = LessonReflection(
+            id=uuid4().hex,
+            lesson_id=lesson_id,
+            timestamp=datetime.now(UTC).isoformat(),
+            prompt=prompt,
+            response=text,
+        )
+        self.lesson_reflections = [
+            item for item in self.lesson_reflections if item.lesson_id != lesson_id
+        ]
+        self.lesson_reflections.append(reflection)
+        return reflection
+
     def filtered(self, simulation_id: str | None = None) -> list[TrialRecord]:
         if not simulation_id:
             return list(self.trials)
@@ -131,6 +160,7 @@ class ExperimentNotebook:
 
     def reset(self) -> None:
         self.trials.clear()
+        self.lesson_reflections.clear()
         self.pinned_run_a_id = None
         self.next_trial_number = 1
 
@@ -201,6 +231,20 @@ class ExperimentNotebook:
             for item in raw_trials
             if isinstance(item, Mapping)
         ]
+        raw_reflections = payload.get("lesson_reflections", [])
+        if not isinstance(raw_reflections, list):
+            raise TypeError("Notebook lesson reflections must be a list.")
+        reflections = [
+            LessonReflection(
+                id=str(item["id"]),
+                lesson_id=str(item["lesson_id"]),
+                timestamp=str(item["timestamp"]),
+                prompt=str(item.get("prompt", "")),
+                response=str(item.get("response", "")),
+            )
+            for item in raw_reflections
+            if isinstance(item, Mapping)
+        ]
         pinned = payload.get("pinned_run_a_id")
         if pinned is not None and not isinstance(pinned, str):
             raise TypeError("Pinned trial ID must be a string or null.")
@@ -209,6 +253,7 @@ class ExperimentNotebook:
             raise TypeError("Next trial number must be integer-like.")
         return cls(
             trials=trials,
+            lesson_reflections=reflections,
             pinned_run_a_id=pinned,
             next_trial_number=int(raw_next_trial),
         )

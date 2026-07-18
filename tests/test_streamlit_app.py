@@ -16,3 +16,7 @@ def test_app_renders_home_and_a_simulation_page(monkeypatch, tmp_path) -> None:
     assert not app.exception
     assert any(header.value == "🎯 Cannonball Launcher" for header in app.header)
     assert any(button.label == "🔒 Lock in my guess!" for button in app.button)
+    assert any(
+        expander.label == "Learning pathway: Projectile motion from components"
+        for expander in app.expander
+    )

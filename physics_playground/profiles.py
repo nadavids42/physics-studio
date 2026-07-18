@@ -35,6 +35,7 @@ class LocalProfile:
     application_version: str = APPLICATION_VERSION
     profile_schema_version: int = SCHEMA_VERSION
     accessibility_settings: Mapping[str, bool] = field(default_factory=dict)
+    educational_progress: Mapping[str, Mapping[str, object]] = field(default_factory=dict)
 
     def to_dict(self):
         return asdict(self)
@@ -54,6 +55,7 @@ class LocalProfile:
             application_version=str(data.get("application_version", "unknown")),
             profile_schema_version=SCHEMA_VERSION,
             accessibility_settings=dict(data.get("accessibility_settings", {})),
+            educational_progress=dict(data.get("educational_progress", {})),
         )
 
 

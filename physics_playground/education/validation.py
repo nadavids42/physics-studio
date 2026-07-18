@@ -110,6 +110,7 @@ def _validate_activity(
 def _validate_lesson(lesson: Lesson, concept_ids: set[str], simulation_ids: set[str]) -> None:
     _require_text(lesson.title, "Lesson title")
     _require_text(lesson.summary, "Lesson summary")
+    _require_text(lesson.next_lesson_title, "Next lesson title")
     if lesson.estimated_minutes <= 0:
         raise PhysicsValidationError("Lesson duration must be positive.")
     objective_ids = _unique_ids(lesson.objectives, "Learning objective")

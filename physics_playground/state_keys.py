@@ -36,6 +36,7 @@ class SharedStateKeys:
     missions_progress: str = feature_key("missions", "progress")
     notebook: str = feature_key("notebook", "trials")
     notebook_setup_request: str = feature_key("notebook", "setup_request")
+    education_progress: str = feature_key("education", "pathway_progress")
     profiles_store: str = feature_key("profiles", "store")
     profiles_active_id: str = feature_key("profiles", "active_id")
     profiles_favorite_simulation: str = feature_key("profiles", "favorite_simulation")

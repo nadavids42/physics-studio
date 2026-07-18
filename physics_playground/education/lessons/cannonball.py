@@ -314,6 +314,8 @@ CANNONBALL_LESSON = Lesson(
     ACTIVITIES,
     ContentProfile(ContentDepth.STANDARD, ContentVoice.APPROACHABLE),
     55,
+    None,
+    "Forces on an inclined plane",
 )
 
 MECHANICS_SUBJECT = Subject(

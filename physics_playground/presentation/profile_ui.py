@@ -9,6 +9,7 @@ import streamlit as st
 
 from physics_playground.accessibility_settings import AccessibilitySettings
 from physics_playground.application_callbacks import ApplicationEvent
+from physics_playground.education.progress import PathwayProgress
 from physics_playground.missions.service import MissionProgress
 from physics_playground.notebook import ExperimentNotebook
 from physics_playground.profiles import LocalProfile, PersistenceUnavailable, ProfileStore
@@ -57,6 +58,10 @@ def load_into_session(profile: LocalProfile):
     st.session_state[SHARED_STATE_KEYS.accessibility_settings] = AccessibilitySettings.from_dict(
         profile.accessibility_settings
     )
+    st.session_state[SHARED_STATE_KEYS.education_progress] = {
+        lesson_id: PathwayProgress.from_dict(payload, lesson_id=lesson_id)
+        for lesson_id, payload in profile.educational_progress.items()
+    }
     st.session_state[SHARED_STATE_KEYS.navigation_active] = profile.last_used_simulation
     st.session_state[FAVORITE_KEY] = profile.favorite_simulation
     if profile.last_used_simulation:
@@ -71,6 +76,7 @@ def profile_from_session(existing: LocalProfile) -> LocalProfile:
         last_parameters[trial.simulation_id] = dict(trial.parameters)
     observations = tuple(trial.learner_observation for trial in trials if trial.learner_observation)
     progress = st.session_state.get(SHARED_STATE_KEYS.missions_progress, MissionProgress())
+    pathway_progress = st.session_state.get(SHARED_STATE_KEYS.education_progress, {})
     return LocalProfile(
         id=existing.id,
         display_name=existing.display_name,
@@ -85,6 +91,11 @@ def profile_from_session(existing: LocalProfile) -> LocalProfile:
         accessibility_settings=st.session_state.get(
             SHARED_STATE_KEYS.accessibility_settings, AccessibilitySettings()
         ).to_dict(),
+        educational_progress={
+            lesson_id: item.to_dict()
+            for lesson_id, item in pathway_progress.items()
+            if isinstance(item, PathwayProgress)
+        },
     )
 
 
