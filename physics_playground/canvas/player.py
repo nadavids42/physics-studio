@@ -11,6 +11,7 @@ import json
 from functools import lru_cache
 from typing import Any
 from physics_playground.visual.assets import CANVAS_ASSET_JS
+from physics_playground.visual.animation import CANVAS_ANIMATION_JS
 from physics_playground.visual.canvas import CANVAS_VISUAL_JS
 from physics_playground.visual.css import shared_css
 from physics_playground.visual.tokens import DARK_THEME,LIGHT_THEME,theme_payload
@@ -31,7 +32,7 @@ canvas { display: block; width: 100%; max-width: 100%; height: 100%; }
   color: #263238; box-shadow: 0 4px 14px rgba(0,0,0,.18); text-align: center;
   font-size: 14px; font-weight: 650; opacity: 0; transition: .25s ease; pointer-events: none; }
 .message.show { opacity: 1; transform: translate(-50%, 0); }
-.controls { display: grid; grid-template-columns: auto auto minmax(100px,1fr) auto;
+.controls { display: grid; grid-template-columns: auto auto auto auto minmax(100px,1fr) auto;
   gap: 8px; align-items: center; padding: 8px 2px 0; }
 .controls button, .controls select { min-height: 34px; border: 1px solid #cbd5e1;
   border-radius: 9px; background: white; color: #263238; font-weight: 650; cursor: pointer; }
@@ -43,7 +44,7 @@ canvas { display: block; width: 100%; max-width: 100%; height: 100%; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 @media (max-width: 480px) {
-  .controls { grid-template-columns: auto auto 1fr; }
+  .controls { grid-template-columns: repeat(4,auto) minmax(80px,1fr); }
   .speed-label { grid-column: 1 / -1; justify-content: flex-end; }
   .controls button { min-width: 38px; padding-inline: 7px; }
 }
@@ -113,13 +114,15 @@ class AnimationPlayer {
     this.config=config; this.scene=scene; this.canvas=document.getElementById('animation-canvas');
     this.ctx=this.canvas.getContext('2d'); this.wrap=document.getElementById('canvas-wrap');
     this.playButton=document.getElementById('play-pause'); this.replayButton=document.getElementById('replay');
+    this.stepBackButton=document.getElementById('step-back'); this.stepForwardButton=document.getElementById('step-forward');
     this.scrubber=document.getElementById('scrubber'); this.speed=document.getElementById('speed');
     this.message=document.getElementById('message'); this.hint=document.getElementById('hint');
     this.status=document.getElementById('status'); this.reducedMotion=Boolean(config.reducedMotion)||matchMedia('(prefers-reduced-motion: reduce)').matches;
     document.body.classList.toggle('high-contrast',Boolean(config.highContrast));
     this.random=seededRandom(config.seed); this.particles=new ParticleSystem(this.random,this.reducedMotion);
     this.trails=new TrailStore(config.trailLength||18); this.fraction=0; this.state='idle'; this.playbackRate=1;
-    this.lastTimestamp=null; this.fired=new Set(); this.frameRequest=null; this.cssWidth=1; this.cssHeight=1;
+    this.lastTimestamp=null; this.fired=new Set(); this.frameRequest=null; this.cssWidth=1; this.cssHeight=1;this.lastTrailFraction=null;
+    this.fixedStep=1/60;this.accumulator=0;this.camera=new PhysicsAnimation.Camera(config.camera||{},this.reducedMotion);
     this.bind(); this.resize(); this.render(0);
     if(config.autoplay && !this.reducedMotion) this.play();
     else if(config.autoplay && this.reducedMotion) {
@@ -129,21 +132,27 @@ class AnimationPlayer {
   bind() {
     this.playButton.addEventListener('click',()=>this.toggle());
     this.replayButton.addEventListener('click',()=>this.replay());
+    this.stepBackButton.addEventListener('click',()=>this.stepFrames(-1));
+    this.stepForwardButton.addEventListener('click',()=>this.stepFrames(1));
     this.scrubber.addEventListener('input',event=>this.seek(Number(event.target.value)/1000));
     this.speed.addEventListener('change',event=>{this.playbackRate=Number(event.target.value);});
-    new ResizeObserver(()=>this.resize()).observe(this.wrap);
-    document.addEventListener('visibilitychange',()=>{if(document.hidden&&this.state==='playing') this.pause();});
-    document.addEventListener('keydown',event=>{
+    this.resizeObserver=new ResizeObserver(()=>this.resize());this.resizeObserver.observe(this.wrap);
+    this.onVisibility=()=>{if(document.hidden&&this.state==='playing') this.pause();};document.addEventListener('visibilitychange',this.onVisibility);
+    this.onKeydown=event=>{
       if(['INPUT','SELECT','BUTTON'].includes(document.activeElement.tagName)&&event.key!==' ') return;
       if(event.key===' '){event.preventDefault();this.toggle();}
       else if(event.key==='r'||event.key==='R') this.replay();
       else if(event.key==='ArrowRight') this.seek(this.fraction+.02);
       else if(event.key==='ArrowLeft') this.seek(this.fraction-.02);
-    });
+      else if(event.key==='.'||event.key==='>') this.stepFrames(1);
+      else if(event.key===','||event.key==='<') this.stepFrames(-1);
+    };document.addEventListener('keydown',this.onKeydown);window.addEventListener('pagehide',()=>this.destroy(),{once:true});
   }
   resize() {
-    const box=this.wrap.getBoundingClientRect(), dpr=Math.max(1,window.devicePixelRatio||1);
-    this.cssWidth=Math.max(1,box.width); this.cssHeight=Math.max(1,box.height);
+    const box=this.wrap.getBoundingClientRect(), dpr=Math.min(this.config.maximumDpr||2.5,Math.max(1,window.devicePixelRatio||1));
+    const nextWidth=Math.max(1,box.width),nextHeight=Math.max(1,box.height);
+    if(Math.abs(nextWidth-this.cssWidth)<.5&&Math.abs(nextHeight-this.cssHeight)<.5&&this.canvas.width===Math.round(nextWidth*dpr))return;
+    this.cssWidth=nextWidth; this.cssHeight=nextHeight;
     this.canvas.width=Math.round(this.cssWidth*dpr); this.canvas.height=Math.round(this.cssHeight*dpr);
     this.ctx.setTransform(dpr,0,0,dpr,0,0); this.render(this.fraction);
   }
@@ -158,19 +167,24 @@ class AnimationPlayer {
     this.hint.hidden=true; this.status.textContent='Animation playing'; this.ensureFrame(); }
   pause() { this.state='paused'; this.playButton.textContent='▶'; this.playButton.setAttribute('aria-label','Play animation');
     this.status.textContent='Animation paused'; }
+  resume() { this.play(); }
   toggle() { this.state==='playing'?this.pause():this.play(); }
-  replay() { this.fraction=0; this.fired.clear(); this.trails.reset(); this.particles.reset();
+  replay() { this.fraction=0; this.fired.clear(); this.trails.reset(); this.particles.reset();this.camera.reset();this.lastTrailFraction=null;
     this.message.classList.remove('show'); this.scrubber.value='0'; this.state='paused'; this.play(); }
   seek(fraction) { this.fraction=clamp(fraction,0,1); this.scrubber.value=String(Math.round(this.fraction*1000));
     this.fired.clear(); for(const event of this.config.events||[]) if(event.fraction<=this.fraction) this.fired.add(event.id);
-    this.trails.reset(); this.particles.reset(); if(this.fraction<1) this.message.classList.remove('show');
+    this.trails.reset(); this.particles.reset();this.lastTrailFraction=null; if(this.fraction<1) this.message.classList.remove('show');
     this.render(this.fraction); this.status.textContent=`Animation at ${Math.round(this.fraction*100)} percent`; }
+  frameCount(){return Math.max(2,this.config.frameCount||0,...(this.config.tracks||[]).map(track=>Math.max(track.x?.length||0,track.y?.length||0)));}
+  stepFrames(amount) { if(this.state==='playing')this.pause();const count=this.frameCount(),index=Math.round(this.fraction*(count-1));
+    this.seek(clamp(index+amount,0,count-1)/(count-1));this.status.textContent=`Frame ${clamp(index+amount,0,count-1)+1} of ${count}`; }
   ensureFrame() { if(this.frameRequest===null) this.frameRequest=requestAnimationFrame(timestamp=>this.tick(timestamp)); }
-  tick(timestamp) { this.frameRequest=null; const elapsed=this.lastTimestamp===null?0:(timestamp-this.lastTimestamp)/1000;
-    this.lastTimestamp=timestamp; if(this.state==='playing') { const duration=this.config.durationMs/1000;
-      this.fraction=clamp(this.fraction+elapsed*this.playbackRate/duration,0,1); this.fireEvents();
+  tick(timestamp) { this.frameRequest=null; const rawElapsed=this.lastTimestamp===null?0:(timestamp-this.lastTimestamp)/1000,elapsed=clamp(rawElapsed,0,.25);
+    this.lastTimestamp=timestamp;this.accumulator+=elapsed;let stableElapsed=0,steps=0;while(this.accumulator>=this.fixedStep&&steps<15){stableElapsed+=this.fixedStep;this.accumulator-=this.fixedStep;steps++}
+    if(this.state==='playing') { const duration=this.config.durationMs/1000;
+      this.fraction=clamp(this.fraction+stableElapsed*this.playbackRate/duration,0,1); this.fireEvents();
       this.scrubber.value=String(Math.round(this.fraction*1000)); if(this.fraction>=1) this.complete(); }
-    this.particles.update(Math.min(elapsed,.05)); this.render(this.fraction);
+    this.camera.update(stableElapsed);this.particles.update(stableElapsed); this.render(this.fraction);
     if(this.state==='playing'||this.particles.items.length) this.ensureFrame(); }
   fireEvents() { for(const event of this.config.events||[]) if(this.fraction>=event.fraction&&!this.fired.has(event.id)) {
       this.fired.add(event.id); if(this.scene.onEvent) this.scene.onEvent(event,this); } }
@@ -178,9 +192,11 @@ class AnimationPlayer {
     this.message.textContent=this.config.completionMessage||''; this.message.classList.toggle('show',!!this.config.completionMessage);
     this.status.textContent=this.config.completionMessage||'Animation complete'; }
   render(fraction) { if(!this.scene||!this.ctx) return; const transform=this.coordinates(), tracks=this.snapshot(fraction);
-    for(const track of Object.values(tracks)) this.trails.push(track.id,{x:track.x,y:track.y});
+    if(this.lastTrailFraction===null||Math.abs(fraction-this.lastTrailFraction)>1e-9){for(const track of Object.values(tracks)) this.trails.push(track.id,{x:track.x,y:track.y});this.lastTrailFraction=fraction;}
     this.scene.draw(this.ctx,{fraction,state:this.state,tracks,transform,particles:this.particles,
-      trails:this.trails,reducedMotion:this.reducedMotion,config:this.config}); this.particles.draw(this.ctx); }
+      trails:this.trails,reducedMotion:this.reducedMotion,config:this.config,camera:this.camera,effects:PhysicsAnimation}); this.particles.draw(this.ctx); }
+  destroy(){if(this.frameRequest!==null)cancelAnimationFrame(this.frameRequest);this.frameRequest=null;this.resizeObserver?.disconnect();
+    document.removeEventListener('visibilitychange',this.onVisibility);document.removeEventListener('keydown',this.onKeydown);this.particles.reset();this.trails.reset();}
 }
 """
 
@@ -220,10 +236,12 @@ def _cached_player_document(payload:str,scene_javascript:str,aspect_ratio:float,
   <div class="controls" aria-label="Animation controls">
     <button id="play-pause" type="button" aria-label="Play animation" title="Play or pause (Space)">▶</button>
     <button id="replay" type="button" aria-label="Replay animation" title="Replay (R)">↺</button>
+    <button id="step-back" type="button" aria-label="Step backward one frame" title="Previous frame (,)">‹</button>
+    <button id="step-forward" type="button" aria-label="Step forward one frame" title="Next frame (.)">›</button>
     <label class="sr-only" for="scrubber">Animation position</label><input id="scrubber" type="range" min="0" max="1000" value="0">
     <label class="speed-label" for="speed">Speed <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
   </div><div id="status" class="sr-only" aria-live="polite">Animation ready</div></div>
-<script>{PLAYER_JS}\n{CANVAS_VISUAL_JS}\n{CANVAS_ASSET_JS}\n{CANVAS_VECTOR_JS}\nconst playerConfig={payload};\nresolveVisualTheme(playerConfig);\n{scene_javascript}\nwindow.animationPlayer=new AnimationPlayer(playerConfig,scene);</script>
+<script>{PLAYER_JS}\n{CANVAS_VISUAL_JS}\n{CANVAS_ASSET_JS}\n{CANVAS_VECTOR_JS}\n{CANVAS_ANIMATION_JS}\nconst playerConfig={payload};\nresolveVisualTheme(playerConfig);\n{scene_javascript}\nwindow.animationPlayer=new AnimationPlayer(playerConfig,scene);</script>
 </body></html>"""
 
 
