@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
+from typing import cast
+
 import streamlit as st
 
 from physics_playground.canvas import embed
 from physics_playground.canvas.gas_container import build_gas_document
-from physics_playground.contracts import MissionEvaluation
+from physics_playground.contracts import JsonValue, MissionEvaluation
 from physics_playground.missions import ui as mission_ui
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
@@ -27,8 +30,13 @@ from .plugin import ASSUMPTIONS, GAS_LAWS_PLUGIN, LIMITATIONS, GasLawPluginResul
 SEED = 20263301
 
 
-def mission_evidence(result: GasLawPluginResult, comparison: bool) -> tuple[MissionEvaluation, ...]:
-    return evaluate(result.gas, comparison)
+def mission_evidence(
+    result: GasLawPluginResult, context: Mapping[str, JsonValue]
+) -> tuple[MissionEvaluation, ...]:
+    return cast(
+        tuple[MissionEvaluation, ...],
+        evaluate(result.gas, bool(context.get("comparison", False))),
+    )
 
 
 RUNTIME: StreamlitSimulationRuntime[GasLawParameters, GasLawPluginResult] = (
@@ -177,7 +185,7 @@ def compare() -> None:
     columns[1].metric("Heated pressure", f"{run_b.gas.state_b.pressure_pa / 1000:.1f} kPa")
     if st.button("▶ Run process comparison", use_container_width=True):
         for label, result, seed in (("Run A", run_a, 20263311), ("Run B", run_b, 20263312)):
-            badges = RUNTIME.process_missions(result, comparison=True)
+            badges = RUNTIME.process_missions(result, context={"comparison": True})
             RUNTIME.record_trial(
                 result,
                 seed=seed,

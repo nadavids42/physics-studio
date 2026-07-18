@@ -168,7 +168,13 @@ def _build_result(
             SummaryMetric(
                 "maximum_height", "Maximum height", maximum_height, "m", f"{maximum_height:.1f} m"
             ),
-            SummaryMetric("flight_time", "Flight time", flight_time, "s", f"{flight_time:.2f} s"),
+            SummaryMetric(
+                "flight_time",
+                "Flight time",
+                flight_time,
+                "s",
+                f"{flight_time:.2f} s" if landed else "Did not land",
+            ),
             SummaryMetric(
                 "impact_speed",
                 "Impact speed",

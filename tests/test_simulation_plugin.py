@@ -24,6 +24,7 @@ from physics_playground.subjects.mechanics.cannonball.physics import (
     ProjectileResult,
     simulate_projectile,
 )
+from physics_playground.subjects.mechanics.cannonball.plugin import CANNONBALL_PLUGIN
 from physics_playground.validation import PhysicsValidationError
 
 PAGE = "physics_playground.subjects.mechanics.cannonball.page.render"
@@ -118,3 +119,7 @@ def test_renderer_must_be_available() -> None:
 
 def test_gas_laws_is_the_first_production_plugin() -> None:
     validate_simulation_plugin(GAS_LAWS_PLUGIN)
+
+
+def test_cannonball_is_a_validated_production_plugin() -> None:
+    validate_simulation_plugin(CANNONBALL_PLUGIN)

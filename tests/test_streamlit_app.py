@@ -92,12 +92,24 @@ def test_cannonball_setup_is_committed_and_notes_do_not_rerun_player(monkeypatch
     assert any(button.label == "Apply launch setup" for button in app.button)
     speed = next(item for item in app.slider if item.label == "Launch speed (m/s)")
     assert speed.value == 31.0
+    assert (
+        app.session_state[simulation_key("cannonball", "editing_parameters")].launch_speed_m_s
+        == 31.0
+    )
+    assert (
+        app.session_state[simulation_key("cannonball", "committed_parameters")].launch_speed_m_s
+        == 31.0
+    )
     original_setup_document = app.get("iframe")[0].proto.srcdoc
     speed.set_value(33.0)
     next(button for button in app.button if button.label == "Apply launch setup").click().run(
         timeout=30
     )
     assert app.session_state[simulation_key("cannonball", "speed")] == 33.0
+    assert (
+        app.session_state[simulation_key("cannonball", "committed_parameters")].launch_speed_m_s
+        == 33.0
+    )
     assert app.get("iframe")[0].proto.srcdoc != original_setup_document
     iframe_before = app.get("iframe")[0].proto.srcdoc
     observation = next(

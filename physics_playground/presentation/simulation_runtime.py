@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from typing import Any, Generic, TypeVar, cast
 
 import streamlit as st
 
 from physics_playground.contracts import (
     ContractResult,
+    JsonValue,
     MissionEvaluation,
     ModelAssumption,
     ParameterSet,
@@ -27,7 +28,8 @@ from physics_playground.validation import PhysicsValidationError
 
 P = TypeVar("P", bound=ParameterSet)
 R = TypeVar("R", bound=ContractResult[Any])
-MissionHook = Callable[[R, bool], tuple[MissionEvaluation, ...]]
+MissionContext = Mapping[str, JsonValue]
+MissionHook = Callable[[R, MissionContext], tuple[MissionEvaluation, ...]]
 
 EXPECTED_MODEL_ERRORS = (PhysicsValidationError, FloatingPointError, OverflowError, MemoryError)
 
@@ -103,12 +105,17 @@ class StreamlitSimulationRuntime(Generic[P, R]):
     def render_accessible_outcome(self, result: R) -> None:
         st.caption("Text outcome: " + self.plugin.accessible_summary(result))
 
-    def process_missions(self, result: R, *, comparison: bool = False) -> tuple[str, ...]:
+    def process_missions(
+        self,
+        result: R,
+        *,
+        context: MissionContext | None = None,
+    ) -> tuple[str, ...]:
         if self.mission_hook is None:
             return ()
         return cast(
             tuple[str, ...],
-            mission_ui.process_run(self.plugin.id, self.mission_hook(result, comparison)),
+            mission_ui.process_run(self.plugin.id, self.mission_hook(result, context or {})),
         )
 
     def record_trial(
@@ -120,13 +127,19 @@ class StreamlitSimulationRuntime(Generic[P, R]):
         prediction: str | None,
         label: str | None = None,
         earned_badges: tuple[str, ...] = (),
+        parameter_extras: Mapping[str, JsonValue] | None = None,
+        summary: str | None = None,
+        metrics: Mapping[str, float] | None = None,
     ) -> None:
+        parameters = self.plugin.serialize_notebook_parameters(result.parameters)
+        if parameter_extras:
+            parameters = {**parameters, **parameter_extras}
         add_trial(
             simulation_id=self.plugin.id,
-            parameters=self.plugin.serialize_notebook_parameters(result.parameters),
+            parameters=parameters,
             prediction=prediction,
-            result_summary=self.plugin.accessible_summary(result),
-            metrics={metric.id: metric.value for metric in result.metrics},
+            result_summary=summary or self.plugin.accessible_summary(result),
+            metrics=metrics or {metric.id: metric.value for metric in result.metrics},
             earned_badges=earned_badges,
             random_seed=seed,
             model_version=self.plugin.model_version,
