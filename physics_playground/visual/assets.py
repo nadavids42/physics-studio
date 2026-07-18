@@ -105,7 +105,8 @@ const PhysicsAssets=(()=>{
     ctx.save();V.applyText(ctx,s,'heading');ctx.fillStyle=V.token(s,'colors','text_inverse','#FFF');ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(positive?'+':'−',o.x,o.y);ctx.restore();if(o.label)finish(ctx,s,{...o,shadow:false})}
   function fieldLine(ctx,s,o={}){const pts=o.points||[point(o.x,o.y),o.end||point(o.x+(o.width||100),o.y)];ctx.save();ctx.strokeStyle=o.outline||V.token(s,'colors','electric_field','#006D77');ctx.lineWidth=o.lineWidth||1.5;ctx.globalAlpha=o.opacity??.75;
     ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();if(o.direction!==false&&pts.length>1){const i=Math.floor(pts.length/2),a=pts[Math.max(0,i-1)],b=pts[i];V.arrow(ctx,s,a,b,{color:ctx.strokeStyle,width:1.5,head:7})}ctx.restore()}
-  function semanticArrow(role){return (ctx,s,o={})=>V.arrow(ctx,s,point(o.x,o.y),o.end||point(o.x+(o.width||80),o.y),{...o,role})}
+  function semanticArrow(role){return (ctx,s,o={})=>{const end=o.end||point(o.x+(o.width||80),o.y),dx=end.x-o.x,dy=-(end.y-o.y);
+    PhysicsAnnotations.vector(ctx,s,{...o,role,dx,dy,scale_mode:o.scale_mode||'schematic',fixed_length_px:o.fixed_length_px||Math.hypot(dx,dy),scale_disclosure:o.scale_disclosure},1,o.show_disclosure!==false)}}
   const forceArrow=semanticArrow('net_force'),velocityArrow=semanticArrow('velocity'),accelerationArrow=semanticArrow('acceleration');
   function torqueArc(ctx,s,o={}){const r=o.radius||42,start=o.startAngle??-.8,end=o.endAngle??2.8,color=o.fill||V.token(s,'colors','net_force','#C2410C');ctx.save();ctx.strokeStyle=color;ctx.lineWidth=o.lineWidth||3;ctx.beginPath();ctx.arc(o.x,o.y,r,start,end,o.counterclockwise||false);ctx.stroke();
     const a=end,tip=point(o.x+Math.cos(a)*r,o.y+Math.sin(a)*r),back=point(o.x+Math.cos(a-.14)*r,o.y+Math.sin(a-.14)*r);V.arrow(ctx,s,back,tip,{color,width:3,head:10,label:o.label});ctx.restore()}

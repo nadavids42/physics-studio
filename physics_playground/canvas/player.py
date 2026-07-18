@@ -14,6 +14,7 @@ from physics_playground.visual.assets import CANVAS_ASSET_JS
 from physics_playground.visual.canvas import CANVAS_VISUAL_JS
 from physics_playground.visual.css import shared_css
 from physics_playground.visual.tokens import DARK_THEME,LIGHT_THEME,theme_payload
+from physics_playground.visual.vectors import CANVAS_VECTOR_JS
 
 PLAYER_CSS = r"""
 * { box-sizing: border-box; }
@@ -222,7 +223,7 @@ def _cached_player_document(payload:str,scene_javascript:str,aspect_ratio:float,
     <label class="sr-only" for="scrubber">Animation position</label><input id="scrubber" type="range" min="0" max="1000" value="0">
     <label class="speed-label" for="speed">Speed <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
   </div><div id="status" class="sr-only" aria-live="polite">Animation ready</div></div>
-<script>{PLAYER_JS}\n{CANVAS_VISUAL_JS}\n{CANVAS_ASSET_JS}\nconst playerConfig={payload};\nresolveVisualTheme(playerConfig);\n{scene_javascript}\nwindow.animationPlayer=new AnimationPlayer(playerConfig,scene);</script>
+<script>{PLAYER_JS}\n{CANVAS_VISUAL_JS}\n{CANVAS_ASSET_JS}\n{CANVAS_VECTOR_JS}\nconst playerConfig={payload};\nresolveVisualTheme(playerConfig);\n{scene_javascript}\nwindow.animationPlayer=new AnimationPlayer(playerConfig,scene);</script>
 </body></html>"""
 
 

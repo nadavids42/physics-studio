@@ -12,9 +12,11 @@ from physics_playground.visual.tokens import (
     theme_payload,
 )
 from physics_playground.visual.assets import AssetKind,AssetSpec,AssetStyle
+from physics_playground.visual.vectors import ForceDiagramSpec,VectorScaleMode,VectorSpec
 
 __all__ = [
     "DARK_THEME", "LIGHT_THEME", "MOTION", "RESPONSIVE", "SHAPE",
     "SPACING", "TYPOGRAPHY", "ThemeTokens", "theme_payload",
     "AssetKind", "AssetSpec", "AssetStyle",
+    "ForceDiagramSpec", "VectorScaleMode", "VectorSpec",
 ]
