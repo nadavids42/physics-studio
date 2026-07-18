@@ -1,17 +1,20 @@
 import streamlit as st
+import matplotlib.pyplot as plt
 from physics_playground.canvas import legacy
 from physics_playground.canvas.vector_field import build_vector_field_document
 from physics_playground.contracts import ModelAssumption
 from physics_playground.missions import legacy as kidtools
 from physics_playground.presentation.learning_modes import LearningMode,mode_navigation,mode_heading,ChangedVariable,changed_variable_banner,assumptions_panel
 from physics_playground.presentation.notebook_ui import add_trial
+from physics_playground.presentation.accessibility import render_chart
+from physics_playground.presentation.chart_system import series_figure
 from .physics import MAX_FIELD_POINTS,ElectricFieldParameters,PointCharge,field_at,simulate
 from .missions import evaluate
 ID="electric_fields";VERSION="electric-field-1.0"
 def metrics(r):return {"test_field_magnitude_n_c":r.test_field_magnitude_n_c,"test_potential_v":r.test_potential_v,"force_magnitude_n":r.force_magnitude_n,"force_x_n":r.force_x_n,"force_y_n":r.force_y_n,"excluded_grid_points":float(r.excluded_points)}
 def record(r,seed,obs,label=None,badges=()):add_trial(simulation_id=ID,parameters=r.parameters.to_dict(),prediction=st.session_state.get("field_quiz_guess"),result_summary=r.outcome,metrics=metrics(r),earned_badges=badges,random_seed=seed,model_version=VERSION,learner_observation=obs,label=label)
 def diagram(r,seed):
-    samples=[{"x":p.x_m,"y":p.y_m,"ex":p.electric_x_n_c,"ey":p.electric_y_n_c,"v":p.potential_v} for p in r.samples];charges=[{"q":q.charge_c,"x":q.x_m,"y":q.y_m} for q in r.parameters.charges];legacy.show(build_vector_field_document(samples=samples,charges=charges,grid_size=r.parameters.grid_size,extent=r.parameters.extent_m,test_x=r.parameters.test_x_m,test_y=r.parameters.test_y_m,message=r.outcome,seed=seed),height=690)
+    samples=[{"x":p.x_m,"y":p.y_m,"ex":p.electric_x_n_c,"ey":p.electric_y_n_c,"v":p.potential_v} for p in r.samples];charges=[{"q":q.charge_c,"x":q.x_m,"y":q.y_m} for q in r.parameters.charges];legacy.show(build_vector_field_document(samples=samples,charges=charges,grid_size=r.parameters.grid_size,extent=r.parameters.extent_m,test_x=r.parameters.test_x_m,test_y=r.parameters.test_y_m,message=r.outcome,seed=seed,test_charge=r.parameters.test_charge_c),height=690)
 def controls(prefix="field"):
     count=st.slider("Number of source charges",1,4,2,key=f"{prefix}_count");charges=[]
     defaults=((-1.,0.,1.),(1.,0.,-1.),(0.,-1.,1.),(0.,1.,-1.))
@@ -35,7 +38,7 @@ def analyze():
     for x in xs:
         try:ex,ey,v=field_at(r.parameters.charges,x,r.parameters.test_y_m,r.parameters.minimum_distance_m);potential.append(v);magnitude.append((ex*ex+ey*ey)**.5)
         except Exception:potential.append(None);magnitude.append(None)
-    st.line_chart({"x_m":xs,"potential_v":potential},x="x_m",y="potential_v");st.caption("Accessible chart: electric potential is positive near positive charges, negative near negative charges, and omitted inside singularity exclusion zones.");st.line_chart({"x_m":xs,"field_magnitude_n_c":magnitude},x="x_m",y="field_magnitude_n_c");st.caption("Accessible chart: field magnitude grows sharply near charges; excluded gaps prevent singular values from dominating the chart.")
+    potential_figure=series_figure(x=xs,series={"Electric potential":potential},x_label="Position x (m)",y_label="Electric potential (V)",title="Potential along the selected line");render_chart(potential_figure,"Electric potential is positive near positive charges, negative near negative charges, and omitted inside singularity exclusion zones.");plt.close(potential_figure);field_figure=series_figure(x=xs,series={"Field magnitude":magnitude},x_label="Position x (m)",y_label="Field magnitude (N/C)",title="Electric-field magnitude along the selected line");render_chart(field_figure,"Field magnitude grows sharply near charges; excluded gaps prevent singular values from dominating the chart.");plt.close(field_figure)
 def model():
     mode_heading(LearningMode.MODEL,"Superpose fields and potentials");st.latex(r"\vec E(\vec r)=k\sum_i q_i\frac{\vec r-\vec r_i}{|\vec r-\vec r_i|^3}");st.latex(r"V(\vec r)=k\sum_i\frac{q_i}{|\vec r-\vec r_i|},\qquad \vec F=q_{test}\vec E");st.markdown(f"Dense visualizations are capped at **{MAX_FIELD_POINTS:,} samples** and six source charges. Points closer than the selected minimum distance are excluded rather than softened or allowed to become infinite.");assumptions_panel((ModelAssumption("point","Charges are ideal mathematical points"),ModelAssumption("static","Charges remain fixed in vacuum")),("No magnetic or radiation effects.","No conductors, polarization, or material boundaries.","The minimum-distance exclusion is a numerical visualization safeguard, not a new physical law."))
 def render():

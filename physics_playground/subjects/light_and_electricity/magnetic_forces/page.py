@@ -1,16 +1,19 @@
 import streamlit as st
+import matplotlib.pyplot as plt
 from physics_playground.canvas import legacy
 from physics_playground.canvas.vector_diagram import build_vector_direction_document
 from physics_playground.contracts import ModelAssumption
 from physics_playground.missions import legacy as kidtools
 from physics_playground.presentation.learning_modes import LearningMode,mode_navigation,mode_heading,ChangedVariable,changed_variable_banner,assumptions_panel
 from physics_playground.presentation.notebook_ui import add_trial
+from physics_playground.presentation.accessibility import render_chart
+from physics_playground.presentation.chart_system import series_figure
 from .physics import ForceMode,MagneticForceParameters,simulate
 from .missions import evaluate
 ID="magnetic_forces";VERSION="magnetic-force-1.0"
 def metrics(r):return {"force_z_n":r.force_z_n,"force_magnitude_n":r.force_magnitude_n,"relative_angle_deg":r.relative_angle_deg,"sine_factor":r.sine_factor,"charge_c":r.parameters.charge_c,"current_a":r.parameters.current_a,"magnetic_field_t":r.parameters.magnetic_field_t}
 def record(r,seed,obs,label=None,badges=()):add_trial(simulation_id=ID,parameters=r.parameters.to_dict(),prediction=st.session_state.get("magnetic_quiz_guess"),result_summary=r.outcome,metrics=metrics(r),earned_badges=badges,random_seed=seed,model_version=VERSION,learner_observation=obs,label=label)
-def diagram(r,seed):legacy.show(build_vector_direction_document(motion=r.motion_vector,field=r.field_vector,force_z=r.force_z_n,motion_label="Velocity v" if r.mode is ForceMode.POINT_CHARGE else "Current I",message=r.outcome,seed=seed),height=500)
+def diagram(r,seed):legacy.show(build_vector_direction_document(motion=r.motion_vector,field=r.field_vector,force_z=r.force_z_n,motion_label="Velocity v" if r.mode is ForceMode.POINT_CHARGE else "Current I",message=r.outcome,seed=seed,subject_kind="charge" if r.mode is ForceMode.POINT_CHARGE else "wire",charge_sign=r.parameters.charge_c if r.mode is ForceMode.POINT_CHARGE else r.parameters.current_a,guidance=r.right_hand_guidance),height=500)
 def controls(prefix="magnetic"):
     mode=ForceMode(st.radio("Experiment",[x.value for x in ForceMode],horizontal=True,key=f"{prefix}_experiment"));c1,c2=st.columns(2)
     with c1:
@@ -27,7 +30,7 @@ def compare():
         for label,r,seed in (("Run A",a,20263011),("Run B",b,20263012)):record(r,seed,"Magnetic force depends on sin θ",label,kidtools.process_run(ID,evaluate(r,True)))
     diagram(b,20263012)
 def analyze():
-    mode_heading(LearningMode.ANALYZE,"Force versus vector angle");mode=ForceMode(st.selectbox("Analysis experiment",[x.value for x in ForceMode]));angles=list(range(0,361,5));results=[simulate(MagneticForceParameters(mode=mode,motion_angle_deg=0,field_angle_deg=a)) for a in angles];st.line_chart({"angle_deg":angles,"signed_force_z_n":[r.force_z_n for r in results],"force_magnitude_n":[r.force_magnitude_n for r in results]},x="angle_deg",y=["signed_force_z_n","force_magnitude_n"]);st.caption("Accessible chart: force is zero for parallel and antiparallel vectors, reaches maximum magnitude at 90° and 270°, and its signed direction reverses across the screen plane.")
+    mode_heading(LearningMode.ANALYZE,"Force versus vector angle");mode=ForceMode(st.selectbox("Analysis experiment",[x.value for x in ForceMode]));angles=list(range(0,361,5));results=[simulate(MagneticForceParameters(mode=mode,motion_angle_deg=0,field_angle_deg=a)) for a in angles];figure=series_figure(x=angles,series={"Signed z-force":[r.force_z_n for r in results],"Force magnitude":[r.force_magnitude_n for r in results]},x_label="Angle between vectors (degrees)",y_label="Force (N)",title="Magnetic force versus vector angle");render_chart(figure,"Force is zero for parallel and antiparallel vectors, reaches maximum magnitude at 90° and 270°, and its signed direction reverses across the screen plane.");plt.close(figure)
 def model():
     mode_heading(LearningMode.MODEL,"Cross products and the right-hand rule");st.latex(r"\vec F=q\vec v\times\vec B,\qquad |F|=|q|vB|\sin\theta|");st.latex(r"\vec F=I\vec L\times\vec B,\qquad |F|=|I|LB|\sin\theta|");st.markdown("The signed result is the z-component: positive means out of the screen (⊙), negative means into it (⊗). Reverse charge or current reverses force. Parallel vectors have zero cross product.");assumptions_panel((ModelAssumption("uniform","Magnetic field is uniform"),ModelAssumption("element","Wire is straight and fully inside the field")),("No electric field or radiation.","Point charge speed is nonrelativistic.","Wire self-fields and end effects are omitted."))
 def render():
