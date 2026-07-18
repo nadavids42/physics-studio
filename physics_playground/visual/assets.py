@@ -58,13 +58,13 @@ const PhysicsAssets=(()=>{
     if(o.label){ctx.save();V.applyText(ctx,s,'label');ctx.textAlign='center';ctx.fillText(o.label,o.x||0,(o.y||0)+(o.height||40)*(o.scale||1)*.72+16);ctx.restore()}}
   function colors(s,o,fill='accent'){return {fill:o.fill||V.token(s,'colors',fill,'#1769AA'),outline:o.outline||V.token(s,'colors','text','#152536')}}
   function gradient(ctx,c,r,base,highlight=true){const g=ctx.createRadialGradient(c.x-r*.35,c.y-r*.4,r*.08,c.x,c.y,r);g.addColorStop(0,highlight?'#FFFFFF':base);g.addColorStop(.22,base);g.addColorStop(1,base);return g}
-  function body(ctx,s,o={},role='accent'){const r=(o.radius||Math.min(o.width||40,o.height||40)/2),c=colors(s,o,role);setup(ctx,s,o);
-    ctx.fillStyle=gradient(ctx,point(0,0),r,c.fill,o.highlight!==false);ctx.strokeStyle=c.outline;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();ctx.stroke();
-    ctx.globalAlpha*=.22;ctx.fillStyle='#FFF';ctx.beginPath();ctx.ellipse(-r*.25,-r*.32,r*.34,r*.16,-.5,0,Math.PI*2);ctx.fill();finish(ctx,s,o)}
+  function body(ctx,s,o={},role='accent'){const r=(o.radius||Math.min(o.width||40,o.height||40)/2),c=colors(s,o,role),depth=PhysicsExperience.profile(s).depth;setup(ctx,s,{...o,shadow:depth&&o.shadow!==false,glow:depth&&o.glow});
+    ctx.fillStyle=gradient(ctx,point(0,0),r,c.fill,depth&&o.highlight!==false);ctx.strokeStyle=c.outline;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();ctx.stroke();
+    if(depth){ctx.globalAlpha*=.22;ctx.fillStyle='#FFF';ctx.beginPath();ctx.ellipse(-r*.25,-r*.32,r*.34,r*.16,-.5,0,Math.PI*2);ctx.fill()}finish(ctx,s,o)}
   function sphere(ctx,s,o={}){body(ctx,s,o,'accent')} function mass(ctx,s,o={}){body(ctx,s,o,'displacement')}
-  function block(ctx,s,o={}){const w=o.width||54,h=o.height||42,c=colors(s,o,'energy');setup(ctx,s,o);const g=ctx.createLinearGradient(0,-h/2,0,h/2);
-    g.addColorStop(0,o.highlight?'#FFF':c.fill);g.addColorStop(.18,c.fill);g.addColorStop(1,c.fill);ctx.fillStyle=g;ctx.strokeStyle=c.outline;
-    ctx.beginPath();ctx.roundRect(-w/2,-h/2,w,h,Math.min(8,h*.18));ctx.fill();ctx.stroke();ctx.globalAlpha*=.18;ctx.fillStyle='#FFF';ctx.fillRect(-w*.36,-h*.34,w*.72,h*.12);finish(ctx,s,o)}
+  function block(ctx,s,o={}){const w=o.width||54,h=o.height||42,c=colors(s,o,'energy'),depth=PhysicsExperience.profile(s).depth;setup(ctx,s,{...o,shadow:depth&&o.shadow!==false});const g=ctx.createLinearGradient(0,-h/2,0,h/2);
+    g.addColorStop(0,depth&&o.highlight?'#FFF':c.fill);g.addColorStop(.18,c.fill);g.addColorStop(1,c.fill);ctx.fillStyle=depth?g:c.fill;ctx.strokeStyle=c.outline;
+    ctx.beginPath();ctx.roundRect(-w/2,-h/2,w,h,Math.min(8,h*.18));ctx.fill();ctx.stroke();if(depth){ctx.globalAlpha*=.18;ctx.fillStyle='#FFF';ctx.fillRect(-w*.36,-h*.34,w*.72,h*.12)}finish(ctx,s,o)}
   function wheel(ctx,s,o={}){const r=o.radius||Math.min(o.width||34,o.height||34)/2,c=colors(s,o,'uncertainty');setup(ctx,s,o);ctx.fillStyle=c.fill;ctx.strokeStyle=c.outline;
     ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle=V.token(s,'colors','surface','#FFF');ctx.beginPath();ctx.arc(0,0,r*.28,0,Math.PI*2);ctx.fill();ctx.stroke();
     for(let i=0;i<6;i++){const a=i*Math.PI/3;ctx.beginPath();ctx.moveTo(Math.cos(a)*r*.3,Math.sin(a)*r*.3);ctx.lineTo(Math.cos(a)*r*.82,Math.sin(a)*r*.82);ctx.stroke()}finish(ctx,s,o)}

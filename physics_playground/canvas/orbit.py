@@ -3,7 +3,7 @@ from physics_playground.models.orbit import OrbitResult
 from physics_playground.serialization import to_jsonable
 CANVAS_W,CANVAS_H,PLAYER_HEIGHT=560,560,640
 SCENE=r"""
-const scene={draw(ctx,f){const t=f.transform,W=t.width,H=t.height,cx=W/2,cy=H/2,view=f.config.orbitView,scale=Math.min(W,H)*.45/view;ctx.clearRect(0,0,W,H);ctx.fillStyle='#050914';ctx.fillRect(0,0,W,H);const rng=seededRandom(f.config.seed);ctx.fillStyle='white';for(let i=0;i<50;i++){ctx.globalAlpha=.3+rng()*.6;ctx.fillRect(rng()*W,rng()*H,1.5,1.5);}ctx.globalAlpha=1;ctx.fillStyle='#FFD54F';ctx.beginPath();ctx.arc(cx,cy,14,0,Math.PI*2);ctx.fill();
+const scene={draw(ctx,f){const t=f.transform,W=t.width,H=t.height,cx=W/2,cy=H/2,view=f.config.orbitView,scale=Math.min(W,H)*.45/view;PhysicsExperience.context(ctx,f,'space');ctx.fillStyle=PhysicsVisuals.token(f,'colors','energy','#B45309');ctx.beginPath();ctx.arc(cx,cy,14,0,Math.PI*2);ctx.fill();
  for(const q of Object.values(f.tracks)){const trail=f.trails.get(q.id);ctx.strokeStyle=q.style.color;ctx.lineWidth=2;ctx.beginPath();trail.forEach((p,i)=>{const x=cx+p.x*scale,y=cy-(p.y||0)*scale;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke();ctx.fillStyle=q.style.color;ctx.beginPath();ctx.arc(cx+q.x*scale,cy-(q.y||0)*scale,8,0,Math.PI*2);ctx.fill();}}
 };
 """

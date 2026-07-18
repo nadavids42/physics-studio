@@ -12,6 +12,7 @@ from functools import lru_cache
 from typing import Any
 from physics_playground.visual.assets import CANVAS_ASSET_JS
 from physics_playground.visual.animation import CANVAS_ANIMATION_JS
+from physics_playground.visual.experience import CANVAS_EXPERIENCE_JS,DEFAULT_PRESENTATION_LEVEL
 from physics_playground.visual.canvas import CANVAS_VISUAL_JS
 from physics_playground.visual.css import shared_css
 from physics_playground.visual.tokens import DARK_THEME,LIGHT_THEME,theme_payload
@@ -215,11 +216,13 @@ def build_player_document(
 
     config={**config,"visualThemes":{"light":theme_payload(LIGHT_THEME),"dark":theme_payload(DARK_THEME)},"theme":config.get("theme","auto")}
     try:
-        from physics_playground.presentation.accessibility import get_accessibility_settings
+        from physics_playground.presentation.accessibility import get_accessibility_settings,get_presentation_level
         settings=get_accessibility_settings()
-        config={**config,"reducedMotion":settings.reduced_motion,"highContrast":settings.high_contrast}
+        config={**config,"reducedMotion":settings.reduced_motion,"highContrast":settings.high_contrast,
+                "presentationLevel":config.get("presentationLevel",get_presentation_level().value)}
     except Exception:
-        config={**config,"reducedMotion":False,"highContrast":False}
+        config={**config,"reducedMotion":False,"highContrast":False,
+                "presentationLevel":config.get("presentationLevel",DEFAULT_PRESENTATION_LEVEL.value)}
     payload = json.dumps(config, allow_nan=False, separators=(",", ":"))
     aspect_ratio = logical_width / logical_height
     return _cached_player_document(payload,scene_javascript,aspect_ratio,accessible_label,idle_hint,extra_css)
@@ -241,7 +244,7 @@ def _cached_player_document(payload:str,scene_javascript:str,aspect_ratio:float,
     <label class="sr-only" for="scrubber">Animation position</label><input id="scrubber" type="range" min="0" max="1000" value="0">
     <label class="speed-label" for="speed">Speed <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
   </div><div id="status" class="sr-only" aria-live="polite">Animation ready</div></div>
-<script>{PLAYER_JS}\n{CANVAS_VISUAL_JS}\n{CANVAS_ASSET_JS}\n{CANVAS_VECTOR_JS}\n{CANVAS_ANIMATION_JS}\nconst playerConfig={payload};\nresolveVisualTheme(playerConfig);\n{scene_javascript}\nwindow.animationPlayer=new AnimationPlayer(playerConfig,scene);</script>
+<script>{PLAYER_JS}\n{CANVAS_VISUAL_JS}\n{CANVAS_ASSET_JS}\n{CANVAS_VECTOR_JS}\n{CANVAS_ANIMATION_JS}\n{CANVAS_EXPERIENCE_JS}\nconst playerConfig={payload};\nresolveVisualTheme(playerConfig);\n{scene_javascript}\nwindow.animationPlayer=new AnimationPlayer(playerConfig,scene);</script>
 </body></html>"""
 
 

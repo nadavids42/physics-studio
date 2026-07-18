@@ -10,15 +10,14 @@ SCENE = r"""
 function mapPoint(x,y,view,t){const left=40,right=t.width-25,ground=t.height-46,top=25;
   return {x:left+(x-view.xMin)/Math.max(.001,view.xMax-view.xMin)*(right-left),
           y:ground-(y-view.yMin)/Math.max(.001,view.yMax-view.yMin)*(ground-top)};}
-function sky(ctx,t){const ground=t.height-46,g=ctx.createLinearGradient(0,0,0,ground);g.addColorStop(0,'#8ECBFF');g.addColorStop(1,'#E3F6FF');
-  ctx.clearRect(0,0,t.width,t.height);ctx.fillStyle=g;ctx.fillRect(0,0,t.width,ground);ctx.fillStyle='#7CB342';ctx.fillRect(0,ground,t.width,t.height-ground);}
+function sky(ctx,t,frame){const ground=t.height-46,mode=PhysicsExperience.context(ctx,frame,'projectileField');if(!mode.environment){ctx.fillStyle=PhysicsVisuals.token(frame,'colors','surface_muted','#EAF0F6');ctx.fillRect(0,ground,t.width,t.height-ground)}}
 function cannon(ctx,t,angle){const p=mapPoint(0,0,t.config.view,t);ctx.fillStyle='#546E7A';ctx.beginPath();ctx.arc(p.x,p.y,15,0,Math.PI*2);ctx.fill();
   ctx.save();ctx.translate(p.x,p.y);ctx.rotate(-angle*Math.PI/180);ctx.fillStyle='#37474F';ctx.fillRect(0,-7,44,14);ctx.restore();}
 function target(ctx,t){const p=mapPoint(t.config.target,0,t.config.view,t);ctx.fillStyle='white';ctx.beginPath();ctx.arc(p.x,p.y-18,17,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#E53935';ctx.beginPath();ctx.arc(p.x,p.y-18,11,0,Math.PI*2);ctx.fill();ctx.fillStyle='white';ctx.beginPath();ctx.arc(p.x,p.y-18,5,0,Math.PI*2);ctx.fill();}
 const scene={onEvent(event,player){if(event.type==='impact'){const track=player.config.tracks[event.track];const t=player.coordinates();
   const p=mapPoint(sample(track.x,event.fraction),sample(track.y,event.fraction),player.config.view,t);player.particles.burst(p.x,p.y,event.count,event.colors);}},
-draw(ctx,frame){const t={...frame.transform,config:frame.config};sky(ctx,t);cannon(ctx,t,frame.config.angle);target(ctx,t);
+draw(ctx,frame){const t={...frame.transform,config:frame.config};sky(ctx,t,frame);cannon(ctx,t,frame.config.angle);target(ctx,t);
   for(const track of Object.values(frame.tracks)){const points=frame.trails.get(track.id);ctx.strokeStyle=track.style.color||'#455A64';ctx.lineWidth=2;ctx.globalAlpha=.35;
     ctx.beginPath();points.forEach((point,index)=>{const p=mapPoint(point.x,point.y||0,frame.config.view,t);index?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);});ctx.stroke();ctx.globalAlpha=1;
     const p=mapPoint(track.x,track.y||0,frame.config.view,t);ctx.fillStyle=track.style.color||'#333';ctx.beginPath();ctx.arc(p.x,p.y,8,0,Math.PI*2);ctx.fill();}}
