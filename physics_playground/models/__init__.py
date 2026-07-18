@@ -2,16 +2,24 @@
 
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
-    SimulationMode,
     VisualMetadata,
 )
 
 __all__ = [
     "Difficulty",
-    "InteractiveMode",
+    "LearningMode",
     "SimulationDefinition",
-    "SimulationMode",
     "VisualMetadata",
 ]
+
+
+def __getattr__(name: str) -> object:
+    """Forward deprecated mode imports through the warning-producing compatibility shim."""
+
+    if name in {"InteractiveMode", "SimulationMode"}:
+        from physics_playground.models import simulations
+
+        return getattr(simulations, name)
+    raise AttributeError(name)

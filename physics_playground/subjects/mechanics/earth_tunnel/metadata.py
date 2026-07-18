@@ -3,7 +3,7 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
@@ -15,7 +15,7 @@ SIMULATION = SimulationDefinition(
     description="Fall through a tunnel across an idealized planet.",
     page_module="physics_playground.subjects.mechanics.earth_tunnel.page",
     mission_group="The Big Fall",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="How long would it take to fall through an entire planet?",
     concepts=("Gravity", "Simple harmonic motion", "Energy"),
     difficulty=Difficulty.INTERMEDIATE,

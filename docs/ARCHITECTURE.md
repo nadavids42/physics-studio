@@ -7,9 +7,10 @@ analytical meaning. Presentation code turns immutable results into learning mode
 browser scenes. Streamlit is the current presentation shell; it is replaceable and is not part of
 the physics domain.
 
-All 22 simulations use subject-oriented vertical slices. Shared packages provide contracts,
-rendering infrastructure, persistence, missions, and presentation helpers; they do not own
-simulation-specific pages or physics.
+All 22 simulations use subject-oriented vertical slices. Gas Laws and Cannonball currently use
+the typed `SimulationPlugin` and shared Streamlit runtime; the other 20 retain validated direct
+page loading. Shared packages provide contracts, rendering infrastructure, persistence, missions,
+and presentation helpers; they do not own simulation-specific pages or physics.
 
 ## Runtime map
 
@@ -43,8 +44,10 @@ Canonical shared-module responsibilities are intentionally explicit:
 - `missions/ui.py` owns the active Streamlit mission adapter;
 - `canvas/embed.py` owns Streamlit iframe embedding.
 
-Completed compatibility re-exports have been removed. Persistent session-state aliases remain
-data migrations rather than import-level shims.
+The canonical domain name is `LearningMode`. Warning-producing `InteractiveMode` and
+`SimulationMode` import shims remain for external compatibility; Kid/Expert are not active product
+modes. Cannonball retains only aliases for learner-authored or setup state that may survive a
+browser session. Its transient controller aliases have been removed.
 
 ## Pure physics-model boundary
 
@@ -102,7 +105,7 @@ The supported subject identifiers are defined by `SubjectArea` in
 
 ## Manifests, validation, and registry
 
-Subject `manifests.py` modules create `ExpansionDefinition` records. The combined catalog in
+Subject `manifests.py` modules create transitional `ExpansionDefinition` records. The combined catalog in
 `physics_playground/expansion_catalog.py` covers all 22 simulations. Validation in
 `physics_playground/expansion_validation.py` requires:
 
@@ -118,7 +121,20 @@ Each slice's `metadata.py` is the metadata source for navigation, cards, mission
 `physics_playground/registry.py` discovers and validates a unique index of those declarations.
 Runtime loading goes through `load_validated_page()`, which requires a manifest, validates it, and
 then lazily imports its page entrypoint. Expansion manifests add implementation contracts and
-reference the discovered metadata; tests enforce exact ID and metadata consistency.
+reference discovered metadata. For Gas Laws and Cannonball, presentation entrypoints are derived
+from their plugins instead of duplicated. The manifest's pure-physics entrypoint and result name
+remain transitional because expansion validation deliberately checks the `physics.py` boundary.
+
+## Product and package names
+
+The product name is **Physics Studio**. The import package remains `physics_playground` because a
+repository-wide rename would break imports, persisted references, packaging, and downstream users
+without improving the current course architecture. This is deliberate technical debt. A future
+rename requires a separately approved compatibility plan, an import shim and release window, and
+evidence that persisted entrypoint strings have migrated.
+
+Model versions are owned by each slice's pure physics module. Metadata imports that constant;
+plugins and notebook records derive it from metadata. Presentation pages do not declare versions.
 
 ## Discovery and navigation
 
@@ -161,6 +177,10 @@ mypy
 pytest
 python -m build
 ```
+
+`tests/test_architecture_dependencies.py` is the reproducible dependency and import-cycle gate. It
+enforces semantic boundaries for physics, plugins, the registry, and education contracts rather
+than arbitrary directory shapes.
 
 MyPy currently checks a documented ratchet of typed foundation modules. See
 `docs/DEVELOPMENT.md` for how to expand that boundary.

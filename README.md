@@ -16,6 +16,8 @@ to be childish by default.
 - Prediction prompts, missions, local profiles, experiment notebooks, and lab-report exports.
 - Reduced-motion, high-contrast, large-text, keyboard, and nonvisual-description support.
 - A typed curriculum model and one complete projectile-motion learning pathway.
+- A typed plugin and shared Streamlit runtime exercised by Gas Laws and Cannonball; the other 20
+  simulations continue through the compatible manifest/page path.
 - A framework-free JavaScript workspace with executable player and scene tests.
 
 Physics Studio is not yet a complete course platform. It does not currently provide accounts,
@@ -79,6 +81,9 @@ All simulations use subject-oriented vertical slices under
 missions, registry metadata, page composition, and package exports. Central catalogs discover and
 validate slice metadata. Expansion manifests describe integration requirements, while the runtime
 registry drives navigation and lazy page loading.
+
+The product is Physics Studio. The historical `physics_playground` Python import package remains
+as deliberate compatibility debt; see the architecture guide for its eventual decision boundary.
 
 Read [the architecture guide](docs/ARCHITECTURE.md) and
 [the expansion guide](docs/EXPANSION_ARCHITECTURE.md) before adding a simulation.

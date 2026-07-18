@@ -9,7 +9,7 @@ from physics_playground.expansion_catalog import (
     resolve_entrypoint,
 )
 from physics_playground.expansion_validation import validate_expansion_definition
-from physics_playground.models.simulations import SimulationMode
+from physics_playground.models.simulations import LearningMode
 from physics_playground.notebook import ExperimentNotebook
 from physics_playground.registry import SIMULATIONS_BY_ID
 from physics_playground.serialization import dataclass_from_dict, to_jsonable
@@ -39,10 +39,10 @@ EXPANSION_IDS = {
     "diffusion",
 }
 LEARNING_MODES = {
-    SimulationMode.EXPLORE,
-    SimulationMode.COMPARE,
-    SimulationMode.ANALYZE,
-    SimulationMode.MODEL,
+    LearningMode.EXPLORE,
+    LearningMode.COMPARE,
+    LearningMode.ANALYZE,
+    LearningMode.MODEL,
 }
 
 

@@ -65,5 +65,6 @@ def test_legacy_state_migration_preserves_values_and_canonical_precedence() -> N
 
 def test_simulation_state_migration_uses_vertical_slice_namespace() -> None:
     state = {"old_speed": 12.0}
-    migrate_simulation_keys(state, "cannonball", {"old_speed": "speed"})
+    with pytest.deprecated_call():
+        migrate_simulation_keys(state, "cannonball", {"old_speed": "speed"})
     assert state == {simulation_key("cannonball", "speed"): 12.0}

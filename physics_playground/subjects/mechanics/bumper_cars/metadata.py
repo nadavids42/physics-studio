@@ -3,7 +3,7 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
@@ -15,7 +15,7 @@ SIMULATION = SimulationDefinition(
     description="Crash two cars and track momentum and energy.",
     page_module="physics_playground.subjects.mechanics.bumper_cars.page",
     mission_group="Bumper Cars",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="What determines how two cars move after a collision?",
     concepts=("Momentum", "Energy", "Collisions"),
     difficulty=Difficulty.BEGINNER,

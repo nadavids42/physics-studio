@@ -8,12 +8,7 @@ from dataclasses import dataclass
 import streamlit as st
 
 from physics_playground.contracts import ModelAssumption, SummaryMetric
-from physics_playground.models.simulations import InteractiveMode
-
-# Compatibility name retained for every existing Streamlit page. New domain
-# code should import InteractiveMode from models.simulations directly.
-LearningMode = InteractiveMode
-
+from physics_playground.models.simulations import LearningMode
 
 MODE_HELP = {
     LearningMode.EXPLORE: "Change simple controls, make a prediction, and launch the experiment.",

@@ -3,7 +3,7 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
@@ -15,7 +15,7 @@ SIMULATION = SimulationDefinition(
     description="Arrange masses and find the point where the system balances.",
     page_module="physics_playground.subjects.mechanics.center_of_mass.page",
     mission_group="Center of Mass",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="Where is the balance point of several objects?",
     concepts=("Center of mass", "Balance", "Weighted averages"),
     difficulty=Difficulty.BEGINNER,

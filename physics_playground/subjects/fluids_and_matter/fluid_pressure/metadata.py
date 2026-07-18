@@ -3,7 +3,7 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
@@ -15,7 +15,7 @@ SIMULATION = SimulationDefinition(
     description="Measure gauge and absolute pressure at different depths and in different fluids.",
     page_module="physics_playground.subjects.fluids_and_matter.fluid_pressure.page",
     mission_group="Fluid Pressure",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="Why does pressure increase as we move deeper into a fluid?",
     concepts=("Fluids", "Pressure", "Density"),
     difficulty=Difficulty.BEGINNER,

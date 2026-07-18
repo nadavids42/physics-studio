@@ -3,7 +3,7 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
@@ -15,7 +15,7 @@ SIMULATION = SimulationDefinition(
     description="Trace reflected and refracted rays across a boundary and discover total internal reflection.",
     page_module="physics_playground.subjects.light_and_electricity.reflection_refraction.page",
     mission_group="Reflection and Refraction",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="How does light choose its direction at a boundary?",
     concepts=("Light", "Reflection", "Refraction"),
     difficulty=Difficulty.INTERMEDIATE,

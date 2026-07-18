@@ -17,16 +17,16 @@ from physics_playground.education.models import (
     SimulationActivity,
     WorkedExample,
 )
-from physics_playground.models.simulations import InteractiveMode
+from physics_playground.models.simulations import LearningMode
 from physics_playground.validation import PhysicsValidationError
 
 PHASE_ORDER = tuple(ActivityPhase)
 EXPECTED_MODES = {
-    ActivityPhase.PREDICTION: InteractiveMode.EXPLORE,
-    ActivityPhase.EXPLORATION: InteractiveMode.EXPLORE,
-    ActivityPhase.COMPARISON: InteractiveMode.COMPARE,
-    ActivityPhase.ANALYSIS: InteractiveMode.ANALYZE,
-    ActivityPhase.MODELING: InteractiveMode.MODEL,
+    ActivityPhase.PREDICTION: LearningMode.EXPLORE,
+    ActivityPhase.EXPLORATION: LearningMode.EXPLORE,
+    ActivityPhase.COMPARISON: LearningMode.COMPARE,
+    ActivityPhase.ANALYSIS: LearningMode.ANALYZE,
+    ActivityPhase.MODELING: LearningMode.MODEL,
 }
 
 

@@ -1,4 +1,4 @@
-"""Machine-checkable architecture for Physics Playground expansion simulations.
+"""Machine-checkable architecture for Physics Studio expansion simulations.
 
 This module describes what a new simulation must provide without importing
 Streamlit.  Subject packages can therefore implement and test physics first,
@@ -13,7 +13,7 @@ from typing import ClassVar, Generic, Protocol, TypeVar, runtime_checkable
 
 from physics_playground.contracts import ContractResult, ModelAssumption, ParameterSet
 from physics_playground.missions.models import MissionDefinition
-from physics_playground.models.simulations import InteractiveMode, SimulationDefinition
+from physics_playground.models.simulations import LearningMode, SimulationDefinition
 
 
 class SubjectArea(StrEnum):
@@ -37,16 +37,16 @@ class PresentationCapability(StrEnum):
 class ModeRequirements:
     """Required behavior for one learning mode."""
 
-    mode: InteractiveMode
+    mode: LearningMode
     capabilities: tuple[PresentationCapability, ...]
 
 
 REQUIRED_MODE_REQUIREMENTS = (
-    ModeRequirements(InteractiveMode.EXPLORE, (PresentationCapability.PREDICTION,)),
-    ModeRequirements(InteractiveMode.COMPARE, (PresentationCapability.BASELINE_COMPARISON,)),
-    ModeRequirements(InteractiveMode.ANALYZE, (PresentationCapability.ANALYTICAL_CHARTS,)),
+    ModeRequirements(LearningMode.EXPLORE, (PresentationCapability.PREDICTION,)),
+    ModeRequirements(LearningMode.COMPARE, (PresentationCapability.BASELINE_COMPARISON,)),
+    ModeRequirements(LearningMode.ANALYZE, (PresentationCapability.ANALYTICAL_CHARTS,)),
     ModeRequirements(
-        InteractiveMode.MODEL,
+        LearningMode.MODEL,
         (
             PresentationCapability.EQUATIONS,
             PresentationCapability.ASSUMPTIONS,

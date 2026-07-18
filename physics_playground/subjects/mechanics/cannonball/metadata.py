@@ -3,10 +3,11 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
+from physics_playground.subjects.mechanics.cannonball.physics import PROJECTILE_MODEL_VERSION
 
 SIMULATION = SimulationDefinition(
     id="cannonball",
@@ -15,13 +16,13 @@ SIMULATION = SimulationDefinition(
     description="Aim a projectile and compare ideal and drag-filled flight.",
     page_module="physics_playground.subjects.mechanics.cannonball.page",
     mission_group="Cannonball Launcher",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="Which launch angle sends a cannonball farthest?",
     concepts=("Projectile motion", "Energy", "Air resistance"),
     difficulty=Difficulty.INTERMEDIATE,
     badge_count=4,
     renderer="shared-browser-player",
-    model_version="projectile-2.0",
+    model_version=PROJECTILE_MODEL_VERSION,
     simulation_type="Analytical + numerical",
     visual=VisualMetadata(
         "#E53935",

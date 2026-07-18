@@ -3,7 +3,7 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
@@ -15,7 +15,7 @@ SIMULATION = SimulationDefinition(
     description="Balance forces around a pivot and build mechanical advantage.",
     page_module="physics_playground.subjects.mechanics.torque_levers.page",
     mission_group="Torque and Levers",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="How do force and distance combine to turn a lever?",
     concepts=("Torque", "Levers", "Equilibrium"),
     difficulty=Difficulty.BEGINNER,

@@ -3,7 +3,7 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
@@ -15,7 +15,7 @@ SIMULATION = SimulationDefinition(
     description="Arrange positive and negative point charges, map vectors and potential, and probe forces.",
     page_module="physics_playground.subjects.light_and_electricity.electric_fields.page",
     mission_group="Electric Fields",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="How do multiple charges shape electric field, potential, and force?",
     concepts=("Electricity", "Fields", "Potential"),
     difficulty=Difficulty.ADVANCED,

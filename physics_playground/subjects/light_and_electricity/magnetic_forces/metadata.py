@@ -3,7 +3,7 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
@@ -15,7 +15,7 @@ SIMULATION = SimulationDefinition(
     description="Cross velocity or current with a magnetic field and use the right-hand rule.",
     page_module="physics_playground.subjects.light_and_electricity.magnetic_forces.page",
     mission_group="Magnetic Forces",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="When does a magnetic field push a charge or wire, and which way?",
     concepts=("Magnetism", "Forces", "Vectors"),
     difficulty=Difficulty.INTERMEDIATE,

@@ -3,7 +3,7 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
@@ -15,7 +15,7 @@ SIMULATION = SimulationDefinition(
     description="Explore how ramp angle and friction decide whether a block slides.",
     page_module="physics_playground.subjects.mechanics.inclined_plane.page",
     mission_group="Inclined Plane",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="When does gravity overcome friction on a ramp?",
     concepts=("Forces", "Friction", "Acceleration"),
     difficulty=Difficulty.BEGINNER,

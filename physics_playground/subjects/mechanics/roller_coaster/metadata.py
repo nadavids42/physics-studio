@@ -3,7 +3,7 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
@@ -15,7 +15,7 @@ SIMULATION = SimulationDefinition(
     description="Trade potential and kinetic energy while testing whether a coaster can finish its track.",
     page_module="physics_playground.subjects.mechanics.roller_coaster.page",
     mission_group="Roller-Coaster Energy",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="How do height and energy losses control a coaster's speed?",
     concepts=("Energy", "Conservation", "Dissipation"),
     difficulty=Difficulty.INTERMEDIATE,

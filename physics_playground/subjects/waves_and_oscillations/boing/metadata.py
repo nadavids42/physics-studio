@@ -3,7 +3,7 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
@@ -15,7 +15,7 @@ SIMULATION = SimulationDefinition(
     description="Build an oscillator and hunt for resonance.",
     page_module="physics_playground.subjects.waves_and_oscillations.boing.page",
     mission_group="Boing Machine",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="What controls a spring's rhythm—and when does resonance appear?",
     concepts=("Oscillation", "Resonance", "Energy"),
     difficulty=Difficulty.INTERMEDIATE,

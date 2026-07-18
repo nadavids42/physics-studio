@@ -3,7 +3,7 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
@@ -15,7 +15,7 @@ SIMULATION = SimulationDefinition(
     description="Follow seeded particles as random steps spread into a measurable distribution.",
     page_module="physics_playground.subjects.fluids_and_matter.diffusion.page",
     mission_group="Diffusion and Random Walks",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="How can unpredictable individual steps create predictable collective spreading?",
     concepts=("Diffusion", "Probability", "Statistics"),
     difficulty=Difficulty.INTERMEDIATE,

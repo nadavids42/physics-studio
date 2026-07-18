@@ -5,6 +5,10 @@
 - **Scope:** Architecture and migration boundaries; no runtime implementation is authorized by
   this ADR alone
 
+Implementation status (2026-07-18): the typed plugin contract and Streamlit runtime are implemented
+for Gas Laws and Cannonball. Parameter-schema, framework-neutral render-spec, assessment, progress,
+and model-migration contracts described below remain target architecture, not current behavior.
+
 ## Context
 
 Physics Studio has 22 scientifically tested simulations, all in subject-owned vertical slices and
@@ -232,12 +236,12 @@ framework-neutral contracts create the migration seam without financing two inco
 Each stage ends with a runnable application and the complete quality gates. Physics outputs,
 simulation IDs, notebook restoration, missions, accessibility, and all four modes are parity gates.
 
-1. **Contracts and adapter:** introduce plugin, parameter-schema, runtime-command/result,
+1. **Contracts and adapter (partially complete):** introduce plugin, parameter-schema, runtime-command/result,
    render-spec, evidence, and migration contracts. Build a read-only adapter that constructs
    plugins from current registry/manifests without changing page routing.
-2. **Runtime pilot on Cannonball:** host Cannonball through `SimulationRuntime` and the shared
-   Streamlit host. Preserve its lesson, forms/fragments, interactive charts, notebook records,
-   missions, query links, and old session-state reads.
+2. **Runtime pilots (complete):** Gas Laws established the smallest runtime; Cannonball then
+   validated forms/fragments, interactive charts, notebook records, missions, lesson routing,
+   targets, and stable player behavior. Both retain slice-owned Streamlit composition.
 3. **Mechanics course foundation:** define the Mechanics subject/unit sequence, reusable activity
    and assessment contracts, progress reduction, and lesson host. Author course lessons against
    plugin actions rather than page functions; do not require other subjects to migrate.

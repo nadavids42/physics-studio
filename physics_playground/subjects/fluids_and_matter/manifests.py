@@ -6,6 +6,7 @@ from physics_playground.models.expansion import (
     SubjectArea,
 )
 from physics_playground.registry import SIMULATIONS_BY_ID
+from physics_playground.subjects.fluids_and_matter.gas_laws.plugin import GAS_LAWS_PLUGIN
 
 
 def make(sim, param, result, physics, page, canvas, assumptions, limitations):
@@ -40,8 +41,8 @@ FLUID_MANIFESTS = (
         "GasLawParameters",
         "GasLawResult",
         "physics_playground.subjects.fluids_and_matter.gas_laws.physics.simulate",
-        "physics_playground.subjects.fluids_and_matter.gas_laws.page.render",
-        "physics_playground.canvas.gas_container.build_gas_document",
+        GAS_LAWS_PLUGIN.presentation.page_entrypoint,
+        GAS_LAWS_PLUGIN.presentation.renderer_entrypoint,
         ("Ideal gas", "Equilibrium states", "Constant gas amount"),
         ("No real-gas corrections", "No phase changes"),
     ),

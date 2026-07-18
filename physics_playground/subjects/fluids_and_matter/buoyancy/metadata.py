@@ -3,7 +3,7 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
@@ -15,7 +15,7 @@ SIMULATION = SimulationDefinition(
     description="Change object and fluid density to make objects float, sink, or hover.",
     page_module="physics_playground.subjects.fluids_and_matter.buoyancy.page",
     mission_group="Buoyancy",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="What decides whether an object floats, sinks, or remains neutrally buoyant?",
     concepts=("Fluids", "Buoyancy", "Density"),
     difficulty=Difficulty.BEGINNER,

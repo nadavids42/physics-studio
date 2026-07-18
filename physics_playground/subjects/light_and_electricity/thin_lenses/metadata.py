@@ -3,7 +3,7 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
@@ -15,7 +15,7 @@ SIMULATION = SimulationDefinition(
     description="Build converging and diverging lens diagrams and classify their images.",
     page_module="physics_playground.subjects.light_and_electricity.thin_lenses.page",
     mission_group="Thin Lenses",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="Where does a lens form an image, and is it real or virtual?",
     concepts=("Light", "Lenses", "Images"),
     difficulty=Difficulty.INTERMEDIATE,

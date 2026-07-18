@@ -18,7 +18,7 @@ from physics_playground.education.models import (
     SimulationActivity,
 )
 from physics_playground.education.validation import validate_curriculum_manifest
-from physics_playground.models.simulations import InteractiveMode
+from physics_playground.models.simulations import LearningMode
 from physics_playground.registry import SIMULATION_REGISTRY
 from physics_playground.subjects.mechanics.cannonball.lesson import CANNONBALL_LESSON
 from physics_playground.validation import PhysicsValidationError
@@ -54,11 +54,11 @@ def test_complete_lesson_sequences_every_learning_phase_and_mode() -> None:
         ActivityPhase
     )
     assert tuple(activity.mode for activity in CANNONBALL_LESSON.activity_sequence) == (
-        InteractiveMode.EXPLORE,
-        InteractiveMode.EXPLORE,
-        InteractiveMode.COMPARE,
-        InteractiveMode.ANALYZE,
-        InteractiveMode.MODEL,
+        LearningMode.EXPLORE,
+        LearningMode.EXPLORE,
+        LearningMode.COMPARE,
+        LearningMode.ANALYZE,
+        LearningMode.MODEL,
         None,
     )
 
@@ -124,7 +124,7 @@ def test_out_of_order_activity_phases_are_rejected() -> None:
 
 def test_activity_phase_requires_the_matching_simulation_mode() -> None:
     original = CANNONBALL_LESSON.activity_sequence[3]
-    invalid = replace(original, mode=InteractiveMode.EXPLORE)
+    invalid = replace(original, mode=LearningMode.EXPLORE)
     sequence = tuple(
         invalid if item.id == invalid.id else item for item in CANNONBALL_LESSON.activity_sequence
     )
@@ -238,7 +238,7 @@ def test_activity_contract_accepts_renderer_independent_presets() -> None:
         "cannonball",
         "Explore",
         ("Run the model.",),
-        InteractiveMode.EXPLORE,
+        LearningMode.EXPLORE,
         {"initial_speed_m_s": 12.0, "drag_enabled": False},
     )
     assert activity.parameter_preset["initial_speed_m_s"] == 12.0

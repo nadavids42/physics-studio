@@ -8,7 +8,7 @@ from enum import StrEnum
 from typing import TypeAlias
 
 from physics_playground.education.audience import MathematicalDepth
-from physics_playground.models.simulations import InteractiveMode
+from physics_playground.models.simulations import LearningMode
 
 ALL_MATHEMATICAL_DEPTHS = frozenset(MathematicalDepth)
 
@@ -186,7 +186,7 @@ class SimulationActivity:
     simulation_id: str
     title: str
     instructions: tuple[str, ...]
-    mode: InteractiveMode | None = None
+    mode: LearningMode | None = None
     parameter_preset: dict[str, float | int | str | bool] = field(default_factory=dict)
     observation_prompt: str = ""
     completion_evidence: str = ""

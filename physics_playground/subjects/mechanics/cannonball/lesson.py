@@ -27,7 +27,7 @@ from physics_playground.education.models import (
     Unit,
     WorkedExample,
 )
-from physics_playground.models.simulations import InteractiveMode
+from physics_playground.models.simulations import LearningMode
 
 PROJECTILE_CONCEPTS = (
     Concept(
@@ -82,7 +82,7 @@ ACTIVITIES = (
             "Predict which of 30°, 45°, and 60° travels farthest before running the model.",
             "Record a physical reason for the prediction.",
         ),
-        InteractiveMode.EXPLORE,
+        LearningMode.EXPLORE,
         {"initial_speed_m_s": 20.0, "launch_angle_deg": 45.0, "drag_enabled": False},
         "Which component tradeoff controls the range?",
         "A recorded angle prediction and explanation.",
@@ -97,7 +97,7 @@ ACTIVITIES = (
             "Observe time aloft, maximum height, and range.",
             "Relate each outcome to v_x and v_y.",
         ),
-        InteractiveMode.EXPLORE,
+        LearningMode.EXPLORE,
         {"initial_speed_m_s": 20.0, "drag_enabled": False},
         "What changes, and what stays symmetric around 45°?",
         "Three completed runs with component-based observations.",
@@ -112,7 +112,7 @@ ACTIVITIES = (
             "Overlay the trajectories.",
             "Explain their equal ideal ranges and different peak heights.",
         ),
-        InteractiveMode.COMPARE,
+        LearningMode.COMPARE,
         {"initial_speed_m_s": 20.0, "drag_enabled": False},
         "Why can two visibly different paths land at the same range?",
         "A comparison citing both horizontal speed and flight time.",
@@ -127,7 +127,7 @@ ACTIVITIES = (
             "Locate the ideal-model maximum on the range graph.",
             "Check the symmetry of complementary angles.",
         ),
-        InteractiveMode.ANALYZE,
+        LearningMode.ANALYZE,
         {"initial_speed_m_s": 20.0, "drag_enabled": False},
         "How does the graph encode sin(2 theta)?",
         "A graph-based estimate of the maximizing angle.",
@@ -142,7 +142,7 @@ ACTIVITIES = (
             "Compare range, peak height, and path symmetry.",
             "State which assumptions changed and which equations no longer apply directly.",
         ),
-        InteractiveMode.MODEL,
+        LearningMode.MODEL,
         {"initial_speed_m_s": 20.0, "launch_angle_deg": 45.0},
         "Which ideal conclusions survive when drag is included?",
         "A model comparison naming assumptions and evidence.",

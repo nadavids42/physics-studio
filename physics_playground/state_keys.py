@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Mapping, MutableMapping
 from dataclasses import dataclass
 from typing import Any
@@ -83,6 +84,8 @@ def migrate_simulation_keys(
     state: MutableMapping[str, Any],
     simulation_id: str,
     aliases: Mapping[str, str],
+    *,
+    removal_condition: str | None = None,
 ) -> None:
     """Move page-local keys into one simulation namespace.
 
@@ -90,6 +93,15 @@ def migrate_simulation_keys(
     :func:`simulation_key`.
     """
 
+    present = tuple(old_key for old_key in aliases if old_key in state)
+    if present:
+        condition = removal_condition or "all supported persisted sessions use canonical keys"
+        warnings.warn(
+            f"Migrated deprecated {simulation_id} session keys {present!r}; "
+            f"compatibility aliases will be removed when {condition}.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
     migrate_legacy_keys(
         state,
         {old_key: simulation_key(simulation_id, name) for old_key, name in aliases.items()},

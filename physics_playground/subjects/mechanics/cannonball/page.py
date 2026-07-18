@@ -85,22 +85,20 @@ def _init() -> None:
         CANNONBALL_PLUGIN.id,
         {
             "cannon_target_seed": "target_seed",
-            "cannon_launch_nonce": "launch_nonce",
-            "cannon_launched_parameters": "launched_parameters",
-            "cannon_compare_nonce": "compare_nonce",
-            "cannon_compare_signature": "compare_signature",
             "cannon_target_override": "target_override",
             "cannon_speed": "speed",
             "cannon_angle": "angle",
             "cannon_world": "world",
             "cannon_learning_mode": "learning_mode",
             "cannon_quiz_guess": "quiz_guess",
-            "cannon_quiz_revealed": "quiz_revealed",
-            "cannon_quiz_lock": "quiz_lock",
             "cannon_reuse_target": "reuse_target",
             "cannon_observation": "observation",
             "cannon_compare_observation": "compare_observation",
         },
+        removal_condition=(
+            "the documented compatibility release has elapsed and persisted-session fixtures "
+            "contain only physics_studio.simulation.cannonball keys"
+        ),
     )
     st.session_state.setdefault(RUNTIME.key("target_seed"), 20260710)
     st.session_state.setdefault(RUNTIME.key("launch_nonce"), 0)

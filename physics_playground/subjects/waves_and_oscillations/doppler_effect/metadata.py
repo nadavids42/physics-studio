@@ -3,7 +3,7 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
@@ -15,7 +15,7 @@ SIMULATION = SimulationDefinition(
     description="Move a sound source and observer to hear frequency shifts and watch wavefronts bunch up.",
     page_module="physics_playground.subjects.waves_and_oscillations.doppler_effect.page",
     mission_group="Sound and Doppler Effect",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="Why does a moving siren change pitch as it passes?",
     concepts=("Sound", "Doppler effect", "Waves"),
     difficulty=Difficulty.INTERMEDIATE,

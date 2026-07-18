@@ -12,6 +12,7 @@ from physics_playground.units import (
 from physics_playground.validation import PhysicsValidationError
 
 GAS_CONSTANT_J_MOL_K = MOLAR_GAS_CONSTANT_J_MOL_K
+GAS_LAWS_MODEL_VERSION = "gas-laws-1.0"
 
 
 class GasLawScenario(StrEnum):

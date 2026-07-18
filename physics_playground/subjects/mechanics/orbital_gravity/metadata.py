@@ -3,7 +3,7 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
@@ -15,7 +15,7 @@ SIMULATION = SimulationDefinition(
     description="Launch a planet and discover crashes, orbits, and escape.",
     page_module="physics_playground.subjects.mechanics.orbital_gravity.page",
     mission_group="Planet Launcher",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="How fast must a planet move to stay in orbit?",
     concepts=("Gravity", "Orbits", "Conservation"),
     difficulty=Difficulty.ADVANCED,

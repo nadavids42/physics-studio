@@ -3,7 +3,7 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
@@ -15,7 +15,7 @@ SIMULATION = SimulationDefinition(
     description="Watch a tiny difference grow into completely different motion.",
     page_module="physics_playground.subjects.waves_and_oscillations.double_pendulum.page",
     mission_group="Double Pendulum of Chaos",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="How can nearly identical starts produce different futures?",
     concepts=("Chaos", "Nonlinear dynamics", "Energy"),
     difficulty=Difficulty.ADVANCED,

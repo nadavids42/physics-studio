@@ -3,7 +3,7 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
@@ -15,7 +15,7 @@ SIMULATION = SimulationDefinition(
     description="Explore how length, gravity, and angle change a swing.",
     page_module="physics_playground.subjects.waves_and_oscillations.pendulum.page",
     mission_group="The Swing Machine",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="What controls how long a swing takes?",
     concepts=("Oscillation", "Gravity", "Approximation"),
     difficulty=Difficulty.BEGINNER,

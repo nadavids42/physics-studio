@@ -3,7 +3,7 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
@@ -15,7 +15,7 @@ SIMULATION = SimulationDefinition(
     description="Combine traveling waves and measure constructive and destructive interference.",
     page_module="physics_playground.subjects.waves_and_oscillations.wave_interference.page",
     mission_group="Wave Interference",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="How do amplitude and phase determine the wave we observe?",
     concepts=("Waves", "Interference", "Superposition"),
     difficulty=Difficulty.INTERMEDIATE,

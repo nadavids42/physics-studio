@@ -1,4 +1,4 @@
-"""Shared simulation contracts for Physics Playground.
+"""Shared simulation contracts for Physics Studio.
 
 The contracts in this module deliberately contain no Streamlit dependencies.
 Physics models can therefore be tested, serialized, reused in notebooks, or

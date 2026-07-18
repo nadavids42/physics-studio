@@ -3,10 +3,11 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
+from physics_playground.subjects.fluids_and_matter.gas_laws.physics import GAS_LAWS_MODEL_VERSION
 
 SIMULATION = SimulationDefinition(
     id="gas_laws",
@@ -15,13 +16,13 @@ SIMULATION = SimulationDefinition(
     description="Constrain an ideal gas and compare Boyle's, Charles's, and Gay-Lussac's laws.",
     page_module="physics_playground.subjects.fluids_and_matter.gas_laws.page",
     mission_group="Gas Laws",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="How do pressure, volume, temperature, and gas amount constrain one another?",
     concepts=("Gases", "Pressure", "Temperature"),
     difficulty=Difficulty.INTERMEDIATE,
     badge_count=5,
     renderer="shared-gas-piston",
-    model_version="gas-laws-1.0",
+    model_version=GAS_LAWS_MODEL_VERSION,
     simulation_type="Analytical + piston diagram",
     visual=VisualMetadata(
         "#F9A825",

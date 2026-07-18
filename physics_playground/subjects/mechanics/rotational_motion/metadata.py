@@ -3,7 +3,7 @@
 from physics_playground.missions.models import MissionDefinition, MissionType
 from physics_playground.models.simulations import (
     Difficulty,
-    InteractiveMode,
+    LearningMode,
     SimulationDefinition,
     VisualMetadata,
 )
@@ -15,7 +15,7 @@ SIMULATION = SimulationDefinition(
     description="Apply torque to different body shapes and track angular motion and energy.",
     page_module="physics_playground.subjects.mechanics.rotational_motion.page",
     mission_group="Rotational Motion",
-    modes=tuple(InteractiveMode),
+    modes=tuple(LearningMode),
     central_question="How does moment of inertia change rotational acceleration?",
     concepts=("Rotation", "Torque", "Energy"),
     difficulty=Difficulty.INTERMEDIATE,

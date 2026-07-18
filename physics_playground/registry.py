@@ -3,10 +3,10 @@
 from importlib import import_module
 from types import ModuleType
 
-from physics_playground.models.simulations import InteractiveMode
+from physics_playground.models.simulations import LearningMode
 from physics_playground.slice_catalog import SLICE_METADATA_MODULES
 
-LEARNING_MODES = tuple(InteractiveMode)
+LEARNING_MODES = tuple(LearningMode)
 SIMULATION_REGISTRY = tuple(module.SIMULATION for module in SLICE_METADATA_MODULES)
 SIMULATIONS_BY_ID = {definition.id: definition for definition in SIMULATION_REGISTRY}
 
