@@ -1,6 +1,6 @@
 # Physics Studio architecture migration audit
 
-Date: 2026-07-18  
+Date: 2026-07-18
 Repository baseline: current working tree at audit time
 
 ## Scope and evidence
