@@ -1,5 +1,3 @@
-import json
-
 import pytest
 
 from physics_playground.canvas.fluid_container import SCENE as FLUID_SCENE,build_fluid_document
