@@ -3,8 +3,9 @@ from physics_playground.models.orbit import OrbitResult
 from physics_playground.serialization import to_jsonable
 CANVAS_W,CANVAS_H,PLAYER_HEIGHT=560,560,640
 SCENE=r"""
-const scene={draw(ctx,f){const t=f.transform,W=t.width,H=t.height,cx=W/2,cy=H/2,view=f.config.orbitView,scale=Math.min(W,H)*.45/view;PhysicsExperience.context(ctx,f,'space');ctx.fillStyle=PhysicsVisuals.token(f,'colors','energy','#B45309');ctx.beginPath();ctx.arc(cx,cy,14,0,Math.PI*2);ctx.fill();
- for(const q of Object.values(f.tracks)){const trail=f.trails.get(q.id);ctx.strokeStyle=q.style.color;ctx.lineWidth=2;ctx.beginPath();trail.forEach((p,i)=>{const x=cx+p.x*scale,y=cy-(p.y||0)*scale;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke();ctx.fillStyle=q.style.color;ctx.beginPath();ctx.arc(cx+q.x*scale,cy-(q.y||0)*scale,8,0,Math.PI*2);ctx.fill();}}
+const scene={draw(ctx,f){const t=f.transform,W=t.width,H=t.height,cx=W/2,cy=H/2,view=f.config.orbitView,scale=Math.min(W,H)*.43/view;PhysicsExperience.context(ctx,f,'space');PhysicsAssets.star(ctx,f,{x:cx,y:cy,radius:16,fill:PhysicsVisuals.token(f,'colors','energy','#B45309'),glow:true,shadow:false,label:'Central body'});
+ for(const q of Object.values(f.tracks)){const color=q.style.color||PhysicsVisuals.token(f,'colors','trajectory','#1769AA');PhysicsAnimation.fadingTrail(ctx,f.trails.get(q.id),p=>({x:cx+p.x*scale,y:cy-(p.y||0)*scale}),{color,width:2.2,opacity:.48});
+ PhysicsAssets.planet(ctx,f,{x:cx+q.x*scale,y:cy-(q.y||0)*scale,radius:8,fill:color,highlight:true,shadow:true,label:f.config.tracks.length>1&&PhysicsVisuals.responsive(f)!=='mobile'?q.label:''});}}
 };
 """
 def _doc(items,seed,autoplay,message):

@@ -1,10 +1,13 @@
 import streamlit as st
+import matplotlib.pyplot as plt
 from physics_playground.canvas import legacy
 from physics_playground.canvas.ray_diagram import build_ray_diagram
 from physics_playground.contracts import ModelAssumption
 from physics_playground.missions import legacy as kidtools
 from physics_playground.presentation.learning_modes import LearningMode,mode_navigation,mode_heading,ChangedVariable,changed_variable_banner,assumptions_panel
 from physics_playground.presentation.notebook_ui import add_trial
+from physics_playground.presentation.accessibility import render_chart
+from physics_playground.presentation.chart_system import series_figure
 from .physics import ThinLensParameters,simulate
 from .missions import evaluate
 ID="thin_lenses";VERSION="thin-lens-1.0"
@@ -24,7 +27,7 @@ def compare():
         for label,r,seed in (("Run A",a,20262811),("Run B",b,20262812)):record(r,seed,"Lens sign changes real versus virtual behavior",label,kidtools.process_run(ID,evaluate(r,True)))
     diagram(b,20262812)
 def analyze():
-    mode_heading(LearningMode.ANALYZE,"Image distance near the focal point");f=st.slider("Analysis focal length (m)",.2,3.,1.,.1);distances=[.1+i*.05 for i in range(200) if abs((.1+i*.05)-f)>.01];images=[simulate(ThinLensParameters(d,f)).image_distance_m for d in distances];st.line_chart({"object_distance_m":distances,"image_distance_m":images},x="object_distance_m",y="image_distance_m");st.caption("Accessible chart: image distance diverges at object distance equal to focal length, is negative for a virtual image inside the focus, and positive beyond it.")
+    mode_heading(LearningMode.ANALYZE,"Image distance near the focal point");f=st.slider("Analysis focal length (m)",.2,3.,1.,.1);distances=[.1+i*.05 for i in range(200) if abs((.1+i*.05)-f)>.01];images=[simulate(ThinLensParameters(d,f)).image_distance_m for d in distances];figure=series_figure(x=distances,series={"Image distance":images},x_label="Object distance (m)",y_label="Image distance (m)",title="Thin-lens response near the focal point");render_chart(figure,"Image distance diverges at object distance equal to focal length, is negative for a virtual image inside the focus, and positive beyond it.");plt.close(figure)
 def model():
     mode_heading(LearningMode.MODEL,"The signed thin-lens equation");st.latex(r"\frac1f=\frac1{d_o}+\frac1{d_i}\qquad m=-\frac{d_i}{d_o}=\frac{h_i}{h_o}");st.markdown("Positive focal length means converging; negative means diverging. Positive image distance is real, negative is virtual. Negative magnification is inverted.");assumptions_panel((ModelAssumption("thin","Lens thickness is negligible"),ModelAssumption("paraxial","Rays remain near the optical axis")),("No aberration or dispersion.","One ideal lens in air.","Near the focal point, tiny input changes produce enormous image-distance changes."))
 def render():

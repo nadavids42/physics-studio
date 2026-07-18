@@ -40,6 +40,7 @@ const PhysicsExperience=(()=>{
       ctx.fillStyle='rgba(255,255,255,.7)';for(let i=0;i<36;i++){const x=(i*83)%w,y=(i*i*29+17)%h,r=i%7===0?1.5:.7;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}}
     else if(kind==='opticsBench'){ctx.fillStyle='#EEF3F7';ctx.fillRect(0,0,w,h);ctx.fillStyle='#A9B6C2';ctx.fillRect(0,h*.76,w,12);ctx.strokeStyle='#738394';ctx.lineWidth=2;for(let x=30;x<w;x+=45){ctx.beginPath();ctx.moveTo(x,h*.76);ctx.lineTo(x,h*.82);ctx.stroke()}}
     else if(kind==='rollerCoaster'){const g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,'#C9E6F7');g.addColorStop(1,'#F6FAFC');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);ctx.fillStyle='#B7D59B';ctx.fillRect(0,h*.72,w,h*.28)}
+    else if(kind==='collisionTrack'){ctx.fillStyle='#F2E8DC';ctx.fillRect(0,0,w,h);ctx.fillStyle='#73655B';ctx.fillRect(0,h*.72,w,h*.28);ctx.strokeStyle='rgba(255,255,255,.65)';ctx.lineWidth=3;ctx.setLineDash([14,10]);ctx.beginPath();ctx.moveTo(0,h*.86);ctx.lineTo(w,h*.86);ctx.stroke();ctx.setLineDash([])}
     ctx.restore();return mode}
   function scientificOverlay(ctx,s,draw){ctx.save();draw();ctx.restore()}
   return {level,profile,context,scientificOverlay};

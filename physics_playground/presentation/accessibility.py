@@ -7,6 +7,7 @@ from physics_playground.accessibility import AccessibilitySettings
 from physics_playground.visual.css import streamlit_css
 from physics_playground.visual.tokens import LIGHT_THEME
 from physics_playground.visual.experience import DEFAULT_PRESENTATION_LEVEL,PresentationLevel
+from physics_playground.presentation.chart_system import style_figure
 
 SETTINGS_KEY="accessibility_settings"
 PRESENTATION_LEVEL_KEY="presentation_level"
@@ -57,6 +58,7 @@ def apply_global_accessibility(settings):
     </style>""",unsafe_allow_html=True)
     mpl.rcParams["axes.prop_cycle"]=cycler(color=SAFE_COLORS)+cycler(linestyle=LINE_STYLES)+cycler(marker=MARKERS)
 def render_chart(figure,caption):
+    style_figure(figure,get_presentation_level())
     for axis in figure.axes:
         for index,line in enumerate(axis.lines):
             line.set_linestyle(LINE_STYLES[index%len(LINE_STYLES)])

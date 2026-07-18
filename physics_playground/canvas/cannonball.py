@@ -11,16 +11,14 @@ function mapPoint(x,y,view,t){const left=40,right=t.width-25,ground=t.height-46,
   return {x:left+(x-view.xMin)/Math.max(.001,view.xMax-view.xMin)*(right-left),
           y:ground-(y-view.yMin)/Math.max(.001,view.yMax-view.yMin)*(ground-top)};}
 function sky(ctx,t,frame){const ground=t.height-46,mode=PhysicsExperience.context(ctx,frame,'projectileField');if(!mode.environment){ctx.fillStyle=PhysicsVisuals.token(frame,'colors','surface_muted','#EAF0F6');ctx.fillRect(0,ground,t.width,t.height-ground)}}
-function cannon(ctx,t,angle){const p=mapPoint(0,0,t.config.view,t);ctx.fillStyle='#546E7A';ctx.beginPath();ctx.arc(p.x,p.y,15,0,Math.PI*2);ctx.fill();
-  ctx.save();ctx.translate(p.x,p.y);ctx.rotate(-angle*Math.PI/180);ctx.fillStyle='#37474F';ctx.fillRect(0,-7,44,14);ctx.restore();}
+function cannon(ctx,t,angle,frame){const p=mapPoint(0,0,t.config.view,t);PhysicsAssets.cannon(ctx,frame,{x:p.x,y:p.y-3,width:48,rotation:-angle*Math.PI/180,fill:PhysicsVisuals.token(frame,'colors','uncertainty','#64748B'),highlight:true,shadow:true,label:PhysicsVisuals.responsive(frame)==='mobile'?'':'Launcher'});}
 function target(ctx,t){const p=mapPoint(t.config.target,0,t.config.view,t);ctx.fillStyle='white';ctx.beginPath();ctx.arc(p.x,p.y-18,17,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#E53935';ctx.beginPath();ctx.arc(p.x,p.y-18,11,0,Math.PI*2);ctx.fill();ctx.fillStyle='white';ctx.beginPath();ctx.arc(p.x,p.y-18,5,0,Math.PI*2);ctx.fill();}
 const scene={onEvent(event,player){if(event.type==='impact'){const track=player.config.tracks[event.track];const t=player.coordinates();
   const p=mapPoint(sample(track.x,event.fraction),sample(track.y,event.fraction),player.config.view,t);player.particles.burst(p.x,p.y,event.count,event.colors);}},
-draw(ctx,frame){const t={...frame.transform,config:frame.config};sky(ctx,t,frame);cannon(ctx,t,frame.config.angle);target(ctx,t);
-  for(const track of Object.values(frame.tracks)){const points=frame.trails.get(track.id);ctx.strokeStyle=track.style.color||'#455A64';ctx.lineWidth=2;ctx.globalAlpha=.35;
-    ctx.beginPath();points.forEach((point,index)=>{const p=mapPoint(point.x,point.y||0,frame.config.view,t);index?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);});ctx.stroke();ctx.globalAlpha=1;
-    const p=mapPoint(track.x,track.y||0,frame.config.view,t);ctx.fillStyle=track.style.color||'#333';ctx.beginPath();ctx.arc(p.x,p.y,8,0,Math.PI*2);ctx.fill();}}
+draw(ctx,frame){const t={...frame.transform,config:frame.config};sky(ctx,t,frame);cannon(ctx,t,frame.config.angle,frame);target(ctx,t);
+  for(const track of Object.values(frame.tracks)){const points=frame.trails.get(track.id);PhysicsAnimation.fadingTrail(ctx,points,q=>mapPoint(q.x,q.y||0,frame.config.view,t),{color:track.style.color||PhysicsVisuals.token(frame,'colors','trajectory','#1769AA'),width:2.5,opacity:.42});
+    const p=mapPoint(track.x,track.y||0,frame.config.view,t);PhysicsAssets.projectile(ctx,frame,{x:p.x,y:p.y,radius:8,fill:track.style.color||PhysicsVisuals.token(frame,'colors','trajectory','#1769AA'),highlight:true,shadow:true,label:frame.config.tracks.length>1&&PhysicsVisuals.responsive(frame)!=='mobile'?track.label:''});}}
 };
 """
 
