@@ -1,8 +1,8 @@
 """Tests for trial storage, comparison, deletion, reset, and export."""
 
 import csv
-from io import StringIO
 import json
+from io import StringIO
 
 from physics_playground.notebook import ExperimentNotebook
 
@@ -37,9 +37,14 @@ def test_filter_pin_delete_and_reset() -> None:
     notebook = ExperimentNotebook()
     bumper = add_example(notebook, 4.0)
     notebook.add_trial(
-        simulation_id="pendulum", parameters={"length_m": 2.0}, prediction=None,
-        result_summary="Swing", metrics={"period_s": 2.8}, earned_badges=(),
-        random_seed=7, model_version="pendulum-legacy",
+        simulation_id="pendulum",
+        parameters={"length_m": 2.0},
+        prediction=None,
+        result_summary="Swing",
+        metrics={"period_s": 2.8},
+        earned_badges=(),
+        random_seed=7,
+        model_version="pendulum-legacy",
     )
     assert notebook.filtered("bumper_cars") == [bumper]
     notebook.pin(bumper.id)

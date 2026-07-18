@@ -6,7 +6,9 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .coverage
+.coverage.*
 htmlcov/
+coverage.xml
 
 # Virtual environments
 .venv/
@@ -31,6 +33,17 @@ Thumbs.db
 build/
 dist/
 *.egg-info/
+
+# Frontend dependencies and generated output
+node_modules/
+.npm/
+.yarn/
+.pnpm-store/
+*.tsbuildinfo
+.vite/
+.parcel-cache/
+frontend/coverage/
+frontend/dist/
 
 # Local project data
 *.log

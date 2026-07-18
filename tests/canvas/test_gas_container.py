@@ -14,8 +14,14 @@ def test_gas_container_uses_shared_accessible_player() -> None:
         seed=17,
     )
     for token in (
-        "AnimationPlayer", 'id="play-pause"', 'id="scrubber"', "ResizeObserver",
-        "devicePixelRatio", "prefers-reduced-motion", "seededRandom",
-        "Gas piston changing from state A to state B", "Compressed gas",
+        "AnimationPlayer",
+        'id="play-pause"',
+        'id="scrubber"',
+        "ResizeObserver",
+        "devicePixelRatio",
+        "prefers-reduced-motion",
+        "seededRandom",
+        "Gas piston changing from state A to state B",
+        "Compressed gas",
     ):
         assert token in document

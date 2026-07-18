@@ -1,2 +1,15 @@
 from physics_playground.contracts import MissionEvaluation
-def evaluate(r,comparison=False):return (MissionEvaluation("optics_reflect",abs(r.reflection_angle_deg-r.parameters.incident_angle_deg)<1e-10,"Verified reflection law"),MissionEvaluation("optics_tir",r.total_internal_reflection,"Produced total internal reflection"),MissionEvaluation("optics_index_compare",comparison,"Compared refractive indices"))
+
+
+def evaluate(r, comparison=False):
+    return (
+        MissionEvaluation(
+            "optics_reflect",
+            abs(r.reflection_angle_deg - r.parameters.incident_angle_deg) < 1e-10,
+            "Verified reflection law",
+        ),
+        MissionEvaluation(
+            "optics_tir", r.total_internal_reflection, "Produced total internal reflection"
+        ),
+        MissionEvaluation("optics_index_compare", comparison, "Compared refractive indices"),
+    )

@@ -5,7 +5,14 @@ import pytest
 from physics_playground.canvas.player import build_player_document
 from physics_playground.visual.contrast import contrast_ratio
 from physics_playground.visual.css import shared_css, streamlit_css
-from physics_playground.visual.tokens import DARK_THEME, LIGHT_THEME, MOTION, RESPONSIVE, ThemeTokens, theme_payload
+from physics_playground.visual.tokens import (
+    DARK_THEME,
+    LIGHT_THEME,
+    MOTION,
+    RESPONSIVE,
+    ThemeTokens,
+    theme_payload,
+)
 
 
 def test_themes_have_identical_semantic_tokens():
@@ -42,9 +49,14 @@ def test_theme_payload_groups_tokens_for_renderers():
 
 
 def test_player_embeds_both_themes_and_shared_canvas_primitives():
-    document = build_player_document(config={"durationMs": 1, "tracks": [], "events": []},
-        scene_javascript="const scene={draw(){}};", logical_width=100, logical_height=50,
-        accessible_label="Tokens", idle_hint="Play")
+    document = build_player_document(
+        config={"durationMs": 1, "tracks": [], "events": []},
+        scene_javascript="const scene={draw(){}};",
+        logical_width=100,
+        logical_height=50,
+        accessible_label="Tokens",
+        idle_hint="Play",
+    )
     assert '"visualThemes":{"light"' in document
     assert "prefers-color-scheme: dark" in document
     assert "resolveVisualTheme" in document

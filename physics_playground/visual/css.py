@@ -1,10 +1,24 @@
 """CSS generation for Streamlit and embedded simulation documents."""
+
 from dataclasses import asdict
-from physics_playground.visual.tokens import DARK_THEME, LIGHT_THEME, MOTION, RESPONSIVE, SHAPE, SPACING, TYPOGRAPHY
+
+from physics_playground.visual.tokens import (
+    DARK_THEME,
+    LIGHT_THEME,
+    MOTION,
+    RESPONSIVE,
+    SHAPE,
+    SPACING,
+    TYPOGRAPHY,
+)
 
 
 def _variables(theme) -> str:
-    colors = ";".join(f"--ps-{name.replace('_','-')}:{value}" for name, value in asdict(theme).items() if name != "name")
+    colors = ";".join(
+        f"--ps-{name.replace('_', '-')}:{value}"
+        for name, value in asdict(theme).items()
+        if name != "name"
+    )
     return colors + ";"
 
 
@@ -45,7 +59,9 @@ img,svg,canvas,iframe {{max-width:100%;}}
 
 
 def streamlit_css() -> str:
-    return shared_css() + f"""
+    return (
+        shared_css()
+        + f"""
 .stApp {{background:var(--ps-canvas);color:var(--ps-text);}}
 .stApp [data-testid="stSidebar"] {{background:var(--ps-surface);border-right:1px solid var(--ps-border);}}
 .stApp [data-testid="stMetric"],.stApp [data-testid="stExpander"] {{border-radius:var(--ps-radius-lg);}}
@@ -53,3 +69,4 @@ def streamlit_css() -> str:
 .stApp iframe {{width:100%;border:0;border-radius:var(--ps-radius-panel);}}
 @media (max-width:{RESPONSIVE.mobile_max_px}px) {{.stApp [data-testid="stHorizontalBlock"] {{gap:{SPACING.sm}px;}}}}
 """
+    )

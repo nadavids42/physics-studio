@@ -15,7 +15,11 @@ from physics_playground.models.results import (
     SimulationResult,
     Trajectory,
 )
-from physics_playground.models.simulations import InteractiveMode, SimulationDefinition, SimulationMode
+from physics_playground.models.simulations import (
+    InteractiveMode,
+    SimulationDefinition,
+    SimulationMode,
+)
 
 __all__ = [
     "DoublePendulumParameters",

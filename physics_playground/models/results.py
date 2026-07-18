@@ -1,8 +1,8 @@
 """Typed result models for numerical and analytic simulations."""
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import Mapping
 
 import numpy as np
 from numpy.typing import NDArray
@@ -17,10 +17,7 @@ class Trajectory:
 
     def __post_init__(self) -> None:
         time_s = np.asarray(self.time_s, dtype=float)
-        channels = {
-            name: np.asarray(values, dtype=float)
-            for name, values in self.channels.items()
-        }
+        channels = {name: np.asarray(values, dtype=float) for name, values in self.channels.items()}
         object.__setattr__(self, "time_s", time_s)
         object.__setattr__(self, "channels", MappingProxyType(channels))
 

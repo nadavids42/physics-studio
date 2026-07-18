@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from typing import Iterable, Mapping
 
 import streamlit as st
 
@@ -78,7 +78,7 @@ def comparison_metrics(
     for metric_id in baseline.keys() & modified.keys():
         label, value_a = baseline[metric_id]
         _, value_b = modified[metric_id]
-        rows.append(f"| {label} | {value_a:.3f} | {value_b:.3f} | {value_b-value_a:+.3f} |")
+        rows.append(f"| {label} | {value_a:.3f} | {value_b:.3f} | {value_b - value_a:+.3f} |")
     st.markdown("\n".join(rows))
 
 

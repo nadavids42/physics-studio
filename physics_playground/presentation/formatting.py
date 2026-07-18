@@ -14,7 +14,11 @@ def friendly_speed(meters_per_second: float) -> str:
     for name, reference_speed in SPEED_REFERENCES:
         ratio = meters_per_second / reference_speed
         if ratio >= 1.0:
-            return f"about {ratio:.0f}× faster than {name}" if ratio >= 1.8 else f"about as fast as {name}"
+            return (
+                f"about {ratio:.0f}× faster than {name}"
+                if ratio >= 1.8
+                else f"about as fast as {name}"
+            )
     return "slower than a grown-up walking"
 
 

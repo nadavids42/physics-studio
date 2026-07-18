@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, MutableMapping
 from dataclasses import dataclass
-from typing import Any, Mapping, MutableMapping
+from typing import Any
 
 from physics_playground.contracts import JsonValue
 from physics_playground.simulation_binding import SimulationPreset
-
 
 SETUP_REQUEST_KEY = "notebook_reuse_request"
 
@@ -64,4 +64,3 @@ def consume_setup_request(
         source_trial=payload.get("source_trial"),
         preset_id=payload.get("preset_id"),
     )
-

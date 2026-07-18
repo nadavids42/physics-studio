@@ -23,6 +23,11 @@ from physics_playground.contracts import (
     SimulationEvent,
     SummaryMetric,
 )
+from physics_playground.performance import (
+    MAX_TRAJECTORY_SAMPLES,
+    enforce_budget,
+    validate_finite_parameters,
+)
 from physics_playground.serialization import to_jsonable
 from physics_playground.validation import (
     PhysicsValidationError,
@@ -30,7 +35,6 @@ from physics_playground.validation import (
     require_finite,
     require_positive,
 )
-from physics_playground.performance import MAX_TRAJECTORY_SAMPLES,enforce_budget,validate_finite_parameters
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,10 +63,12 @@ class CollisionParameters:
         require_positive("Aftermath time", self.aftermath_time_s)
         if self.samples < 2:
             raise PhysicsValidationError("Animation samples must be at least 2.")
-        enforce_budget("Collision samples",self.samples,MAX_TRAJECTORY_SAMPLES)
+        enforce_budget("Collision samples", self.samples, MAX_TRAJECTORY_SAMPLES)
         gap = self.initial_position_b_m - self.initial_position_a_m - self.contact_distance_m
         if gap < 0:
-            raise PhysicsValidationError("The cars start overlapped. Move Car B farther to the right.")
+            raise PhysicsValidationError(
+                "The cars start overlapped. Move Car B farther to the right."
+            )
 
     def to_dict(self) -> dict[str, object]:
         return to_jsonable(asdict(self))
@@ -109,7 +115,11 @@ def collision_time(parameters: CollisionParameters) -> float | None:
     """Return first contact time, or ``None`` when separation never closes."""
 
     parameters.validate()
-    gap = parameters.initial_position_b_m - parameters.initial_position_a_m - parameters.contact_distance_m
+    gap = (
+        parameters.initial_position_b_m
+        - parameters.initial_position_a_m
+        - parameters.contact_distance_m
+    )
     closing_speed = parameters.velocity_a_m_s - parameters.velocity_b_m_s
     if closing_speed <= 0.0:
         return None
@@ -199,21 +209,43 @@ def simulate_collision(parameters: CollisionParameters) -> CollisionResult:
                         "restitution": parameters.restitution,
                     },
                 ),
-                SimulationEvent("complete", EventKind.COMPLETION, total_time, "Collision aftermath complete"),
+                SimulationEvent(
+                    "complete", EventKind.COMPLETION, total_time, "Collision aftermath complete"
+                ),
             )
         )
 
     minimum = float(min(np.min(position_a), np.min(position_b)) - 1.5)
     maximum = float(max(np.max(position_a), np.max(position_b)) + 1.5)
     metrics = (
-        SummaryMetric("velocity_a_after", "Car A after", after.car_a_m_s, "m/s", f"{after.car_a_m_s:.2f} m/s"),
-        SummaryMetric("velocity_b_after", "Car B after", after.car_b_m_s, "m/s", f"{after.car_b_m_s:.2f} m/s"),
-        SummaryMetric("momentum_before", "Momentum before", diagnostics.momentum_before_kg_m_s, "kg·m/s"),
-        SummaryMetric("momentum_after", "Momentum after", diagnostics.momentum_after_kg_m_s, "kg·m/s"),
-        SummaryMetric("kinetic_energy_before", "Kinetic energy before", diagnostics.kinetic_energy_before_j, "J"),
-        SummaryMetric("kinetic_energy_after", "Kinetic energy after", diagnostics.kinetic_energy_after_j, "J"),
+        SummaryMetric(
+            "velocity_a_after", "Car A after", after.car_a_m_s, "m/s", f"{after.car_a_m_s:.2f} m/s"
+        ),
+        SummaryMetric(
+            "velocity_b_after", "Car B after", after.car_b_m_s, "m/s", f"{after.car_b_m_s:.2f} m/s"
+        ),
+        SummaryMetric(
+            "momentum_before", "Momentum before", diagnostics.momentum_before_kg_m_s, "kg·m/s"
+        ),
+        SummaryMetric(
+            "momentum_after", "Momentum after", diagnostics.momentum_after_kg_m_s, "kg·m/s"
+        ),
+        SummaryMetric(
+            "kinetic_energy_before",
+            "Kinetic energy before",
+            diagnostics.kinetic_energy_before_j,
+            "J",
+        ),
+        SummaryMetric(
+            "kinetic_energy_after", "Kinetic energy after", diagnostics.kinetic_energy_after_j, "J"
+        ),
         SummaryMetric("energy_lost", "Energy lost", diagnostics.energy_lost_j, "J"),
-        SummaryMetric("center_of_mass_velocity", "Center-of-mass velocity", diagnostics.center_of_mass_velocity_m_s, "m/s"),
+        SummaryMetric(
+            "center_of_mass_velocity",
+            "Center-of-mass velocity",
+            diagnostics.center_of_mass_velocity_m_s,
+            "m/s",
+        ),
     )
     return CollisionResult(
         simulation_id="bumper_cars",
@@ -258,12 +290,18 @@ def simulate_collision(parameters: CollisionParameters) -> CollisionResult:
 
 
 @lru_cache(maxsize=128)
-def collision_energy_scan(mass_a:float,mass_b:float,velocity_a:float,velocity_b:float,points:int=25):
-    from physics_playground.performance import MAX_SCAN_POINTS,enforce_budget
-    enforce_budget("Collision scan points",points,MAX_SCAN_POINTS)
-    restitutions=tuple(index/(points-1) for index in range(points));ratios=[]
+def collision_energy_scan(
+    mass_a: float, mass_b: float, velocity_a: float, velocity_b: float, points: int = 25
+):
+    from physics_playground.performance import MAX_SCAN_POINTS, enforce_budget
+
+    enforce_budget("Collision scan points", points, MAX_SCAN_POINTS)
+    restitutions = tuple(index / (points - 1) for index in range(points))
+    ratios = []
     for value in restitutions:
-        result=simulate_collision(CollisionParameters(mass_a,mass_b,velocity_a,velocity_b,value))
-        before=result.diagnostics.kinetic_energy_before_j
-        ratios.append(result.diagnostics.kinetic_energy_after_j/before if before else 0.0)
-    return restitutions,tuple(ratios)
+        result = simulate_collision(
+            CollisionParameters(mass_a, mass_b, velocity_a, velocity_b, value)
+        )
+        before = result.diagnostics.kinetic_energy_before_j
+        ratios.append(result.diagnostics.kinetic_energy_after_j / before if before else 0.0)
+    return restitutions, tuple(ratios)

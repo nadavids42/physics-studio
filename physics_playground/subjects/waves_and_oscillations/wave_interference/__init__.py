@@ -1,2 +1,3 @@
-from .physics import WaveSource,WaveInterferenceParameters,WaveInterferenceResult,simulate
-__all__=["WaveSource","WaveInterferenceParameters","WaveInterferenceResult","simulate"]
+from .physics import WaveInterferenceParameters, WaveInterferenceResult, WaveSource, simulate
+
+__all__ = ["WaveSource", "WaveInterferenceParameters", "WaveInterferenceResult", "simulate"]

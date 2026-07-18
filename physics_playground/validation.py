@@ -1,7 +1,7 @@
 """Reusable validation for model boundaries and trajectory contracts."""
 
-from collections.abc import Mapping
 import math
+from collections.abc import Mapping
 
 import numpy as np
 from numpy.typing import ArrayLike

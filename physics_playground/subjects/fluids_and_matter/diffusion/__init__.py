@@ -1,3 +1,5 @@
 """Diffusion and random-walk simulation."""
-from .physics import WalkDimension,DiffusionParameters,DiffusionResult,simulate
-__all__=("WalkDimension","DiffusionParameters","DiffusionResult","simulate")
+
+from .physics import DiffusionParameters, DiffusionResult, WalkDimension, simulate
+
+__all__ = ("WalkDimension", "DiffusionParameters", "DiffusionResult", "simulate")

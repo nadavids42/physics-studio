@@ -7,9 +7,10 @@ driven by a future web component without importing the application UI.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Any, Generic, Mapping, Protocol, Sequence, TypeVar, runtime_checkable
+from typing import Any, Generic, Protocol, TypeVar, runtime_checkable
 
 from physics_playground.models.simulations import SimulationDefinition
 

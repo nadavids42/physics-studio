@@ -56,13 +56,15 @@ def build_bumper_canvas(
         "sticky": result.parameters.restitution == 0,
         "completionMessage": final_message,
         "events": (
-            [{
-                "id": "impact",
-                "fraction": impact_fraction,
-                "type": "particle_burst",
-                "count": 20,
-                "colors": ["#FFD54F", "#FF7043", "#FFEE58", "#FFFFFF"],
-            }]
+            [
+                {
+                    "id": "impact",
+                    "fraction": impact_fraction,
+                    "type": "particle_burst",
+                    "count": 20,
+                    "colors": ["#FFD54F", "#FF7043", "#FFEE58", "#FFFFFF"],
+                }
+            ]
             if result.collided
             else []
         ),
@@ -119,12 +121,28 @@ def build_bumper_comparison_canvas(
         total = result.animation.time_s[-1]
         if result.collision_time_s is not None and total > 0:
             fraction = result.collision_time_s / total
-            events.append({"id": f"impact_{lane}", "fraction": fraction, "type": "particle_burst",
-                "lane": lane, "trackA": offset*2, "trackB": offset*2+1, "count": 14,
-                "colors": ["#FFD54F", "#FF7043", "#FFFFFF"]})
-    config = {"durationMs": 4_200, "autoplay": autoplay, "seed": 20_260_800+nonce,
-        "trailLength": 0, "view": {"minimum": minimum, "maximum": maximum}, "tracks": tracks,
-        "events": events, "completionMessage": f"Comparison complete: {changed_variable}"}
+            events.append(
+                {
+                    "id": f"impact_{lane}",
+                    "fraction": fraction,
+                    "type": "particle_burst",
+                    "lane": lane,
+                    "trackA": offset * 2,
+                    "trackB": offset * 2 + 1,
+                    "count": 14,
+                    "colors": ["#FFD54F", "#FF7043", "#FFFFFF"],
+                }
+            )
+    config = {
+        "durationMs": 4_200,
+        "autoplay": autoplay,
+        "seed": 20_260_800 + nonce,
+        "trailLength": 0,
+        "view": {"minimum": minimum, "maximum": maximum},
+        "tracks": tracks,
+        "events": events,
+        "completionMessage": f"Comparison complete: {changed_variable}",
+    }
     return build_player_document(
         config=config,
         scene_javascript=COMPARISON_SCENE_JAVASCRIPT,

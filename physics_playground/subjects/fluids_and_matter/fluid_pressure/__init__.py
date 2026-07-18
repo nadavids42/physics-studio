@@ -1,2 +1,3 @@
-from .physics import FluidPressureParameters,FluidPressureResult,PressureSample,simulate
-__all__=["FluidPressureParameters","FluidPressureResult","PressureSample","simulate"]
+from .physics import FluidPressureParameters, FluidPressureResult, PressureSample, simulate
+
+__all__ = ["FluidPressureParameters", "FluidPressureResult", "PressureSample", "simulate"]

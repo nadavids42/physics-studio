@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Callable, Generic, Mapping, TypeVar
+from typing import Any, Generic, TypeVar, cast
 
 from physics_playground.contract_validation import validate_contract_result
 from physics_playground.contracts import ContractResult, JsonValue, ParameterSet, SummaryMetric
@@ -13,9 +14,8 @@ from physics_playground.model_metadata import ModelMetadata
 from physics_playground.serialization import dataclass_from_dict, to_jsonable
 from physics_playground.validation import PhysicsValidationError
 
-
 P = TypeVar("P", bound=ParameterSet)
-R = TypeVar("R", bound=ContractResult)
+R = TypeVar("R", bound=ContractResult[Any])
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,20 +59,31 @@ class SimulationPreset:
         metric_ids = [item.metric_id for item in self.expected_metrics]
         if len(metric_ids) != len(set(metric_ids)):
             raise ValueError("Expected preset metrics must have unique IDs.")
-        if any(item.absolute_tolerance < 0 or item.relative_tolerance < 0 for item in self.expected_metrics):
+        if any(
+            item.absolute_tolerance < 0 or item.relative_tolerance < 0
+            for item in self.expected_metrics
+        ):
             raise ValueError("Expected metric tolerances cannot be negative.")
 
     def to_dict(self) -> dict[str, JsonValue]:
-        return to_jsonable(self)
+        return cast(dict[str, JsonValue], to_jsonable(self))
 
     @classmethod
-    def from_dict(cls, payload: Mapping[str, object]) -> "SimulationPreset":
-        expected = tuple(ExpectedMetric(**item) for item in payload.get("expected_metrics", ()))
+    def from_dict(cls, payload: Mapping[str, object]) -> SimulationPreset:
+        expected_payload = payload.get("expected_metrics", ())
+        if not isinstance(expected_payload, list | tuple):
+            raise TypeError("Expected metrics must be a list or tuple.")
+        expected = tuple(
+            ExpectedMetric(**dict(cast(Mapping[str, Any], item))) for item in expected_payload
+        )
+        parameters_payload = payload.get("parameters")
+        if not isinstance(parameters_payload, Mapping):
+            raise TypeError("Preset parameters must be a mapping.")
         return cls(
             id=str(payload["id"]),
             simulation_id=str(payload["simulation_id"]),
             title=str(payload["title"]),
-            parameters=dict(payload["parameters"]),
+            parameters=cast(dict[str, JsonValue], dict(parameters_payload)),
             model_version=str(payload["model_version"]),
             expected_metrics=expected,
         )
@@ -106,7 +117,9 @@ class SimulationBinding(Generic[P, R]):
         return parameters
 
     def run(self, parameters: P | Mapping[str, JsonValue]) -> R:
-        typed = self.parameters_from_dict(parameters) if isinstance(parameters, Mapping) else parameters
+        typed = (
+            self.parameters_from_dict(parameters) if isinstance(parameters, Mapping) else parameters
+        )
         typed.validate()
         result = self.runner(typed)
         if not isinstance(result, self.result_model):
@@ -152,4 +165,3 @@ class SimulationBinding(Generic[P, R]):
         if metric_id not in {item.id for item in self.metrics}:
             raise KeyError(f"Unknown binding metric: {metric_id}")
         return result.metric(metric_id)
-

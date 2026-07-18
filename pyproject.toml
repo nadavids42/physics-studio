@@ -1,13 +1,23 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "physics-playground"
 version = "1.0.0"
-description = "Interactive physics simulations and educational tools"
+description = "An interactive physics textbook where every figure is alive"
 readme = "README.md"
 requires-python = ">=3.11"
+keywords = ["education", "physics", "simulation", "streamlit"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Education",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Education",
+]
 dependencies = [
     "streamlit>=1.40",
     "numpy>=1.26",
@@ -15,11 +25,62 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+dev = [
+    "build>=1.2",
+    "mypy>=1.11",
+    "pre-commit>=3.8",
+    "pytest>=8.0",
+    "ruff==0.9.10",
+]
 test = ["pytest>=8.0"]
+
+[project.urls]
+Documentation = "https://github.com/nadavids42/physics-studio#readme"
+Issues = "https://github.com/nadavids42/physics-studio/issues"
+Repository = "https://github.com/nadavids42/physics-studio"
 
 [tool.setuptools.packages.find]
 include = ["physics_playground*"]
 
 [tool.pytest.ini_options]
+addopts = ["--strict-config", "--strict-markers"]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = [".venv", "build", "dist"]
+
+[tool.ruff.lint]
+select = ["B", "E4", "E7", "E9", "F", "I", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["B017"]
+
+[tool.ruff.format]
+docstring-code-format = true
+line-ending = "lf"
+
+[tool.mypy]
+python_version = "3.11"
+files = [
+    "physics_playground/accessibility.py",
+    "physics_playground/contracts.py",
+    "physics_playground/history.py",
+    "physics_playground/integrators.py",
+    "physics_playground/notebook.py",
+    "physics_playground/setup_handoff.py",
+    "physics_playground/units.py",
+    "physics_playground/validation.py",
+]
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+show_error_codes = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unreachable = true
+warn_unused_configs = true

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
 from physics_playground.contracts import PlotData
-from physics_playground.models.collision import CollisionParameters, simulate_collision
+from physics_playground.models.collision import CollisionParameters
 
 
 def position_figure(plot: PlotData, collision_time_s: float | None) -> Figure:
@@ -23,7 +23,13 @@ def position_figure(plot: PlotData, collision_time_s: float | None) -> Figure:
 
 def energy_retention_figure(parameters: CollisionParameters) -> Figure:
     from physics_playground.models.collision import collision_energy_scan
-    restitutions,retained=collision_energy_scan(parameters.mass_a_kg,parameters.mass_b_kg,parameters.velocity_a_m_s,parameters.velocity_b_m_s)
+
+    restitutions, retained = collision_energy_scan(
+        parameters.mass_a_kg,
+        parameters.mass_b_kg,
+        parameters.velocity_a_m_s,
+        parameters.velocity_b_m_s,
+    )
     fig, ax = plt.subplots()
     ax.plot(restitutions, retained)
     ax.set_xlabel("Restitution coefficient e")

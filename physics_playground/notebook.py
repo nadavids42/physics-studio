@@ -7,15 +7,15 @@ instance in ``st.session_state`` and any migrated simulation can append trials.
 from __future__ import annotations
 
 import csv
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from io import StringIO
-from typing import Mapping
 from uuid import uuid4
 
 from physics_playground.contracts import JsonValue
-from physics_playground.serialization import dumps
 from physics_playground.performance import MAX_NOTEBOOK_TRIALS
+from physics_playground.serialization import dumps
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,7 +72,7 @@ class ExperimentNotebook:
             id=uuid4().hex,
             simulation_id=simulation_id,
             trial_number=self.next_trial_number,
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             parameters=dict(parameters),
             prediction=prediction,
             result_summary=result_summary,
@@ -80,13 +80,16 @@ class ExperimentNotebook:
             earned_badges=tuple(earned_badges),
             random_seed=random_seed,
             model_version=model_version,
-            learner_observation=learner_observation.strip() if learner_observation and learner_observation.strip() else None,
+            learner_observation=learner_observation.strip()
+            if learner_observation and learner_observation.strip()
+            else None,
             label=label,
         )
         self.trials.append(trial)
-        if len(self.trials)>MAX_NOTEBOOK_TRIALS:
-            removed=self.trials.pop(0)
-            if self.pinned_run_a_id==removed.id:self.pinned_run_a_id=None
+        if len(self.trials) > MAX_NOTEBOOK_TRIALS:
+            removed = self.trials.pop(0)
+            if self.pinned_run_a_id == removed.id:
+                self.pinned_run_a_id = None
         self.next_trial_number += 1
         return trial
 
@@ -119,8 +122,11 @@ class ExperimentNotebook:
             run_a,
             run_b,
             {key: run_b.metrics[key] - run_a.metrics[key] for key in shared_metrics},
-            {key: (run_a.parameters[key], run_b.parameters[key]) for key in shared_parameters
-             if run_a.parameters[key] != run_b.parameters[key]},
+            {
+                key: (run_a.parameters[key], run_b.parameters[key])
+                for key in shared_parameters
+                if run_a.parameters[key] != run_b.parameters[key]
+            },
         )
 
     def reset(self) -> None:
@@ -134,8 +140,18 @@ class ExperimentNotebook:
     def to_csv(self) -> str:
         parameter_names = sorted({key for trial in self.trials for key in trial.parameters})
         metric_names = sorted({key for trial in self.trials for key in trial.metrics})
-        fields = ["trial_number", "simulation_id", "timestamp", "prediction", "result_summary",
-                  "earned_badges", "random_seed", "model_version", "learner_observation", "label"]
+        fields = [
+            "trial_number",
+            "simulation_id",
+            "timestamp",
+            "prediction",
+            "result_summary",
+            "earned_badges",
+            "random_seed",
+            "model_version",
+            "learner_observation",
+            "label",
+        ]
         fields += [f"parameter.{name}" for name in parameter_names]
         fields += [f"metric.{name}" for name in metric_names]
         output = StringIO()
@@ -154,21 +170,45 @@ class ExperimentNotebook:
                 "learner_observation": trial.learner_observation or "",
                 "label": trial.label or "",
             }
-            row.update({f"parameter.{name}": trial.parameters.get(name, "") for name in parameter_names})
+            row.update(
+                {f"parameter.{name}": trial.parameters.get(name, "") for name in parameter_names}
+            )
             row.update({f"metric.{name}": trial.metrics.get(name, "") for name in metric_names})
             writer.writerow(row)
         return output.getvalue()
 
     @classmethod
-    def from_dict(cls, payload: Mapping[str, object]) -> "ExperimentNotebook":
-        trials = [TrialRecord(
-            id=str(item["id"]), simulation_id=str(item["simulation_id"]),
-            trial_number=int(item["trial_number"]), timestamp=str(item["timestamp"]),
-            parameters=dict(item.get("parameters", {})), prediction=item.get("prediction"),
-            result_summary=str(item.get("result_summary", "")), metrics={key: float(value) for key, value in item.get("metrics", {}).items()},
-            earned_badges=tuple(item.get("earned_badges", ())), random_seed=int(item.get("random_seed", 0)),
-            model_version=str(item.get("model_version", "unknown")), learner_observation=item.get("learner_observation"),
-            label=item.get("label"),
-        ) for item in payload.get("trials", [])]
-        return cls(trials=trials, pinned_run_a_id=payload.get("pinned_run_a_id"),
-                   next_trial_number=int(payload.get("next_trial_number", len(trials)+1)))
+    def from_dict(cls, payload: Mapping[str, object]) -> ExperimentNotebook:
+        raw_trials = payload.get("trials", [])
+        if not isinstance(raw_trials, list):
+            raise TypeError("Notebook trials must be a list.")
+        trials = [
+            TrialRecord(
+                id=str(item["id"]),
+                simulation_id=str(item["simulation_id"]),
+                trial_number=int(item["trial_number"]),
+                timestamp=str(item["timestamp"]),
+                parameters=dict(item.get("parameters", {})),
+                prediction=item.get("prediction"),
+                result_summary=str(item.get("result_summary", "")),
+                metrics={key: float(value) for key, value in item.get("metrics", {}).items()},
+                earned_badges=tuple(item.get("earned_badges", ())),
+                random_seed=int(item.get("random_seed", 0)),
+                model_version=str(item.get("model_version", "unknown")),
+                learner_observation=item.get("learner_observation"),
+                label=item.get("label"),
+            )
+            for item in raw_trials
+            if isinstance(item, Mapping)
+        ]
+        pinned = payload.get("pinned_run_a_id")
+        if pinned is not None and not isinstance(pinned, str):
+            raise TypeError("Pinned trial ID must be a string or null.")
+        raw_next_trial = payload.get("next_trial_number", len(trials) + 1)
+        if not isinstance(raw_next_trial, int | str | bytes | bytearray):
+            raise TypeError("Next trial number must be integer-like.")
+        return cls(
+            trials=trials,
+            pinned_run_a_id=pinned,
+            next_trial_number=int(raw_next_trial),
+        )

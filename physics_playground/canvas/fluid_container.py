@@ -1,7 +1,8 @@
 """Reusable responsive container renderer for buoyancy and hydrostatic pressure."""
+
 from physics_playground.canvas.player import build_player_document
 
-SCENE=r"""
+SCENE = r"""
 const scene={draw(ctx,s){const w=s.transform.width,h=s.transform.height,c=s.config.fluidContainer||{},left=w*.22,right=w*.78,top=h*.15,bottom=h*.82,width=right-left,height=bottom-top,waterline=top+42;PhysicsExperience.context(ctx,s,'laboratory');
 if(c.kind==='buoyancy'){const progress=s.reducedMotion?1:s.fraction,fraction=Math.max(0,Math.min(1,c.fraction)),objectH=96,objectW=Math.min(116,width*.42);let cy;
 if(c.state==='Sinking')cy=bottom-objectH/2-8;else if(c.state==='Neutral buoyancy')cy=waterline+(bottom-waterline)*.5;else cy=waterline+objectH*(fraction-.5)*progress;
@@ -17,9 +18,67 @@ const samples=c.pressureSamples||[];for(const sample of samples){const y=top+hei
 ctx.save();PhysicsVisuals.applyText(ctx,s,'label');ctx.fillText(`Surface: ${(c.surfacePressure/1000).toFixed(2)} kPa`,left+12,top+24);ctx.fillText(`Gauge: ${(c.gaugePressure/1000).toFixed(2)} kPa`,left+12,selectedY-24);ctx.fillText(`Absolute: ${(c.absolutePressure/1000).toFixed(2)} kPa`,left+12,selectedY-8);ctx.restore();}}};
 """
 
-def build_fluid_document(*,kind:str,message:str,seed:int,submerged_fraction:float=0.,depth:float=0.,maximum_depth:float=1.,state:str="Floating",object_density:float=0.,fluid_density:float=0.,displaced_volume:float=0.,weight:float=0.,buoyant_force:float=0.,gauge_pressure:float=0.,absolute_pressure:float=0.,surface_pressure:float=0.,pressure_samples:list[dict]|None=None)->str:
-    raw_samples=pressure_samples or [{"depth":maximum_depth*i/4,"gauge":gauge_pressure*i/4} for i in range(5)]
-    maximum_gauge=max((float(item["gauge"]) for item in raw_samples),default=1.) or 1.
-    samples=[{"depth":float(item["depth"]),"ratio":max(0.,min(1.,float(item["gauge"])/maximum_gauge))} for item in raw_samples]
-    config={"durationMs":1500,"autoplay":False,"seed":seed,"tracks":[{"id":"fluid-reveal","label":"Fluid result reveal","x":[0,1]}],"events":[],"completionMessage":message,"fluidContainer":{"kind":kind,"fraction":submerged_fraction,"depth":depth,"maxDepth":maximum_depth,"state":state,"objectDensity":object_density,"fluidDensity":fluid_density,"displacedVolume":displaced_volume,"weight":weight,"buoyant":buoyant_force,"gaugePressure":gauge_pressure,"absolutePressure":absolute_pressure,"surfacePressure":surface_pressure,"pressureSamples":samples},"view":{"minimum":0,"maximum":1}}
-    return build_player_document(config=config,scene_javascript=SCENE,logical_width=680,logical_height=500,accessible_label="Fluid container diagram. "+message,idle_hint="Press Play to reveal the fluid result")
+
+def build_fluid_document(
+    *,
+    kind: str,
+    message: str,
+    seed: int,
+    submerged_fraction: float = 0.0,
+    depth: float = 0.0,
+    maximum_depth: float = 1.0,
+    state: str = "Floating",
+    object_density: float = 0.0,
+    fluid_density: float = 0.0,
+    displaced_volume: float = 0.0,
+    weight: float = 0.0,
+    buoyant_force: float = 0.0,
+    gauge_pressure: float = 0.0,
+    absolute_pressure: float = 0.0,
+    surface_pressure: float = 0.0,
+    pressure_samples: list[dict] | None = None,
+) -> str:
+    raw_samples = pressure_samples or [
+        {"depth": maximum_depth * i / 4, "gauge": gauge_pressure * i / 4} for i in range(5)
+    ]
+    maximum_gauge = max((float(item["gauge"]) for item in raw_samples), default=1.0) or 1.0
+    samples = [
+        {
+            "depth": float(item["depth"]),
+            "ratio": max(0.0, min(1.0, float(item["gauge"]) / maximum_gauge)),
+        }
+        for item in raw_samples
+    ]
+    config = {
+        "durationMs": 1500,
+        "autoplay": False,
+        "seed": seed,
+        "tracks": [{"id": "fluid-reveal", "label": "Fluid result reveal", "x": [0, 1]}],
+        "events": [],
+        "completionMessage": message,
+        "fluidContainer": {
+            "kind": kind,
+            "fraction": submerged_fraction,
+            "depth": depth,
+            "maxDepth": maximum_depth,
+            "state": state,
+            "objectDensity": object_density,
+            "fluidDensity": fluid_density,
+            "displacedVolume": displaced_volume,
+            "weight": weight,
+            "buoyant": buoyant_force,
+            "gaugePressure": gauge_pressure,
+            "absolutePressure": absolute_pressure,
+            "surfacePressure": surface_pressure,
+            "pressureSamples": samples,
+        },
+        "view": {"minimum": 0, "maximum": 1},
+    }
+    return build_player_document(
+        config=config,
+        scene_javascript=SCENE,
+        logical_width=680,
+        logical_height=500,
+        accessible_label="Fluid container diagram. " + message,
+        idle_hint="Press Play to reveal the fluid result",
+    )

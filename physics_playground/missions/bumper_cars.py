@@ -24,16 +24,13 @@ def evaluate_bumper_missions(result: CollisionResult) -> tuple[MissionEvaluation
         ),
         MissionEvaluation(
             "collision_stop",
-            p.restitution < 0.05
-            and abs(result.diagnostics.momentum_before_kg_m_s) < 0.5,
+            p.restitution < 0.05 and abs(result.diagnostics.momentum_before_kg_m_s) < 0.5,
             "Use sticky bumpers and balance the incoming momentum.",
             {"momentum_before_kg_m_s": result.diagnostics.momentum_before_kg_m_s},
         ),
         MissionEvaluation(
             "collision_bounce",
-            p.restitution > 0.95
-            and p.mass_a_kg < 0.5 * p.mass_b_kg
-            and after.car_a_m_s < -0.3,
+            p.restitution > 0.95 and p.mass_a_kg < 0.5 * p.mass_b_kg and after.car_a_m_s < -0.3,
             "Bounce a light Car A backward from a much heavier Car B.",
             {"velocity_a_after_m_s": after.car_a_m_s},
         ),

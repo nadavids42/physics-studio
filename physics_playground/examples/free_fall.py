@@ -88,12 +88,22 @@ class FreeFallSimulation:
             simulation_id=self.metadata.id,
             parameters=parameters,
             metrics=(
-                SummaryMetric("flight_time", "Time to ground", flight_time, "s", f"{flight_time:.2f} s"),
-                SummaryMetric("impact_speed", "Impact speed", float(speed_m_s[-1]), "m/s", f"{speed_m_s[-1]:.1f} m/s"),
+                SummaryMetric(
+                    "flight_time", "Time to ground", flight_time, "s", f"{flight_time:.2f} s"
+                ),
+                SummaryMetric(
+                    "impact_speed",
+                    "Impact speed",
+                    float(speed_m_s[-1]),
+                    "m/s",
+                    f"{speed_m_s[-1]:.1f} m/s",
+                ),
             ),
             events=(
                 SimulationEvent("release", EventKind.START, 0.0, "Object released"),
-                SimulationEvent("impact", EventKind.COMPLETION, flight_time, "Object reaches the ground"),
+                SimulationEvent(
+                    "impact", EventKind.COMPLETION, flight_time, "Object reaches the ground"
+                ),
             ),
             plots=(
                 PlotData(
@@ -120,7 +130,9 @@ class FreeFallSimulation:
             ),
             assumptions=(
                 ModelAssumption("constant_gravity", "Gravity is constant throughout the fall."),
-                ModelAssumption("no_drag", "Air resistance is ignored.", "Real objects may fall more slowly."),
+                ModelAssumption(
+                    "no_drag", "Air resistance is ignored.", "Real objects may fall more slowly."
+                ),
             ),
         )
         return replace(result, missions=self._missions.evaluate(result))
@@ -130,6 +142,11 @@ class FreeFallSimulation:
         baseline: ContractResult[FreeFallParameters],
         comparison: ContractResult[FreeFallParameters],
     ) -> ComparisonResult:
-        if baseline.simulation_id != self.metadata.id or comparison.simulation_id != self.metadata.id:
+        if (
+            baseline.simulation_id != self.metadata.id
+            or comparison.simulation_id != self.metadata.id
+        ):
             raise ValueError("Both results must come from the free-fall example.")
-        return ComparisonResult("baseline", "comparison", shared_metric_deltas(baseline, comparison))
+        return ComparisonResult(
+            "baseline", "comparison", shared_metric_deltas(baseline, comparison)
+        )

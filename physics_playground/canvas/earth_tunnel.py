@@ -1,4 +1,5 @@
 """Shared-asset Earth Tunnel animation adapters."""
+
 from __future__ import annotations
 
 from physics_playground.canvas.player import build_player_document
@@ -42,21 +43,39 @@ def _doc(items, seed, autoplay, message):
         track["y"] = _acceleration_samples(result)
         track["style"] = {"role": roles[i % len(roles)]}
         tracks.append(track)
-        travelers.append({"label": f"{label}: {result.parameters.model.value}",
-                          "model": result.parameters.model.value,
-                          "turningPointKm": result.parameters.radius_m * result.parameters.start_fraction / 1000,
-                          "role": roles[i % len(roles)]})
+        travelers.append(
+            {
+                "label": f"{label}: {result.parameters.model.value}",
+                "model": result.parameters.model.value,
+                "turningPointKm": result.parameters.radius_m
+                * result.parameters.start_fraction
+                / 1000,
+                "role": roles[i % len(roles)],
+            }
+        )
     radius = max(result.parameters.radius_m / 1000 for _, result, _ in items)
     models = list(dict.fromkeys(result.parameters.model.value for _, result, _ in items))
-    config = {"durationMs": 4500, "autoplay": autoplay, "seed": seed, "trailLength": 36,
-              "frameCount": max(len(track["x"]) for track in tracks),
-              "view": {"minimum": -radius, "maximum": radius}, "radiusKm": radius,
-              "earthTunnel": {"travelers": travelers, "modelSummary": " vs. ".join(models)},
-              "tracks": tracks, "events": [], "completionMessage": message}
-    return build_player_document(config=config, scene_javascript=SCENE, logical_width=CANVAS_W,
+    config = {
+        "durationMs": 4500,
+        "autoplay": autoplay,
+        "seed": seed,
+        "trailLength": 36,
+        "frameCount": max(len(track["x"]) for track in tracks),
+        "view": {"minimum": -radius, "maximum": radius},
+        "radiusKm": radius,
+        "earthTunnel": {"travelers": travelers, "modelSummary": " vs. ".join(models)},
+        "tracks": tracks,
+        "events": [],
+        "completionMessage": message,
+    }
+    return build_player_document(
+        config=config,
+        scene_javascript=SCENE,
+        logical_width=CANVAS_W,
         logical_height=CANVAS_H,
         accessible_label="Travelers on synchronized recorded timelines inside a labeled tunnel, distinguished by labels, solid or dashed trails, and outlines.",
-        idle_hint="Use Play or press JUMP IN!")
+        idle_hint="Use Play or press JUMP IN!",
+    )
 
 
 def build_tunnel_canvas(r, *, seed, autoplay):
@@ -64,5 +83,9 @@ def build_tunnel_canvas(r, *, seed, autoplay):
 
 
 def build_tunnel_comparison_canvas(items, *, seed, autoplay):
-    return _doc([(label, result, color) for label, result, color in items], seed, autoplay,
-                "Comparison complete")
+    return _doc(
+        [(label, result, color) for label, result, color in items],
+        seed,
+        autoplay,
+        "Comparison complete",
+    )

@@ -47,8 +47,11 @@ REQUIRED_MODE_REQUIREMENTS = (
     ModeRequirements(InteractiveMode.ANALYZE, (PresentationCapability.ANALYTICAL_CHARTS,)),
     ModeRequirements(
         InteractiveMode.MODEL,
-        (PresentationCapability.EQUATIONS, PresentationCapability.ASSUMPTIONS,
-         PresentationCapability.LIMITATIONS),
+        (
+            PresentationCapability.EQUATIONS,
+            PresentationCapability.ASSUMPTIONS,
+            PresentationCapability.LIMITATIONS,
+        ),
     ),
 )
 

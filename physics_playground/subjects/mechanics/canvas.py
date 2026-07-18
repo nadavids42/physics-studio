@@ -1,10 +1,10 @@
 """Shared browser-player scene adapter for mechanics diagrams."""
+
 from __future__ import annotations
 
 from typing import Any
 
 from physics_playground.canvas.player import build_player_document
-
 
 SCENE = r"""
 const scene={draw(ctx,s){

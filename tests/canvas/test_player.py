@@ -1,6 +1,9 @@
 """Contract tests for the browser-side player document."""
 
-from physics_playground.canvas.bumper_cars import build_bumper_canvas, build_bumper_comparison_canvas
+from physics_playground.canvas.bumper_cars import (
+    build_bumper_canvas,
+    build_bumper_comparison_canvas,
+)
 from physics_playground.canvas.player import build_player_document
 from physics_playground.models.collision import CollisionParameters, simulate_collision
 

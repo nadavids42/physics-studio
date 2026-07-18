@@ -14,7 +14,6 @@ from physics_playground.simulation_binding import (
     SimulationPreset,
 )
 
-
 PROJECTILE_BINDING = SimulationBinding(
     simulation_id="cannonball",
     parameter_model=ProjectileParameters,
@@ -64,4 +63,3 @@ def preset_for(preset_id: str) -> SimulationPreset:
         return SIMULATION_PRESETS[preset_id]
     except KeyError as error:
         raise KeyError(f"No simulation preset registered for {preset_id!r}.") from error
-

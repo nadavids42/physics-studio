@@ -1,8 +1,10 @@
 """Reusable responsive piston animation for ideal-gas state comparisons."""
+
 import random
+
 from physics_playground.canvas.player import build_player_document
 
-SCENE=r"""
+SCENE = r"""
 const scene={draw(ctx,s){const w=s.transform.width,h=s.transform.height,c=s.config.gasContainer||{},progress=s.reducedMotion?1:s.fraction,left=w*.25,right=w*.75,outerTop=h*.16,bottom=h*.82,outerHeight=bottom-outerTop,maxV=Math.max(c.volumeA,c.volumeB,.001),v=c.volumeA+(c.volumeB-c.volumeA)*progress,gasH=80+v/maxV*outerHeight*.72,top=bottom-gasH,pressure=c.pressureA+(c.pressureB-c.pressureA)*progress,temp=c.tempA+(c.tempB-c.tempA)*progress;PhysicsExperience.context(ctx,s,'laboratory');
 ctx.save();ctx.globalAlpha=.16;ctx.fillStyle=PhysicsVisuals.token(s,'colors','energy','#B45309');ctx.fillRect(left,top,right-left,bottom-top);ctx.restore();PhysicsAssets.fluidContainer(ctx,s,{x:(left+right)/2,y:(outerTop+bottom)/2,width:right-left,height:outerHeight,shadow:true,label:'Ideal-gas cylinder'});
 ctx.save();ctx.strokeStyle=PhysicsVisuals.token(s,'colors','border','#B8C5D1');ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(left-18,outerTop);ctx.lineTo(left-18,bottom);ctx.moveTo(right+18,outerTop);ctx.lineTo(right+18,bottom);ctx.stroke();ctx.restore();PhysicsAssets.block(ctx,s,{x:(left+right)/2,y:top,width:right-left+24,height:18,fill:PhysicsVisuals.token(s,'colors','uncertainty','#64748B'),highlight:true,shadow:true,label:'Piston'});
@@ -12,8 +14,55 @@ ctx.save();PhysicsVisuals.applyText(ctx,s,'label');const compact=PhysicsVisuals.
 PhysicsAnnotations.disclosure(ctx,s,'normalized','Pressure indicators are normalized for visibility',12,h-64);if(PhysicsVisuals.responsive(s)!=='mobile')PhysicsAssets.callout(ctx,s,{x:w-245,y:h-104,width:230,height:58,text:'Particles are illustrative\nCount and motion are not molecular scale',shadow:false});}};
 """
 
-def build_gas_document(*,pressure_a_kpa:float,pressure_b_kpa:float,volume_a_m3:float,volume_b_m3:float,temp_a_k:float,temp_b_k:float,particles:int,message:str,seed:int,amount_mol:float=1.)->str:
-    rng=random.Random(seed);count=max(0,min(80,int(particles)))
-    layout=[{"u":round(rng.random(),8),"v":round(rng.random(),8),"r":round(2.3+rng.random()*1.2,4)} for _ in range(count)]
-    config={"durationMs":1700,"autoplay":False,"seed":seed,"tracks":[{"id":"gas-transition","label":"Gas state transition","x":[0,1]}],"events":[],"completionMessage":message,"gasContainer":{"pressureA":pressure_a_kpa,"pressureB":pressure_b_kpa,"volumeA":volume_a_m3,"volumeB":volume_b_m3,"tempA":temp_a_k,"tempB":temp_b_k,"particles":count,"particleLayout":layout,"amount":amount_mol},"view":{"minimum":0,"maximum":1}}
-    return build_player_document(config=config,scene_javascript=SCENE,logical_width=720,logical_height=520,accessible_label="Gas piston changing from state A to state B. "+message,idle_hint="Press Play to animate the gas-state change")
+
+def build_gas_document(
+    *,
+    pressure_a_kpa: float,
+    pressure_b_kpa: float,
+    volume_a_m3: float,
+    volume_b_m3: float,
+    temp_a_k: float,
+    temp_b_k: float,
+    particles: int,
+    message: str,
+    seed: int,
+    amount_mol: float = 1.0,
+) -> str:
+    rng = random.Random(seed)
+    count = max(0, min(80, int(particles)))
+    layout = [
+        {
+            "u": round(rng.random(), 8),
+            "v": round(rng.random(), 8),
+            "r": round(2.3 + rng.random() * 1.2, 4),
+        }
+        for _ in range(count)
+    ]
+    config = {
+        "durationMs": 1700,
+        "autoplay": False,
+        "seed": seed,
+        "tracks": [{"id": "gas-transition", "label": "Gas state transition", "x": [0, 1]}],
+        "events": [],
+        "completionMessage": message,
+        "gasContainer": {
+            "pressureA": pressure_a_kpa,
+            "pressureB": pressure_b_kpa,
+            "volumeA": volume_a_m3,
+            "volumeB": volume_b_m3,
+            "tempA": temp_a_k,
+            "tempB": temp_b_k,
+            "particles": count,
+            "particleLayout": layout,
+            "amount": amount_mol,
+        },
+        "view": {"minimum": 0, "maximum": 1},
+    }
+    return build_player_document(
+        config=config,
+        scene_javascript=SCENE,
+        logical_width=720,
+        logical_height=520,
+        accessible_label="Gas piston changing from state A to state B. " + message,
+        idle_hint="Press Play to animate the gas-state change",
+    )

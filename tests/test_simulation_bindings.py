@@ -1,7 +1,7 @@
 """Consistency checks for reusable simulation bindings and setup presets."""
 
-from dataclasses import replace
 import json
+from dataclasses import replace
 
 import pytest
 
@@ -79,4 +79,3 @@ def test_preset_uses_the_same_setup_handoff_as_notebook_reuse() -> None:
     assert request.preset_id == PROJECTILE_WORKED_EXAMPLE_PRESET.id
     assert request.parameters == PROJECTILE_WORKED_EXAMPLE_PRESET.parameters
     assert SETUP_REQUEST_KEY not in state
-

@@ -10,12 +10,13 @@ from __future__ import annotations
 import json
 from functools import lru_cache
 from typing import Any
-from physics_playground.visual.assets import CANVAS_ASSET_JS
+
 from physics_playground.visual.animation import CANVAS_ANIMATION_JS
-from physics_playground.visual.experience import CANVAS_EXPERIENCE_JS,DEFAULT_PRESENTATION_LEVEL
+from physics_playground.visual.assets import CANVAS_ASSET_JS
 from physics_playground.visual.canvas import CANVAS_VISUAL_JS
 from physics_playground.visual.css import shared_css
-from physics_playground.visual.tokens import DARK_THEME,LIGHT_THEME,theme_payload
+from physics_playground.visual.experience import CANVAS_EXPERIENCE_JS, DEFAULT_PRESENTATION_LEVEL
+from physics_playground.visual.tokens import DARK_THEME, LIGHT_THEME, theme_payload
 from physics_playground.visual.vectors import CANVAS_VECTOR_JS
 
 PLAYER_CSS = r"""
@@ -217,24 +218,53 @@ def build_player_document(
 ) -> str:
     """Build a standalone responsive player document for Streamlit embedding."""
 
-    config={**config,"visualThemes":{"light":theme_payload(LIGHT_THEME),"dark":theme_payload(DARK_THEME)},"theme":config.get("theme","auto")}
+    config = {
+        **config,
+        "visualThemes": {"light": theme_payload(LIGHT_THEME), "dark": theme_payload(DARK_THEME)},
+        "theme": config.get("theme", "auto"),
+    }
     try:
-        from physics_playground.presentation.accessibility import get_accessibility_settings,get_visual_preferences
-        settings=get_accessibility_settings()
-        preferences=get_visual_preferences()
-        config={**config,"reducedMotion":settings.reduced_motion,"highContrast":settings.high_contrast,"largeText":settings.large_text,
-                "presentationLevel":config.get("presentationLevel",preferences.presentation_level.value),
-                "theme":config.get("theme",preferences.theme.value)}
+        from physics_playground.presentation.accessibility import (
+            get_accessibility_settings,
+            get_visual_preferences,
+        )
+
+        settings = get_accessibility_settings()
+        preferences = get_visual_preferences()
+        config = {
+            **config,
+            "reducedMotion": settings.reduced_motion,
+            "highContrast": settings.high_contrast,
+            "largeText": settings.large_text,
+            "presentationLevel": config.get(
+                "presentationLevel", preferences.presentation_level.value
+            ),
+            "theme": config.get("theme", preferences.theme.value),
+        }
     except Exception:
-        config={**config,"reducedMotion":False,"highContrast":False,"largeText":False,
-                "presentationLevel":config.get("presentationLevel",DEFAULT_PRESENTATION_LEVEL.value)}
+        config = {
+            **config,
+            "reducedMotion": False,
+            "highContrast": False,
+            "largeText": False,
+            "presentationLevel": config.get("presentationLevel", DEFAULT_PRESENTATION_LEVEL.value),
+        }
     payload = json.dumps(config, allow_nan=False, separators=(",", ":"))
     aspect_ratio = logical_width / logical_height
-    return _cached_player_document(payload,scene_javascript,aspect_ratio,accessible_label,idle_hint,extra_css)
+    return _cached_player_document(
+        payload, scene_javascript, aspect_ratio, accessible_label, idle_hint, extra_css
+    )
 
 
 @lru_cache(maxsize=128)
-def _cached_player_document(payload:str,scene_javascript:str,aspect_ratio:float,accessible_label:str,idle_hint:str,extra_css:str)->str:
+def _cached_player_document(
+    payload: str,
+    scene_javascript: str,
+    aspect_ratio: float,
+    accessible_label: str,
+    idle_hint: str,
+    extra_css: str,
+) -> str:
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>:root{{--aspect-ratio:{aspect_ratio};}}{shared_css()}{PLAYER_CSS}{extra_css}</style></head>

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Generic, TypeVar
 from uuid import uuid4
 
@@ -33,7 +33,7 @@ class TrialHistory(Generic[P]):
             raise ValueError("Trial result does not belong to this history.")
         trial = Trial(
             id=uuid4().hex,
-            created_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
             result=result,
             label=label,
         )

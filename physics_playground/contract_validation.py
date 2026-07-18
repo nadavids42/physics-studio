@@ -29,18 +29,25 @@ def validate_animation(animation: AnimationData) -> None:
     _require_finite_sequence("Animation time", animation.time_s)
     if animation.duration_ms <= 0:
         raise PhysicsValidationError("Animation duration must be greater than zero.")
-    if any(later < earlier for earlier, later in zip(animation.time_s, animation.time_s[1:])):
+    if any(
+        later < earlier
+        for earlier, later in zip(animation.time_s, animation.time_s[1:], strict=False)
+    ):
         raise PhysicsValidationError("Animation time must be non-decreasing.")
     if not animation.tracks:
         raise PhysicsValidationError("Animation must contain at least one track.")
     for track in animation.tracks:
         _require_finite_sequence(f"Animation track {track.id!r} x-values", track.x)
         if len(track.x) != len(animation.time_s):
-            raise PhysicsValidationError(f"Animation track {track.id!r} length does not match time.")
+            raise PhysicsValidationError(
+                f"Animation track {track.id!r} length does not match time."
+            )
         if track.y is not None:
             _require_finite_sequence(f"Animation track {track.id!r} y-values", track.y)
             if len(track.y) != len(animation.time_s):
-                raise PhysicsValidationError(f"Animation track {track.id!r} y length does not match time.")
+                raise PhysicsValidationError(
+                    f"Animation track {track.id!r} y length does not match time."
+                )
 
 
 def validate_contract_result(result: ContractResult[ParameterSet]) -> None:
