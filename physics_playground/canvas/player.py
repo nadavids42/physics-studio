@@ -11,10 +11,11 @@ import json
 from functools import lru_cache
 from typing import Any
 
+from physics_playground.application_callbacks import get_player_preferences
 from physics_playground.visual.animation import CANVAS_ANIMATION_JS
 from physics_playground.visual.assets import CANVAS_ASSET_JS
 from physics_playground.visual.css import shared_css
-from physics_playground.visual.experience import CANVAS_EXPERIENCE_JS, DEFAULT_PRESENTATION_LEVEL
+from physics_playground.visual.experience import CANVAS_EXPERIENCE_JS
 from physics_playground.visual.primitives import CANVAS_VISUAL_JS
 from physics_playground.visual.tokens import DARK_THEME, LIGHT_THEME, theme_payload
 from physics_playground.visual.vectors import CANVAS_VECTOR_JS
@@ -223,32 +224,15 @@ def build_player_document(
         "visualThemes": {"light": theme_payload(LIGHT_THEME), "dark": theme_payload(DARK_THEME)},
         "theme": config.get("theme", "auto"),
     }
-    try:
-        from physics_playground.presentation.accessibility_ui import (
-            get_accessibility_settings,
-            get_visual_preferences,
-        )
-
-        settings = get_accessibility_settings()
-        preferences = get_visual_preferences()
-        config = {
-            **config,
-            "reducedMotion": settings.reduced_motion,
-            "highContrast": settings.high_contrast,
-            "largeText": settings.large_text,
-            "presentationLevel": config.get(
-                "presentationLevel", preferences.presentation_level.value
-            ),
-            "theme": config.get("theme", preferences.theme.value),
-        }
-    except Exception:
-        config = {
-            **config,
-            "reducedMotion": False,
-            "highContrast": False,
-            "largeText": False,
-            "presentationLevel": config.get("presentationLevel", DEFAULT_PRESENTATION_LEVEL.value),
-        }
+    preferences = get_player_preferences()
+    config = {
+        **config,
+        "reducedMotion": preferences.reduced_motion,
+        "highContrast": preferences.high_contrast,
+        "largeText": preferences.large_text,
+        "presentationLevel": config.get("presentationLevel", preferences.presentation_level),
+        "theme": config.get("theme", preferences.theme),
+    }
     payload = json.dumps(config, allow_nan=False, separators=(",", ":"))
     aspect_ratio = logical_width / logical_height
     return _cached_player_document(

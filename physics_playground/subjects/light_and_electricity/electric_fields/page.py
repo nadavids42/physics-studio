@@ -16,6 +16,7 @@ from physics_playground.presentation.learning_modes import (
     mode_navigation,
 )
 from physics_playground.presentation.notebook_ui import add_trial
+from physics_playground.validation import PhysicsValidationError
 
 from .missions import evaluate
 from .physics import MAX_FIELD_POINTS, ElectricFieldParameters, PointCharge, field_at, simulate
@@ -154,7 +155,7 @@ def analyze():
             )
             potential.append(v)
             magnitude.append((ex * ex + ey * ey) ** 0.5)
-        except Exception:
+        except PhysicsValidationError:
             potential.append(None)
             magnitude.append(None)
     potential_figure = series_figure(

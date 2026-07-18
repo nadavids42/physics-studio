@@ -1,8 +1,9 @@
 """Side-effect-free mission evaluation and progress summaries."""
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 
+from physics_playground.application_callbacks import ApplicationEvent, BadgeEarned, ProgressChanged
 from physics_playground.contracts import MissionEvaluation
 from physics_playground.missions.definitions import MISSION_DEFINITIONS, MISSIONS_BY_SIMULATION
 
@@ -23,7 +24,10 @@ class CompletionSummary:
 
 
 def evaluate_run(
-    progress: MissionProgress, simulation_id: str, evaluations: Iterable[MissionEvaluation]
+    progress: MissionProgress,
+    simulation_id: str,
+    evaluations: Iterable[MissionEvaluation],
+    publish: Callable[[ApplicationEvent], None] | None = None,
 ) -> tuple[str, ...]:
     evidence = {item.mission_id: item.completed for item in evaluations}
     earned = []
@@ -43,7 +47,12 @@ def evaluate_run(
             progress.completed.add(mission.id)
             earned.append(mission.id)
         progress.pending_explanations.discard(mission.id)
-    return tuple(earned)
+    earned_ids = tuple(earned)
+    if publish is not None and earned_ids:
+        for mission_id in earned_ids:
+            publish(BadgeEarned(simulation_id, mission_id))
+        publish(ProgressChanged(simulation_id, tuple(sorted(progress.completed))))
+    return earned_ids
 
 
 def hint_for(progress: MissionProgress, mission_id: str) -> str:

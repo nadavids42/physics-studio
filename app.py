@@ -6,9 +6,14 @@ from importlib import import_module
 
 import streamlit as st
 
+from physics_playground.application_callbacks import (
+    ApplicationCallbacks,
+    configure_application_callbacks,
+)
 from physics_playground.missions import ui as mission_ui
 from physics_playground.presentation.accessibility_ui import (
     apply_global_accessibility,
+    current_player_preferences,
     render_accessibility_panel,
 )
 from physics_playground.presentation.diagnostics import render_developer_diagnostics
@@ -16,6 +21,7 @@ from physics_playground.presentation.home import render_home
 from physics_playground.presentation.notebook_ui import render_notebook_sidebar
 from physics_playground.presentation.profile_ui import (
     persist_active_session,
+    persist_application_event,
     render_profile_sidebar,
 )
 from physics_playground.registry import SIMULATION_REGISTRY, SIMULATIONS_BY_ID
@@ -23,6 +29,12 @@ from physics_playground.state_keys import SHARED_STATE_KEYS, migrate_legacy_keys
 from physics_playground.validation import PhysicsValidationError
 
 st.set_page_config(page_title="Physics Mission Control", page_icon="🚀", layout="wide")
+configure_application_callbacks(
+    ApplicationCallbacks(
+        on_event=persist_application_event,
+        player_preferences=current_player_preferences,
+    )
+)
 migrate_legacy_keys(st.session_state)
 mission_ui.init_missions()
 st.session_state.setdefault(SHARED_STATE_KEYS.navigation_active, None)

@@ -157,3 +157,12 @@ accessibility, profiles, missions, and notebook state use `SHARED_STATE_KEYS`. N
 uses `feature_key(feature, name)` and vertical slices use
 `simulation_key(simulation_id, name)`. The `physics_studio.*` namespace avoids collisions without
 introducing a state manager. `migrate_legacy_keys` preserves sessions created before namespacing.
+
+## Application callbacks
+
+`physics_playground.application_callbacks` is the explicit seam between learning-state changes
+and Streamlit integration. Missions emit typed badge and progress events; notebook and
+accessibility UI emit their corresponding typed changes. `app.py` connects those events to local
+profile persistence and supplies player preferences. Domain services never import Streamlit UI,
+and callback failures propagate instead of being silently discarded. This is intentionally one
+synchronous callback and one player-preference provider, not a general event framework.

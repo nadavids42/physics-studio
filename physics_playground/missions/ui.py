@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import streamlit as st
 
+from physics_playground.application_callbacks import BadgeEarned, ProgressChanged, publish
 from physics_playground.contracts import MissionEvaluation
 from physics_playground.missions.definitions import (
     MISSION_DEFINITIONS,
@@ -64,6 +65,13 @@ def complete(mission_id: str, celebrate: bool = True, experiment_ran: bool = Fal
     if mission_id not in st.session_state[SHARED_STATE_KEYS.missions_progress].completed:
         st.session_state[SHARED_STATE_KEYS.missions_progress].completed.add(mission_id)
         _celebrate(mission_id, celebrate)
+        publish(BadgeEarned(mission.simulation_id, mission_id))
+        publish(
+            ProgressChanged(
+                mission.simulation_id,
+                tuple(sorted(st.session_state[SHARED_STATE_KEYS.missions_progress].completed)),
+            )
+        )
         return True
     return False
 
@@ -71,16 +79,13 @@ def complete(mission_id: str, celebrate: bool = True, experiment_ran: bool = Fal
 def process_run(simulation_id: str, evaluations: tuple[MissionEvaluation, ...]) -> tuple[str, ...]:
     init_missions()
     earned = evaluate_run(
-        st.session_state[SHARED_STATE_KEYS.missions_progress], simulation_id, evaluations
+        st.session_state[SHARED_STATE_KEYS.missions_progress],
+        simulation_id,
+        evaluations,
+        publish,
     )
     for mission_id in earned:
         _celebrate(mission_id)
-    try:
-        from physics_playground.presentation.profile_ui import persist_active_session
-
-        persist_active_session()
-    except Exception:
-        pass
     return earned
 
 

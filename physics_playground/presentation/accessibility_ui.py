@@ -7,6 +7,11 @@ import streamlit as st
 from cycler import cycler
 
 from physics_playground.accessibility_settings import AccessibilitySettings
+from physics_playground.application_callbacks import (
+    AccessibilityChanged,
+    PlayerPreferences,
+    publish,
+)
 from physics_playground.presentation.chart_system import style_figure
 from physics_playground.state_keys import SHARED_STATE_KEYS, feature_key, migrate_legacy_keys
 from physics_playground.visual.css import streamlit_css
@@ -112,13 +117,20 @@ def render_accessibility_panel():
     updated = AccessibilitySettings(reduced, contrast, large)
     if updated != current:
         st.session_state[SETTINGS_KEY] = updated
-        try:
-            from physics_playground.presentation.profile_ui import persist_active_session
-
-            persist_active_session()
-        except Exception:
-            pass
+        publish(AccessibilityChanged(reduced, contrast, large))
     return updated
+
+
+def current_player_preferences() -> PlayerPreferences:
+    settings = get_accessibility_settings()
+    preferences = get_visual_preferences()
+    return PlayerPreferences(
+        reduced_motion=settings.reduced_motion,
+        high_contrast=settings.high_contrast,
+        large_text=settings.large_text,
+        presentation_level=preferences.presentation_level.value,
+        theme=preferences.theme.value,
+    )
 
 
 def apply_global_accessibility(settings):

@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import streamlit as st
 
+from physics_playground.application_callbacks import NotebookChanged, publish
 from physics_playground.notebook import ExperimentNotebook, TrialRecord
+from physics_playground.presentation.report_ui import render_report_builder
 from physics_playground.setup_handoff import (
     SETUP_REQUEST_KEY,
     SimulationSetupRequest,
@@ -28,12 +30,7 @@ def add_trial(**kwargs) -> TrialRecord:
     """Append a trial through the shared session notebook."""
 
     trial = get_notebook().add_trial(**kwargs)
-    try:
-        from physics_playground.presentation.profile_ui import persist_active_session
-
-        persist_active_session()
-    except Exception:
-        pass
+    publish(NotebookChanged(trial.id))
     return trial
 
 
@@ -131,6 +128,4 @@ def render_notebook_sidebar() -> None:
         ):
             notebook.reset()
             st.rerun()
-        from physics_playground.presentation.report_ui import render_report_builder
-
         render_report_builder(notebook)

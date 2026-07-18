@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import json
+import logging
 
 import streamlit as st
 
 from physics_playground.accessibility_settings import AccessibilitySettings
+from physics_playground.application_callbacks import ApplicationEvent
 from physics_playground.missions.service import MissionProgress
 from physics_playground.notebook import ExperimentNotebook
-from physics_playground.presentation.accessibility_ui import SETTINGS_KEY
-from physics_playground.presentation.notebook_ui import NOTEBOOK_STATE_KEY, get_notebook
 from physics_playground.profiles import LocalProfile, PersistenceUnavailable, ProfileStore
 from physics_playground.registry import SIMULATION_REGISTRY, SIMULATIONS_BY_ID
 from physics_playground.state_keys import SHARED_STATE_KEYS, feature_key, migrate_legacy_keys
@@ -20,6 +20,16 @@ STORE_KEY = SHARED_STATE_KEYS.profiles_store
 ACTIVE_KEY = SHARED_STATE_KEYS.profiles_active_id
 FAVORITE_KEY = SHARED_STATE_KEYS.profiles_favorite_simulation
 PERSISTENCE_ERROR_KEY = SHARED_STATE_KEYS.profiles_persistence_error
+LOGGER = logging.getLogger(__name__)
+
+
+def get_notebook() -> ExperimentNotebook:
+    notebook = st.session_state.get(SHARED_STATE_KEYS.notebook)
+    if isinstance(notebook, ExperimentNotebook):
+        return notebook
+    notebook = ExperimentNotebook()
+    st.session_state[SHARED_STATE_KEYS.notebook] = notebook
+    return notebook
 
 
 def get_store():
@@ -41,10 +51,12 @@ def load_into_session(profile: LocalProfile):
     progress = MissionProgress(completed=set(profile.badges_earned))
     st.session_state[SHARED_STATE_KEYS.missions_progress] = progress
     st.session_state[SHARED_STATE_KEYS.missions_completed] = progress.completed
-    st.session_state[NOTEBOOK_STATE_KEY] = ExperimentNotebook.from_dict(
+    st.session_state[SHARED_STATE_KEYS.notebook] = ExperimentNotebook.from_dict(
         profile.trial_notebook or {}
     )
-    st.session_state[SETTINGS_KEY] = AccessibilitySettings.from_dict(profile.accessibility_settings)
+    st.session_state[SHARED_STATE_KEYS.accessibility_settings] = AccessibilitySettings.from_dict(
+        profile.accessibility_settings
+    )
     st.session_state[SHARED_STATE_KEYS.navigation_active] = profile.last_used_simulation
     st.session_state[FAVORITE_KEY] = profile.favorite_simulation
     if profile.last_used_simulation:
@@ -71,7 +83,7 @@ def profile_from_session(existing: LocalProfile) -> LocalProfile:
         learner_observations=observations,
         application_version=APPLICATION_VERSION,
         accessibility_settings=st.session_state.get(
-            SETTINGS_KEY, AccessibilitySettings()
+            SHARED_STATE_KEYS.accessibility_settings, AccessibilitySettings()
         ).to_dict(),
     )
 
@@ -86,7 +98,14 @@ def persist_active_session():
         return True
     except (OSError, KeyError, ValueError) as error:
         st.session_state[PERSISTENCE_ERROR_KEY] = str(error)
+        LOGGER.warning("Could not persist the active profile: %s", error)
         return False
+
+
+def persist_application_event(_event: ApplicationEvent) -> None:
+    """Application-boundary subscriber for learning-state changes."""
+
+    persist_active_session()
 
 
 def current_scientist_name():
