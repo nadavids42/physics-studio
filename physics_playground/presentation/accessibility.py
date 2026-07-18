@@ -4,9 +4,11 @@ import streamlit as st
 from cycler import cycler
 import matplotlib as mpl
 from physics_playground.accessibility import AccessibilitySettings
+from physics_playground.visual.css import streamlit_css
+from physics_playground.visual.tokens import LIGHT_THEME
 
 SETTINGS_KEY="accessibility_settings"
-SAFE_COLORS=("#0072B2","#D55E00","#009E73","#CC79A7","#E69F00","#56B4E9","#000000")
+SAFE_COLORS=LIGHT_THEME.graph_colors
 LINE_STYLES=("-","--","-.",":","-","--","-.")
 MARKERS=("o","s","^","D","v","P","X")
 def get_accessibility_settings():
@@ -35,7 +37,7 @@ def apply_global_accessibility(settings):
     .stApp [data-testid="stSidebar"] { background:#111 !important; }
     a { color:#6EC6FF !important; text-decoration:underline !important; }
     """ if settings.high_contrast else ""
-    st.markdown(f"""<style>
+    st.markdown(f"""<style>{streamlit_css()}
     html,body,.stApp {{ max-width:100%; overflow-x:hidden; font-size:{text_size}; }}
     [data-testid="stHorizontalBlock"] {{ flex-wrap:wrap; }}
     button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[role="radio"]:focus-visible {{ outline:3px solid #0072B2 !important; outline-offset:3px !important; }}

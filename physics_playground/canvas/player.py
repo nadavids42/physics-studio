@@ -10,6 +10,9 @@ from __future__ import annotations
 import json
 from functools import lru_cache
 from typing import Any
+from physics_playground.visual.canvas import CANVAS_VISUAL_JS
+from physics_playground.visual.css import shared_css
+from physics_playground.visual.tokens import DARK_THEME,LIGHT_THEME,theme_payload
 
 PLAYER_CSS = r"""
 * { box-sizing: border-box; }
@@ -51,6 +54,13 @@ body.high-contrast .controls input[type=range] { accent-color:#FFD600; }
 """
 
 PLAYER_JS = r"""
+function resolveVisualTheme(config) {
+  const requested=config.theme||'auto';
+  const dark=requested==='dark'||(requested==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);
+  config.resolvedTheme=dark?'dark':'light';
+  config.visualTokens=(config.visualThemes||{})[config.resolvedTheme]||config.visualTokens||{};
+  document.documentElement.dataset.psTheme=config.resolvedTheme;
+}
 function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, value)); }
 function lerp(a, b, amount) { return a + (b - a) * amount; }
 function sample(values, fraction) {
@@ -185,6 +195,7 @@ def build_player_document(
 ) -> str:
     """Build a standalone responsive player document for Streamlit embedding."""
 
+    config={**config,"visualThemes":{"light":theme_payload(LIGHT_THEME),"dark":theme_payload(DARK_THEME)},"theme":config.get("theme","auto")}
     try:
         from physics_playground.presentation.accessibility import get_accessibility_settings
         settings=get_accessibility_settings()
@@ -200,7 +211,7 @@ def build_player_document(
 def _cached_player_document(payload:str,scene_javascript:str,aspect_ratio:float,accessible_label:str,idle_hint:str,extra_css:str)->str:
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>:root{{--aspect-ratio:{aspect_ratio};}}{PLAYER_CSS}{extra_css}</style></head>
+<style>:root{{--aspect-ratio:{aspect_ratio};}}{shared_css()}{PLAYER_CSS}{extra_css}</style></head>
 <body><div class="animation-shell" role="group" aria-label={json.dumps(accessible_label)}>
   <div class="canvas-wrap" id="canvas-wrap"><canvas id="animation-canvas" role="img" aria-label={json.dumps(accessible_label)}></canvas>
     <div class="hint" id="hint">{idle_hint}</div><div class="message" id="message" aria-live="polite"></div></div>
@@ -210,7 +221,7 @@ def _cached_player_document(payload:str,scene_javascript:str,aspect_ratio:float,
     <label class="sr-only" for="scrubber">Animation position</label><input id="scrubber" type="range" min="0" max="1000" value="0">
     <label class="speed-label" for="speed">Speed <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
   </div><div id="status" class="sr-only" aria-live="polite">Animation ready</div></div>
-<script>{PLAYER_JS}\nconst playerConfig={payload};\n{scene_javascript}\nwindow.animationPlayer=new AnimationPlayer(playerConfig,scene);</script>
+<script>{PLAYER_JS}\n{CANVAS_VISUAL_JS}\nconst playerConfig={payload};\nresolveVisualTheme(playerConfig);\n{scene_javascript}\nwindow.animationPlayer=new AnimationPlayer(playerConfig,scene);</script>
 </body></html>"""
 
 
