@@ -2,7 +2,6 @@ from dataclasses import fields
 
 import pytest
 
-from physics_playground.models.parameters import DoublePendulumParameters
 from physics_playground.state_keys import (
     LEGACY_SHARED_KEYS,
     SHARED_STATE_KEYS,
@@ -17,6 +16,9 @@ from physics_playground.subjects.fluids_and_matter.fluid_pressure.physics import
 )
 from physics_playground.subjects.mechanics.cannonball.physics import ProjectileParameters
 from physics_playground.subjects.mechanics.inclined_plane.physics import InclinedPlaneParameters
+from physics_playground.subjects.waves_and_oscillations.double_pendulum.physics import (
+    DoublePendulumParameters,
+)
 from physics_playground.units import (
     EARTH_GRAVITY_M_S2,
     MOLAR_GAS_CONSTANT_J_MOL_K,

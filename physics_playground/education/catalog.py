@@ -1,9 +1,9 @@
 """Validated built-in educational-content catalog."""
 
-from physics_playground.education.lessons.cannonball import MECHANICS_SUBJECT
 from physics_playground.education.models import CurriculumManifest
 from physics_playground.education.validation import validate_curriculum_manifest
 from physics_playground.registry import SIMULATION_REGISTRY
+from physics_playground.subjects.mechanics.cannonball.lesson import MECHANICS_SUBJECT
 
 CURRICULUM = CurriculumManifest(
     id="physics-studio-core",

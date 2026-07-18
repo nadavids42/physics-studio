@@ -1,0 +1,87 @@
+"""Registry and mission metadata owned by this simulation slice."""
+
+from physics_playground.missions.models import MissionDefinition, MissionType
+from physics_playground.models.simulations import (
+    Difficulty,
+    InteractiveMode,
+    SimulationDefinition,
+    VisualMetadata,
+)
+
+SIMULATION = SimulationDefinition(
+    id="orbital_gravity",
+    title="Planet Launcher",
+    icon="🪐",
+    description="Launch a planet and discover crashes, orbits, and escape.",
+    page_module="physics_playground.subjects.mechanics.orbital_gravity.page",
+    mission_group="Planet Launcher",
+    modes=tuple(InteractiveMode),
+    central_question="How fast must a planet move to stay in orbit?",
+    concepts=("Gravity", "Orbits", "Conservation"),
+    difficulty=Difficulty.ADVANCED,
+    badge_count=4,
+    renderer="shared-browser-player",
+    model_version="orbit-verlet-1.0",
+    simulation_type="Numerical",
+    visual=VisualMetadata(
+        "#3949AB",
+        "#E8EAF6",
+        "☀️",
+        "A planet orbiting a central star",
+    ),
+)
+
+MISSIONS = (
+    MissionDefinition(
+        id="orbit_predict",
+        simulation_id="orbital_gravity",
+        title="Guessed what a slow throw does",
+        description="Predict a low-speed planetary launch.",
+        hints=("Sideways motion fights an inward fall.",),
+        category=MissionType.EXPLANATION,
+        difficulty=Difficulty.INTERMEDIATE,
+        prerequisites=(),
+        hidden=False,
+        completion_rule_id="run:orbit_predict",
+        group="Planet Launcher",
+    ),
+    MissionDefinition(
+        id="orbit_crash",
+        simulation_id="orbital_gravity",
+        title="Crashed a planet into the Sun",
+        description="Produce a crash outcome.",
+        hints=("Use less sideways speed.", "Try well below circular speed."),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=("orbit_predict",),
+        hidden=False,
+        completion_rule_id="run:orbit_crash",
+        group="Planet Launcher",
+    ),
+    MissionDefinition(
+        id="orbit_escape",
+        simulation_id="orbital_gravity",
+        title="Launched a planet into deep space",
+        description="Produce an escape outcome.",
+        hints=("Compare launch speed with the escape marker.",),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.INTERMEDIATE,
+        prerequisites=("orbit_predict",),
+        hidden=False,
+        completion_rule_id="run:orbit_escape",
+        group="Planet Launcher",
+    ),
+    MissionDefinition(
+        id="orbit_egg",
+        simulation_id="orbital_gravity",
+        title="Made an egg-shaped orbit",
+        description="Create a clearly elliptical bound orbit.",
+        hints=("Stay below escape speed but away from circular speed.",),
+        category=MissionType.COMPARISON,
+        difficulty=Difficulty.ADVANCED,
+        prerequisites=("orbit_predict",),
+        hidden=True,
+        completion_rule_id="run:orbit_egg",
+        group="Planet Launcher",
+    ),
+)

@@ -4,7 +4,6 @@ import numpy as np
 
 from physics_playground.integrators import rk4_step
 from physics_playground.missions import MISSION_DEFINITIONS
-from physics_playground.models.results import Trajectory
 from physics_playground.registry import SIMULATION_REGISTRY
 from physics_playground.validation import validate_trajectory
 
@@ -23,8 +22,6 @@ def test_trajectory_contract_accepts_matching_finite_arrays() -> None:
     time = np.array([0.0, 0.5, 1.0])
     position = np.array([0.0, 1.0, 0.0])
     validate_trajectory(time, {"position": position})
-    trajectory = Trajectory(time, {"position": position})
-    assert trajectory.channels["position"].shape == trajectory.time_s.shape
 
 
 def test_rk4_integrates_constant_derivative() -> None:

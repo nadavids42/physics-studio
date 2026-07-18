@@ -1,7 +1,7 @@
-from physics_playground.education.lessons.cannonball import CANNONBALL_LESSON
 from physics_playground.education.progress import PathwayProgress
 from physics_playground.expansion_catalog import EXPANSION_MANIFESTS
 from physics_playground.presentation.navigation import NAVIGATION_SUBJECTS, recommended_lesson
+from physics_playground.subjects.mechanics.cannonball.lesson import CANNONBALL_LESSON
 
 
 def test_navigation_catalog_uses_every_validated_simulation_once():

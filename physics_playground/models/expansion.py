@@ -12,7 +12,7 @@ from enum import StrEnum
 from typing import ClassVar, Generic, Protocol, TypeVar, runtime_checkable
 
 from physics_playground.contracts import ContractResult, ModelAssumption, ParameterSet
-from physics_playground.missions.definitions import MissionDefinition
+from physics_playground.missions.models import MissionDefinition
 from physics_playground.models.simulations import InteractiveMode, SimulationDefinition
 
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from dataclasses import asdict, dataclass
 from functools import lru_cache
+from typing import cast
 
 import numpy as np
 
@@ -14,11 +15,13 @@ from physics_playground.contracts import (
     AnimationTrack,
     ContractResult,
     EventKind,
+    JsonValue,
     PlotData,
     PlotSeries,
     SimulationEvent,
     SummaryMetric,
 )
+from physics_playground.integrators import rk4_step
 from physics_playground.model_metadata import PROJECTILE_MODEL_METADATA
 from physics_playground.performance import (
     MAX_INTEGRATION_STEPS,
@@ -68,8 +71,8 @@ class ProjectileParameters:
             MAX_INTEGRATION_STEPS,
         )
 
-    def to_dict(self) -> dict[str, object]:
-        return to_jsonable(asdict(self))
+    def to_dict(self) -> dict[str, JsonValue]:
+        return cast(dict[str, JsonValue], to_jsonable(asdict(self)))
 
 
 @dataclass(frozen=True, slots=True)
@@ -245,14 +248,6 @@ def _derivative(state: np.ndarray, parameters: ProjectileParameters) -> np.ndarr
     )
 
 
-def _rk4(state: np.ndarray, dt: float, parameters: ProjectileParameters) -> np.ndarray:
-    k1 = _derivative(state, parameters)
-    k2 = _derivative(state + 0.5 * dt * k1, parameters)
-    k3 = _derivative(state + 0.5 * dt * k2, parameters)
-    k4 = _derivative(state + dt * k3, parameters)
-    return state + dt * (k1 + 2 * k2 + 2 * k3 + k4) / 6
-
-
 def simulate_quadratic_drag(parameters: ProjectileParameters) -> ProjectileResult:
     """Integrate quadratic drag with RK4 and interpolate the exact ground crossing."""
 
@@ -272,7 +267,9 @@ def simulate_quadratic_drag(parameters: ProjectileParameters) -> ProjectileResul
     landed = False
     while times[-1] < parameters.max_time_s:
         dt = min(parameters.time_step_s, parameters.max_time_s - times[-1])
-        next_state = _rk4(state, dt, parameters)
+        next_state = rk4_step(
+            lambda current, _time: _derivative(current, parameters), state, times[-1], dt
+        )
         next_time = times[-1] + dt
         if next_state[1] <= 0 and next_time > 0:
             denominator = state[1] - next_state[1]
@@ -310,7 +307,7 @@ def simulate_projectile(parameters: ProjectileParameters) -> ProjectileResult:
 @lru_cache(maxsize=128)
 def projectile_range_scan(
     speed_m_s: float, gravity_m_s2: float, start_angle: int = 5, end_angle: int = 89
-):
+) -> tuple[tuple[int, ...], tuple[float, ...]]:
     angles = tuple(range(start_angle, end_angle + 1))
     ranges = tuple(
         simulate_no_drag(ProjectileParameters(speed_m_s, float(angle), gravity_m_s2)).range_m

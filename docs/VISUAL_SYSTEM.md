@@ -307,7 +307,8 @@ Completion guarantees and audit decisions:
 - Responsive behavior is owned by the shared player at representative mobile (360 px), tablet (768 px), and desktop (1100 px) widths. Scenes may suppress redundant labels but not scientific identifiers or units.
 - Reduced motion disables autoplay and decorative effects while retaining scrub and frame-step controls. High contrast, large text, explicit light/dark themes, and automatic theme selection are serialized into every player.
 - Context is drawn before scientific assets and annotations. Diagram mode therefore remains complete, while Contextual scenery cannot cover the scientific overlay.
-- `canvas/embed.py` is the canonical Streamlit `show()` adapter. `canvas/legacy.py` is a compatibility re-export only.
+- `canvas/embed.py` is the canonical Streamlit `show()` adapter; the completed legacy re-export has
+  been removed.
 
 The few remaining hexadecimal values inside scene sources are defensive fallbacks passed to semantic token lookups, plus deterministic decorative particle-burst colors. They are not independent scene palettes and do not encode quantitative meaning. Specialized target rings and field glyphs remain scene compositions because they are not repeated asset concepts.
 

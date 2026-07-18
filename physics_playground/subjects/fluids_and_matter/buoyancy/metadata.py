@@ -1,0 +1,87 @@
+"""Registry and mission metadata owned by this simulation slice."""
+
+from physics_playground.missions.models import MissionDefinition, MissionType
+from physics_playground.models.simulations import (
+    Difficulty,
+    InteractiveMode,
+    SimulationDefinition,
+    VisualMetadata,
+)
+
+SIMULATION = SimulationDefinition(
+    id="buoyancy",
+    title="Buoyancy",
+    icon="🛟",
+    description="Change object and fluid density to make objects float, sink, or hover.",
+    page_module="physics_playground.subjects.fluids_and_matter.buoyancy.page",
+    mission_group="Buoyancy",
+    modes=tuple(InteractiveMode),
+    central_question="What decides whether an object floats, sinks, or remains neutrally buoyant?",
+    concepts=("Fluids", "Buoyancy", "Density"),
+    difficulty=Difficulty.BEGINNER,
+    badge_count=4,
+    renderer="shared-fluid-container",
+    model_version="buoyancy-1.0",
+    simulation_type="Analytical + container diagram",
+    visual=VisualMetadata(
+        "#0288D1",
+        "#E1F5FE",
+        "▰",
+        "An object partly submerged in a fluid",
+    ),
+)
+
+MISSIONS = (
+    MissionDefinition(
+        id="buoy_predict",
+        simulation_id="buoyancy",
+        title="Predicted whether a light object floats",
+        description="Predict the state from density comparison.",
+        hints=("Compare object density with fluid density.",),
+        category=MissionType.EXPLANATION,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=(),
+        hidden=False,
+        completion_rule_id="run:buoy_predict",
+        group="Buoyancy",
+    ),
+    MissionDefinition(
+        id="buoy_float",
+        simulation_id="buoyancy",
+        title="Made an object float",
+        description="Run an object less dense than its fluid.",
+        hints=("Lower object density or increase fluid density.",),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=("buoy_predict",),
+        hidden=False,
+        completion_rule_id="run:buoy_float",
+        group="Buoyancy",
+    ),
+    MissionDefinition(
+        id="buoy_neutral",
+        simulation_id="buoyancy",
+        title="Achieved neutral buoyancy",
+        description="Match effective object and fluid density.",
+        hints=("Use exactly equal densities.",),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.INTERMEDIATE,
+        prerequisites=("buoy_predict",),
+        hidden=False,
+        completion_rule_id="run:buoy_neutral",
+        group="Buoyancy",
+    ),
+    MissionDefinition(
+        id="buoy_compare",
+        simulation_id="buoyancy",
+        title="Compared two fluids",
+        description="Run water versus denser-fluid comparison.",
+        hints=("Use Compare mode.",),
+        category=MissionType.COMPARISON,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=("buoy_predict",),
+        hidden=False,
+        completion_rule_id="run:buoy_compare",
+        group="Buoyancy",
+    ),
+)

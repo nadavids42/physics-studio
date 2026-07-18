@@ -28,7 +28,8 @@ app.py
 
 Cross-cutting state is provided by:
 
-- `physics_playground/missions/` for definitions, pure evaluation, and Streamlit integration;
+- slice `metadata.py` modules for mission definitions, with `physics_playground/missions/` providing
+  typed models, discovery indexes, pure evaluation services, and Streamlit integration;
 - `physics_playground/notebook.py` for UI-independent trial records;
 - `physics_playground/profiles.py` for local SQLite/JSON profile persistence;
 - `physics_playground/accessibility_settings.py` for UI-independent accessibility preferences;
@@ -36,16 +37,14 @@ Cross-cutting state is provided by:
 
 Canonical shared-module responsibilities are intentionally explicit:
 
-- `binding_models.py` defines binding and preset types;
-- `binding_catalog.py` owns registered binding and preset instances;
 - `accessibility_settings.py` owns framework-neutral preference data;
 - `presentation/accessibility_ui.py` owns Streamlit controls and chart accessibility;
 - `visual/primitives.py` owns low-level shared Canvas JavaScript;
 - `missions/ui.py` owns the active Streamlit mission adapter;
 - `canvas/embed.py` owns Streamlit iframe embedding.
 
-Older ambiguous import paths remain thin compatibility re-exports only. New code must use the
-canonical modules above.
+Completed compatibility re-exports have been removed. Persistent session-state aliases remain
+data migrations rather than import-level shims.
 
 ## Pure physics-model boundary
 
@@ -72,11 +71,11 @@ records, mission evidence, and rendering payloads. Python canvas adapters serial
 samples into HTML documents. JavaScript interpolates and draws those samples; it does not own the
 physics integration or alter recorded results.
 
-The shared player is in `physics_playground/canvas/player.py`. Shared scientific assets and tokens
-are under `physics_playground/visual/`. JavaScript is currently embedded in Python string literals,
-so there is no standalone frontend build or npm check. Existing pytest coverage validates payload
-structure, deterministic geometry, scaling semantics, and lifecycle markers. Manual browser
-inspection is still required for appearance and interaction quality.
+Python player adapters are in `physics_playground/canvas/`. Shared scientific assets and tokens are
+under `physics_playground/visual/`. Editable browser code lives as ES modules under `frontend/src/`,
+is checked with ESLint, Prettier, and Vitest, and is built into static assets loaded by Python.
+Behavioral and representative perceptual tests cover the payload boundary and browser rendering;
+manual inspection remains useful for broad appearance review.
 
 ## Vertical slices
 
@@ -87,6 +86,8 @@ physics_playground/subjects/<subject>/<simulation>/
   __init__.py
   physics.py
   missions.py
+  metadata.py     # registry and mission declarations
+  lesson.py       # when the simulation anchors authored curriculum
   page.py
   charts.py       # when simulation-specific
   scene.py        # when simulation-specific
@@ -113,11 +114,11 @@ Subject `manifests.py` modules create `ExpansionDefinition` records. The combine
 - declared physics-invariant and validation-test coverage;
 - a prediction capability in Explore mode.
 
-`physics_playground/registry.py` is the metadata source for navigation, cards, and stable IDs.
+Each slice's `metadata.py` is the metadata source for navigation, cards, missions, and stable IDs.
+`physics_playground/registry.py` discovers and validates a unique index of those declarations.
 Runtime loading goes through `load_validated_page()`, which requires a manifest, validates it, and
-then lazily imports its page entrypoint. Registry and manifest catalogs remain parallel explicit
-declarations, with tests enforcing exact ID and metadata consistency. Contributors must update
-both catalogs and pass validation before a simulation is reachable.
+then lazily imports its page entrypoint. Expansion manifests add implementation contracts and
+reference the discovered metadata; tests enforce exact ID and metadata consistency.
 
 ## Discovery and navigation
 
@@ -138,9 +139,9 @@ validated against the registry and curriculum before use.
 
 ## Compatibility and state
 
-Stable simulation IDs, mission IDs, model versions, notebook fields, profile schemas, and existing
-import paths are compatibility surfaces. Streamlit session-state keys are also observable during a
-session. Change them only with migration reads or forwarding imports where appropriate.
+Stable simulation IDs, mission IDs, model versions, notebook fields, and profile schemas are
+compatibility surfaces. Streamlit session-state keys are also observable during a session. Change
+them only with explicit data migrations where appropriate.
 
 The current architecture migration plan is documented in
 `docs/ARCHITECTURE_MIGRATION.md`. It favors one runnable, testable stage at a time and does not

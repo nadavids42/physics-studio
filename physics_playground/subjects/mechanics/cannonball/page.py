@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 from physics_playground.canvas import embed as canvas_embed
-from physics_playground.education.lessons.cannonball import CANNONBALL_LESSON
 from physics_playground.missions import ui as mission_ui
 from physics_playground.model_metadata import PROJECTILE_MODEL_METADATA
 from physics_playground.presentation.accessibility_ui import render_chart
@@ -35,6 +34,7 @@ from physics_playground.subjects.mechanics.cannonball.charts import (
     range_by_angle_chart,
     trajectory_comparison_chart,
 )
+from physics_playground.subjects.mechanics.cannonball.lesson import CANNONBALL_LESSON
 from physics_playground.subjects.mechanics.cannonball.missions import evaluate_cannonball_missions
 from physics_playground.subjects.mechanics.cannonball.physics import (
     PROJECTILE_MODEL_VERSION,

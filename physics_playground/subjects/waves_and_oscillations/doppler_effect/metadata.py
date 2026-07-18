@@ -1,0 +1,87 @@
+"""Registry and mission metadata owned by this simulation slice."""
+
+from physics_playground.missions.models import MissionDefinition, MissionType
+from physics_playground.models.simulations import (
+    Difficulty,
+    InteractiveMode,
+    SimulationDefinition,
+    VisualMetadata,
+)
+
+SIMULATION = SimulationDefinition(
+    id="doppler_effect",
+    title="Sound and Doppler Effect",
+    icon="🔊",
+    description="Move a sound source and observer to hear frequency shifts and watch wavefronts bunch up.",
+    page_module="physics_playground.subjects.waves_and_oscillations.doppler_effect.page",
+    mission_group="Sound and Doppler Effect",
+    modes=tuple(InteractiveMode),
+    central_question="Why does a moving siren change pitch as it passes?",
+    concepts=("Sound", "Doppler effect", "Waves"),
+    difficulty=Difficulty.INTERMEDIATE,
+    badge_count=4,
+    renderer="shared-wavefront-player",
+    model_version="doppler-1.0",
+    simulation_type="Analytical + wavefront animation",
+    visual=VisualMetadata(
+        "#D32F2F",
+        "#FFEBEE",
+        ")))",
+        "A moving sound source emitting expanding wavefronts",
+    ),
+)
+
+MISSIONS = (
+    MissionDefinition(
+        id="doppler_predict",
+        simulation_id="doppler_effect",
+        title="Predicted the approaching pitch",
+        description="Predict the pitch of an approaching siren.",
+        hints=("Compressed wavefronts arrive more often.",),
+        category=MissionType.EXPLANATION,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=(),
+        hidden=False,
+        completion_rule_id="run:doppler_predict",
+        group="Sound and Doppler Effect",
+    ),
+    MissionDefinition(
+        id="doppler_high",
+        simulation_id="doppler_effect",
+        title="Raised the observed pitch by 20%",
+        description="Create an observed frequency at least 20% above the source.",
+        hints=("Move the source toward the observer or observer toward the source.",),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=("doppler_predict",),
+        hidden=False,
+        completion_rule_id="run:doppler_high",
+        group="Sound and Doppler Effect",
+    ),
+    MissionDefinition(
+        id="doppler_low",
+        simulation_id="doppler_effect",
+        title="Lowered the observed pitch by 20%",
+        description="Create an observed frequency at least 20% below the source.",
+        hints=("Make the source and observer separate faster.",),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.INTERMEDIATE,
+        prerequisites=("doppler_predict",),
+        hidden=False,
+        completion_rule_id="run:doppler_low",
+        group="Sound and Doppler Effect",
+    ),
+    MissionDefinition(
+        id="doppler_compare",
+        simulation_id="doppler_effect",
+        title="Compared approach and recession",
+        description="Run the approaching-versus-receding comparison.",
+        hints=("Use Compare mode.",),
+        category=MissionType.COMPARISON,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=("doppler_predict",),
+        hidden=False,
+        completion_rule_id="run:doppler_compare",
+        group="Sound and Doppler Effect",
+    ),
+)

@@ -21,6 +21,7 @@ from physics_playground.contracts import (
     SimulationEvent,
     SummaryMetric,
 )
+from physics_playground.integrators import rk4_step
 from physics_playground.performance import (
     MAX_SCAN_POINTS,
     MAX_TRAJECTORY_SAMPLES,
@@ -198,13 +199,7 @@ def simulate_damped_driven(p: SpringParameters) -> SpringResult:
     states = np.zeros((p.samples, 2))
     states[0] = (p.initial_displacement_m, 0)
     for i in range(1, p.samples):
-        state = states[i - 1]
-        ti = t[i - 1]
-        k1 = _rhs(state, ti, p)
-        k2 = _rhs(state + dt * k1 / 2, ti + dt / 2, p)
-        k3 = _rhs(state + dt * k2 / 2, ti + dt / 2, p)
-        k4 = _rhs(state + dt * k3, ti + dt, p)
-        states[i] = state + dt * (k1 + 2 * k2 + 2 * k3 + k4) / 6
+        states[i] = rk4_step(lambda state, time: _rhs(state, time, p), states[i - 1], t[i - 1], dt)
     return _result(p, t, states[:, 0], states[:, 1], "RK4 damped/driven oscillator")
 
 

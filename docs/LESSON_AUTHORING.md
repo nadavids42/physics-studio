@@ -16,7 +16,7 @@ physics_playground/education/
     cannonball.py           complete example lesson
 ```
 
-Add a lesson in `education/lessons/`, export it from that package, and enroll it through a `Unit`
+Add a lesson as `lesson.py` in the simulation vertical slice, then enroll it through a `Unit`
 and `Subject` in the curriculum catalog. Reference simulations by their registry ID, such as
 `"cannonball"`; never import a simulation page. Validation rejects unknown IDs.
 

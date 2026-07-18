@@ -2,7 +2,7 @@
 
 Physics Studio's first complete pathway is **Projectile motion from components**, delivered inside
 the Cannonball Launcher page. It uses the presentation-independent lesson manifest in
-`physics_playground/education/lessons/cannonball.py` and the shared Streamlit renderer in
+`physics_playground/subjects/mechanics/cannonball/lesson.py` and the shared Streamlit renderer in
 `physics_playground/presentation/pathway_ui.py`.
 
 The pathway sequences prediction, exploration, controlled comparison, graph analysis, modeling,

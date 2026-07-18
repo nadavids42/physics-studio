@@ -1,0 +1,87 @@
+"""Registry and mission metadata owned by this simulation slice."""
+
+from physics_playground.missions.models import MissionDefinition, MissionType
+from physics_playground.models.simulations import (
+    Difficulty,
+    InteractiveMode,
+    SimulationDefinition,
+    VisualMetadata,
+)
+
+SIMULATION = SimulationDefinition(
+    id="rotational_motion",
+    title="Rotational Motion",
+    icon="🌀",
+    description="Apply torque to different body shapes and track angular motion and energy.",
+    page_module="physics_playground.subjects.mechanics.rotational_motion.page",
+    mission_group="Rotational Motion",
+    modes=tuple(InteractiveMode),
+    central_question="How does moment of inertia change rotational acceleration?",
+    concepts=("Rotation", "Torque", "Energy"),
+    difficulty=Difficulty.INTERMEDIATE,
+    badge_count=4,
+    renderer="shared-browser-player",
+    model_version="rotational-motion-1.0",
+    simulation_type="Analytical",
+    visual=VisualMetadata(
+        "#5E35B1",
+        "#EDE7F6",
+        "◉",
+        "A marked disk rotating about its center",
+    ),
+)
+
+MISSIONS = (
+    MissionDefinition(
+        id="rotation_predict",
+        simulation_id="rotational_motion",
+        title="Predicted which body spins faster",
+        description="Predict how moment of inertia affects acceleration.",
+        hints=("For the same torque, smaller inertia means larger acceleration.",),
+        category=MissionType.EXPLANATION,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=(),
+        hidden=False,
+        completion_rule_id="run:rotation_predict",
+        group="Rotational Motion",
+    ),
+    MissionDefinition(
+        id="rotation_spin",
+        simulation_id="rotational_motion",
+        title="Spun past 10 rad/s",
+        description="Reach at least 10 radians per second.",
+        hints=("Increase torque or reduce inertia.",),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=("rotation_predict",),
+        hidden=False,
+        completion_rule_id="run:rotation_spin",
+        group="Rotational Motion",
+    ),
+    MissionDefinition(
+        id="rotation_energy",
+        simulation_id="rotational_motion",
+        title="Stored 100 joules of rotation",
+        description="Reach at least 100 J of rotational kinetic energy.",
+        hints=("Energy grows with angular speed squared.",),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.INTERMEDIATE,
+        prerequisites=("rotation_predict",),
+        hidden=False,
+        completion_rule_id="run:rotation_energy",
+        group="Rotational Motion",
+    ),
+    MissionDefinition(
+        id="rotation_shape_compare",
+        simulation_id="rotational_motion",
+        title="Compared inertia shapes",
+        description="Run a supported body-shape inertia model.",
+        hints=("Compare a hoop and solid disk with the same mass and radius.",),
+        category=MissionType.COMPARISON,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=("rotation_predict",),
+        hidden=False,
+        completion_rule_id="run:rotation_shape_compare",
+        group="Rotational Motion",
+    ),
+)

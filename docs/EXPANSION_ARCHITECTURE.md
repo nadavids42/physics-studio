@@ -43,7 +43,7 @@ Place model tests in `tests/models/test_<simulation_id>.py`.
 
 Define side-effect-free mission evaluation in `missions.py`. Evaluators receive a result and return
 `MissionEvaluation` records; they must not mutate Streamlit state. Add the corresponding stable
-`MissionDefinition` records to `physics_playground/missions/definitions.py` and test completion,
+`MissionDefinition` records to the slice's `metadata.py` and test completion,
 non-completion, prerequisites, and ownership.
 
 ## 4. Build the four-mode page

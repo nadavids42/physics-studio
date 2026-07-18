@@ -20,6 +20,7 @@ from physics_playground.contracts import (
     SimulationEvent,
     SummaryMetric,
 )
+from physics_playground.integrators import rk4_step
 from physics_playground.performance import (
     MAX_INTEGRATION_STEPS,
     enforce_budget,
@@ -108,14 +109,6 @@ def derivative(s, p):
     return np.array((w1, a1, w2, a2))
 
 
-def rk4(q, dt, p):
-    k1 = derivative(q, p)
-    k2 = derivative(q + dt * k1 / 2, p)
-    k3 = derivative(q + dt * k2 / 2, p)
-    k4 = derivative(q + dt * k3, p)
-    return q + dt * (k1 + 2 * k2 + 2 * k3 + k4) / 6
-
-
 def integrate(p, perturbation_deg=0.0):
     count = int(round(p.duration_s / p.time_step_s)) + 1
     t = np.linspace(0, p.duration_s, count)
@@ -123,7 +116,7 @@ def integrate(p, perturbation_deg=0.0):
     s = np.zeros((count, 4))
     s[0] = (math.radians(p.angle_1_deg + perturbation_deg), 0, math.radians(p.angle_2_deg), 0)
     for i in range(1, count):
-        s[i] = rk4(s[i - 1], dt, p)
+        s[i] = rk4_step(lambda state, _time: derivative(state, p), s[i - 1], t[i - 1], dt)
     return t, s
 
 

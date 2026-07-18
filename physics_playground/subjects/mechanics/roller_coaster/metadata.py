@@ -1,0 +1,87 @@
+"""Registry and mission metadata owned by this simulation slice."""
+
+from physics_playground.missions.models import MissionDefinition, MissionType
+from physics_playground.models.simulations import (
+    Difficulty,
+    InteractiveMode,
+    SimulationDefinition,
+    VisualMetadata,
+)
+
+SIMULATION = SimulationDefinition(
+    id="roller_coaster",
+    title="Roller-Coaster Energy",
+    icon="🎢",
+    description="Trade potential and kinetic energy while testing whether a coaster can finish its track.",
+    page_module="physics_playground.subjects.mechanics.roller_coaster.page",
+    mission_group="Roller-Coaster Energy",
+    modes=tuple(InteractiveMode),
+    central_question="How do height and energy losses control a coaster's speed?",
+    concepts=("Energy", "Conservation", "Dissipation"),
+    difficulty=Difficulty.INTERMEDIATE,
+    badge_count=4,
+    renderer="shared-browser-player",
+    model_version="roller-coaster-1.0",
+    simulation_type="Analytical + sampled",
+    visual=VisualMetadata(
+        "#E53935",
+        "#FFEBEE",
+        "🎢",
+        "A coaster moving over hills",
+    ),
+)
+
+MISSIONS = (
+    MissionDefinition(
+        id="coaster_predict",
+        simulation_id="roller_coaster",
+        title="Predicted the energy exchange",
+        description="Predict how height changes speed.",
+        hints=("Potential energy becomes kinetic energy downhill.",),
+        category=MissionType.EXPLANATION,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=(),
+        hidden=False,
+        completion_rule_id="run:coaster_predict",
+        group="Roller-Coaster Energy",
+    ),
+    MissionDefinition(
+        id="coaster_complete",
+        simulation_id="roller_coaster",
+        title="Completed the whole track",
+        description="Build a track the coaster can physically finish.",
+        hints=("Lower the middle hill or add starting speed.",),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=("coaster_predict",),
+        hidden=False,
+        completion_rule_id="run:coaster_complete",
+        group="Roller-Coaster Energy",
+    ),
+    MissionDefinition(
+        id="coaster_fast",
+        simulation_id="roller_coaster",
+        title="Built a 20 m/s coaster",
+        description="Reach a maximum speed of at least 20 m/s.",
+        hints=("Start higher and finish lower.",),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.INTERMEDIATE,
+        prerequisites=("coaster_predict",),
+        hidden=False,
+        completion_rule_id="run:coaster_fast",
+        group="Roller-Coaster Energy",
+    ),
+    MissionDefinition(
+        id="coaster_loss_compare",
+        simulation_id="roller_coaster",
+        title="Finished despite energy losses",
+        description="Complete a track with dissipative loss enabled.",
+        hints=("Leave enough initial energy for frictional losses.",),
+        category=MissionType.COMPARISON,
+        difficulty=Difficulty.INTERMEDIATE,
+        prerequisites=("coaster_predict",),
+        hidden=False,
+        completion_rule_id="run:coaster_loss_compare",
+        group="Roller-Coaster Energy",
+    ),
+)

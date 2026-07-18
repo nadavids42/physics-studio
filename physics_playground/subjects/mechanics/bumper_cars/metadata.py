@@ -1,0 +1,87 @@
+"""Registry and mission metadata owned by this simulation slice."""
+
+from physics_playground.missions.models import MissionDefinition, MissionType
+from physics_playground.models.simulations import (
+    Difficulty,
+    InteractiveMode,
+    SimulationDefinition,
+    VisualMetadata,
+)
+
+SIMULATION = SimulationDefinition(
+    id="bumper_cars",
+    title="Bumper Cars",
+    icon="🚗",
+    description="Crash two cars and track momentum and energy.",
+    page_module="physics_playground.subjects.mechanics.bumper_cars.page",
+    mission_group="Bumper Cars",
+    modes=tuple(InteractiveMode),
+    central_question="What determines how two cars move after a collision?",
+    concepts=("Momentum", "Energy", "Collisions"),
+    difficulty=Difficulty.BEGINNER,
+    badge_count=4,
+    renderer="shared-browser-player",
+    model_version="collision-1.0",
+    simulation_type="Analytical",
+    visual=VisualMetadata(
+        "#FB8C00",
+        "#FFF3E0",
+        "🚙",
+        "Two bumper cars approaching a collision",
+    ),
+)
+
+MISSIONS = (
+    MissionDefinition(
+        id="collision_predict",
+        simulation_id="bumper_cars",
+        title="Guessed what happens in an equal-mass crash",
+        description="Predict an elastic equal-mass collision.",
+        hints=("Think of Newton's cradle.",),
+        category=MissionType.EXPLANATION,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=(),
+        hidden=False,
+        completion_rule_id="run:collision_predict",
+        group="Bumper Cars",
+    ),
+    MissionDefinition(
+        id="collision_swap",
+        simulation_id="bumper_cars",
+        title="Made two equal cars swap velocities",
+        description="Run an elastic collision with nearly equal masses.",
+        hints=("Use equal masses and bouncy bumpers.", "Start Car B nearly still."),
+        category=MissionType.COMPARISON,
+        difficulty=Difficulty.INTERMEDIATE,
+        prerequisites=("collision_predict",),
+        hidden=False,
+        completion_rule_id="run:collision_swap",
+        group="Bumper Cars",
+    ),
+    MissionDefinition(
+        id="collision_stop",
+        simulation_id="bumper_cars",
+        title="Stuck two cars together for a perfect stop",
+        description="Balance momentum with sticky bumpers.",
+        hints=("Choose sticky bumpers.", "Make the incoming momenta cancel."),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.INTERMEDIATE,
+        prerequisites=("collision_predict",),
+        hidden=False,
+        completion_rule_id="run:collision_stop",
+        group="Bumper Cars",
+    ),
+    MissionDefinition(
+        id="collision_bounce",
+        simulation_id="bumper_cars",
+        title="Bounced a light car backward off a heavy one",
+        description="Reflect a light car from a heavy one.",
+        hints=("Make Car B much heavier.", "Use bouncy bumpers."),
+        category=MissionType.COMPARISON,
+        difficulty=Difficulty.ADVANCED,
+        prerequisites=("collision_predict",),
+        hidden=True,
+        completion_rule_id="run:collision_bounce",
+        group="Bumper Cars",
+    ),
+)

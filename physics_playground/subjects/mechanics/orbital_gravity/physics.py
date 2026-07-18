@@ -20,6 +20,7 @@ from physics_playground.contracts import (
     SimulationEvent,
     SummaryMetric,
 )
+from physics_playground.integrators import velocity_verlet_step
 from physics_playground.performance import (
     MAX_INTEGRATION_STEPS,
     enforce_budget,
@@ -237,14 +238,14 @@ def simulate_orbit(p: OrbitParameters) -> OrbitResult:
     v[0] = (0, p.tangential_speed)
     last = p.steps - 1
     crashed = escaped = False
-    a = _acceleration(r[0], p.gravitational_parameter)
+
+    def acceleration(position: np.ndarray) -> np.ndarray:
+        return _acceleration(position, p.gravitational_parameter)
+
     for i in range(1, p.steps):
-        rn = r[i - 1] + v[i - 1] * p.time_step + 0.5 * a * p.time_step**2
-        an = _acceleration(rn, p.gravitational_parameter)
-        vn = v[i - 1] + 0.5 * (a + an) * p.time_step
+        rn, vn = velocity_verlet_step(r[i - 1], v[i - 1], acceleration, p.time_step)
         r[i] = rn
         v[i] = vn
-        a = an
         d = np.linalg.norm(rn)
         if d <= p.collision_radius:
             crashed = True

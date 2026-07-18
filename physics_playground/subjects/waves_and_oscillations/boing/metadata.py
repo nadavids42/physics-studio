@@ -1,0 +1,87 @@
+"""Registry and mission metadata owned by this simulation slice."""
+
+from physics_playground.missions.models import MissionDefinition, MissionType
+from physics_playground.models.simulations import (
+    Difficulty,
+    InteractiveMode,
+    SimulationDefinition,
+    VisualMetadata,
+)
+
+SIMULATION = SimulationDefinition(
+    id="boing",
+    title="The Boing Machine",
+    icon="🌀",
+    description="Build an oscillator and hunt for resonance.",
+    page_module="physics_playground.subjects.waves_and_oscillations.boing.page",
+    mission_group="Boing Machine",
+    modes=tuple(InteractiveMode),
+    central_question="What controls a spring's rhythm—and when does resonance appear?",
+    concepts=("Oscillation", "Resonance", "Energy"),
+    difficulty=Difficulty.INTERMEDIATE,
+    badge_count=4,
+    renderer="shared-browser-player",
+    model_version="spring-2.0",
+    simulation_type="Analytical + numerical",
+    visual=VisualMetadata(
+        "#5C6BC0",
+        "#E8EAF6",
+        "↔️",
+        "A mass oscillating on a spring",
+    ),
+)
+
+MISSIONS = (
+    MissionDefinition(
+        id="spring_predict",
+        simulation_id="boing",
+        title="Guessed the boing secret",
+        description="Predict whether ideal amplitude changes period.",
+        hints=("Ideal SHM has a hidden timing symmetry.",),
+        category=MissionType.EXPLANATION,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=(),
+        hidden=False,
+        completion_rule_id="run:spring_predict",
+        group="Boing Machine",
+    ),
+    MissionDefinition(
+        id="spring_two_second",
+        simulation_id="boing",
+        title="Built a perfect 2-second boing",
+        description="Create a period between 1.9 and 2.1 seconds.",
+        hints=("Increase mass to slow it down.", "Increase stiffness to speed it up."),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.INTERMEDIATE,
+        prerequisites=("spring_predict",),
+        hidden=False,
+        completion_rule_id="run:spring_two_second",
+        group="Boing Machine",
+    ),
+    MissionDefinition(
+        id="spring_fast",
+        simulation_id="boing",
+        title="Made a boing take under half a second",
+        description="Create a period below 0.5 seconds.",
+        hints=("Use a light mass and stiff spring.",),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.INTERMEDIATE,
+        prerequisites=("spring_predict",),
+        hidden=False,
+        completion_rule_id="run:spring_fast",
+        group="Boing Machine",
+    ),
+    MissionDefinition(
+        id="spring_resonance",
+        simulation_id="boing",
+        title="Found resonance in Model mode",
+        description="Create a large response near natural-frequency driving.",
+        hints=("Turn on driving.", "Choose the natural-frequency preset and keep damping modest."),
+        category=MissionType.COMPARISON,
+        difficulty=Difficulty.ADVANCED,
+        prerequisites=("spring_predict",),
+        hidden=True,
+        completion_rule_id="run:spring_resonance",
+        group="Boing Machine",
+    ),
+)

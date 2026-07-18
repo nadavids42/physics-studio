@@ -1,5 +1,16 @@
-"""Pure mission definitions and the active Streamlit mission adapter."""
+"""Mission domain models with lazy catalog access."""
 
-from physics_playground.missions.definitions import MISSION_DEFINITIONS, MissionDefinition
+from typing import Any
 
-__all__ = ["MISSION_DEFINITIONS", "MissionDefinition"]
+from physics_playground.missions.models import MissionDefinition, MissionType
+
+
+def __getattr__(name: str) -> Any:
+    if name in {"MISSION_DEFINITIONS", "MISSIONS_BY_SIMULATION"}:
+        from physics_playground.missions import definitions
+
+        return getattr(definitions, name)
+    raise AttributeError(name)
+
+
+__all__ = ["MISSION_DEFINITIONS", "MISSIONS_BY_SIMULATION", "MissionDefinition", "MissionType"]

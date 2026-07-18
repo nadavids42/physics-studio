@@ -1,39 +1,17 @@
-"""Typed contracts shared by physics models and presentation code."""
+"""Shared architecture models; simulation contracts live in vertical slices."""
 
-from physics_playground.models.parameters import (
-    DoublePendulumParameters,
-    OrbitParameters,
-    PendulumParameters,
-    ProjectileParameters,
-    SpringParameters,
-    TunnelParameters,
-)
-from physics_playground.models.results import (
-    IntegrationResult,
-    OrbitResult,
-    ScalarMetrics,
-    SimulationResult,
-    Trajectory,
-)
 from physics_playground.models.simulations import (
+    Difficulty,
     InteractiveMode,
     SimulationDefinition,
     SimulationMode,
+    VisualMetadata,
 )
 
 __all__ = [
-    "DoublePendulumParameters",
-    "IntegrationResult",
+    "Difficulty",
     "InteractiveMode",
-    "OrbitParameters",
-    "OrbitResult",
-    "PendulumParameters",
-    "ProjectileParameters",
-    "ScalarMetrics",
     "SimulationDefinition",
     "SimulationMode",
-    "SimulationResult",
-    "SpringParameters",
-    "Trajectory",
-    "TunnelParameters",
+    "VisualMetadata",
 ]

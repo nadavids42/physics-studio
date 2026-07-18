@@ -1,0 +1,87 @@
+"""Registry and mission metadata owned by this simulation slice."""
+
+from physics_playground.missions.models import MissionDefinition, MissionType
+from physics_playground.models.simulations import (
+    Difficulty,
+    InteractiveMode,
+    SimulationDefinition,
+    VisualMetadata,
+)
+
+SIMULATION = SimulationDefinition(
+    id="reflection_refraction",
+    title="Reflection and Refraction",
+    icon="🔦",
+    description="Trace reflected and refracted rays across a boundary and discover total internal reflection.",
+    page_module="physics_playground.subjects.light_and_electricity.reflection_refraction.page",
+    mission_group="Reflection and Refraction",
+    modes=tuple(InteractiveMode),
+    central_question="How does light choose its direction at a boundary?",
+    concepts=("Light", "Reflection", "Refraction"),
+    difficulty=Difficulty.INTERMEDIATE,
+    badge_count=4,
+    renderer="shared-ray-diagram",
+    model_version="reflection-refraction-1.0",
+    simulation_type="Analytical + ray diagram",
+    visual=VisualMetadata(
+        "#FB8C00",
+        "#FFF3E0",
+        "↘",
+        "A light ray splitting into reflected and refracted paths",
+    ),
+)
+
+MISSIONS = (
+    MissionDefinition(
+        id="optics_predict",
+        simulation_id="reflection_refraction",
+        title="Predicted the reflected angle",
+        description="Use the law of reflection before tracing rays.",
+        hints=("Measure both angles from the normal.",),
+        category=MissionType.EXPLANATION,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=(),
+        hidden=False,
+        completion_rule_id="run:optics_predict",
+        group="Reflection and Refraction",
+    ),
+    MissionDefinition(
+        id="optics_reflect",
+        simulation_id="reflection_refraction",
+        title="Verified the law of reflection",
+        description="Run a ray and confirm equal incident and reflected angles.",
+        hints=("Any valid incident angle works.",),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=("optics_predict",),
+        hidden=False,
+        completion_rule_id="run:optics_reflect",
+        group="Reflection and Refraction",
+    ),
+    MissionDefinition(
+        id="optics_tir",
+        simulation_id="reflection_refraction",
+        title="Created total internal reflection",
+        description="Send light from higher to lower index above the critical angle.",
+        hints=("Try glass to air at a steep angle.",),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.INTERMEDIATE,
+        prerequisites=("optics_predict",),
+        hidden=False,
+        completion_rule_id="run:optics_tir",
+        group="Reflection and Refraction",
+    ),
+    MissionDefinition(
+        id="optics_index_compare",
+        simulation_id="reflection_refraction",
+        title="Compared medium order",
+        description="Compare air-to-glass with glass-to-air.",
+        hints=("Use Compare mode.",),
+        category=MissionType.COMPARISON,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=("optics_predict",),
+        hidden=False,
+        completion_rule_id="run:optics_index_compare",
+        group="Reflection and Refraction",
+    ),
+)

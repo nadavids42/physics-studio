@@ -17,7 +17,6 @@ from physics_playground.missions.service import (
     overall_percentage,
     summary,
 )
-from physics_playground.presentation.formatting import friendly_minutes, friendly_speed
 from physics_playground.registry import SIMULATION_REGISTRY
 from physics_playground.state_keys import SHARED_STATE_KEYS, migrate_legacy_keys
 
@@ -170,19 +169,3 @@ def prediction_quiz(key, question, options, correct_index, reveal_text, mission_
     ):
         st.caption("Run the experiment to earn the explanation badge.")
     return True
-
-
-# Deprecated compatibility export. Unverified real-world analogy values were removed.
-SPEED_THINGS: tuple[()] = ()
-
-
-def fun_speed(mps):
-    """Compatibility name for verified speed-unit formatting."""
-
-    return friendly_speed(mps)
-
-
-def fun_time_minutes(minutes):
-    """Compatibility name for verified elapsed-time formatting."""
-
-    return friendly_minutes(minutes)

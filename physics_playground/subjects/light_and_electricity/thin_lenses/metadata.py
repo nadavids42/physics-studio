@@ -1,0 +1,87 @@
+"""Registry and mission metadata owned by this simulation slice."""
+
+from physics_playground.missions.models import MissionDefinition, MissionType
+from physics_playground.models.simulations import (
+    Difficulty,
+    InteractiveMode,
+    SimulationDefinition,
+    VisualMetadata,
+)
+
+SIMULATION = SimulationDefinition(
+    id="thin_lenses",
+    title="Thin Lenses",
+    icon="🔍",
+    description="Build converging and diverging lens diagrams and classify their images.",
+    page_module="physics_playground.subjects.light_and_electricity.thin_lenses.page",
+    mission_group="Thin Lenses",
+    modes=tuple(InteractiveMode),
+    central_question="Where does a lens form an image, and is it real or virtual?",
+    concepts=("Light", "Lenses", "Images"),
+    difficulty=Difficulty.INTERMEDIATE,
+    badge_count=4,
+    renderer="shared-ray-diagram",
+    model_version="thin-lens-1.0",
+    simulation_type="Analytical + ray diagram",
+    visual=VisualMetadata(
+        "#1565C0",
+        "#E3F2FD",
+        ")(",
+        "Principal rays passing through a thin lens",
+    ),
+)
+
+MISSIONS = (
+    MissionDefinition(
+        id="lens_predict",
+        simulation_id="thin_lenses",
+        title="Predicted a real lens image",
+        description="Predict the image from a converging lens beyond focus.",
+        hints=("Principal rays meet on the far side.",),
+        category=MissionType.EXPLANATION,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=(),
+        hidden=False,
+        completion_rule_id="run:lens_predict",
+        group="Thin Lenses",
+    ),
+    MissionDefinition(
+        id="lens_real",
+        simulation_id="thin_lenses",
+        title="Formed a real image",
+        description="Place an object beyond a converging lens's focal point.",
+        hints=("Use positive focal length and object distance greater than it.",),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=("lens_predict",),
+        hidden=False,
+        completion_rule_id="run:lens_real",
+        group="Thin Lenses",
+    ),
+    MissionDefinition(
+        id="lens_virtual",
+        simulation_id="thin_lenses",
+        title="Formed a virtual image",
+        description="Create an image with negative image distance.",
+        hints=("Use a diverging lens or put the object inside a converging focus.",),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=("lens_predict",),
+        hidden=False,
+        completion_rule_id="run:lens_virtual",
+        group="Thin Lenses",
+    ),
+    MissionDefinition(
+        id="lens_compare",
+        simulation_id="thin_lenses",
+        title="Compared converging and diverging lenses",
+        description="Run both lens signs with the same object.",
+        hints=("Use Compare mode.",),
+        category=MissionType.COMPARISON,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=("lens_predict",),
+        hidden=False,
+        completion_rule_id="run:lens_compare",
+        group="Thin Lenses",
+    ),
+)

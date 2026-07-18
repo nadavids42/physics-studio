@@ -21,6 +21,7 @@ from physics_playground.contracts import (
     SimulationEvent,
     SummaryMetric,
 )
+from physics_playground.integrators import rk4_step
 from physics_playground.performance import (
     MAX_TRAJECTORY_SAMPLES,
     enforce_budget,
@@ -174,16 +175,11 @@ def simulate_nonlinear(p: PendulumParameters) -> PendulumResult:
     s = np.zeros((p.samples, 2))
     s[0] = (math.radians(p.release_angle_deg), 0)
 
-    def rhs(q):
+    def rhs(q, _time):
         return np.array((q[1], -(p.gravity_m_s2 / p.length_m) * math.sin(q[0])))
 
     for i in range(1, p.samples):
-        q = s[i - 1]
-        k1 = rhs(q)
-        k2 = rhs(q + dt * k1 / 2)
-        k3 = rhs(q + dt * k2 / 2)
-        k4 = rhs(q + dt * k3)
-        s[i] = q + dt * (k1 + 2 * k2 + 2 * k3 + k4) / 6
+        s[i] = rk4_step(rhs, s[i - 1], t[i - 1], dt)
     return _result(p, t, s[:, 0], s[:, 1], period, "Nonlinear RK4")
 
 

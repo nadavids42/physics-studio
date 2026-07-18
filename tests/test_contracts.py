@@ -5,54 +5,57 @@ import json
 import pytest
 
 from physics_playground.contract_validation import validate_contract_result
-from physics_playground.contracts import AnimationData, AnimationKind, AnimationTrack
-from physics_playground.examples import FreeFallParameters, FreeFallSimulation
+from physics_playground.contracts import (
+    AnimationData,
+    AnimationKind,
+    AnimationTrack,
+    shared_metric_deltas,
+)
 from physics_playground.history import TrialHistory
 from physics_playground.serialization import dumps
+from physics_playground.subjects.mechanics.cannonball.physics import (
+    ProjectileParameters,
+    simulate_projectile,
+)
 from physics_playground.validation import PhysicsValidationError
 
 
-def test_example_implements_complete_contract() -> None:
-    result = FreeFallSimulation().run(FreeFallParameters(height_m=25.0))
+def test_real_simulation_implements_complete_contract() -> None:
+    result = simulate_projectile(ProjectileParameters())
     validate_contract_result(result)
     assert result.animation is not None
-    assert len(result.plots) == 2
+    assert result.plots
     assert result.metric("impact_speed").value > 0
     assert result.events[-1].id == "impact"
-    assert len(result.assumptions) == 2
-    assert len(result.missions) == 1
+    assert result.assumptions
 
 
 def test_result_serializes_as_strict_json() -> None:
-    result = FreeFallSimulation().run(FreeFallParameters())
+    result = simulate_projectile(ProjectileParameters())
     payload = json.loads(dumps(result))
-    assert payload["simulation_id"] == "free_fall_example"
-    assert payload["parameters"]["height_m"] == 20.0
+    assert payload["simulation_id"] == "cannonball"
+    assert payload["parameters"]["launch_speed_m_s"] == 20.0
     assert payload["events"][-1]["kind"] == "completion"
-    assert payload["animation"]["kind"] == "one_dimensional"
+    assert payload["animation"]["kind"] == "two_dimensional"
 
 
 def test_trial_history_serializes_and_preserves_results() -> None:
-    simulation = FreeFallSimulation()
-    history = TrialHistory[FreeFallParameters](simulation.metadata.id)
-    trial = history.add(simulation.run(FreeFallParameters()), label="First try")
+    history = TrialHistory[ProjectileParameters]("cannonball")
+    trial = history.add(simulate_projectile(ProjectileParameters()), label="First try")
     payload = json.loads(history.to_json())
     assert history.get(trial.id) is trial
     assert payload["trials"][0]["label"] == "First try"
 
 
 def test_comparison_returns_shared_metric_deltas() -> None:
-    simulation = FreeFallSimulation()
-    short = simulation.run(FreeFallParameters(height_m=5.0))
-    tall = simulation.run(FreeFallParameters(height_m=20.0))
-    comparison = simulation.compare(short, tall)
-    assert comparison.metric_deltas["flight_time"] > 0
-    assert comparison.metric_deltas["impact_speed"] > 0
+    slow = simulate_projectile(ProjectileParameters(10.0, 45.0))
+    fast = simulate_projectile(ProjectileParameters(20.0, 45.0))
+    assert shared_metric_deltas(slow, fast)["range"] > 0
 
 
 def test_parameter_validation_rejects_nonphysical_height() -> None:
     with pytest.raises(PhysicsValidationError):
-        FreeFallSimulation().run(FreeFallParameters(height_m=0.0))
+        simulate_projectile(ProjectileParameters(launch_speed_m_s=0.0))
 
 
 def test_animation_validation_rejects_mismatched_lengths() -> None:

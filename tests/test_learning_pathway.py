@@ -7,7 +7,6 @@ from physics_playground.application_callbacks import (
     configure_application_callbacks,
     reset_application_callbacks,
 )
-from physics_playground.education.lessons.cannonball import CANNONBALL_LESSON
 from physics_playground.education.models import (
     ActivityPhase,
     CheckpointQuestion,
@@ -18,6 +17,7 @@ from physics_playground.notebook import ExperimentNotebook
 from physics_playground.presentation import pathway_ui, profile_ui
 from physics_playground.profiles import LocalProfile, ProfileStore
 from physics_playground.state_keys import SHARED_STATE_KEYS, simulation_key
+from physics_playground.subjects.mechanics.cannonball.lesson import CANNONBALL_LESSON
 
 
 def _requirements() -> tuple[tuple[str, ...], tuple[str, ...]]:

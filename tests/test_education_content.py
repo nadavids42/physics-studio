@@ -9,7 +9,6 @@ from pathlib import Path
 import pytest
 
 from physics_playground.education.catalog import CURRICULUM, LESSONS_BY_ID
-from physics_playground.education.lessons.cannonball import CANNONBALL_LESSON
 from physics_playground.education.models import (
     ActivityPhase,
     ContentVoice,
@@ -21,6 +20,7 @@ from physics_playground.education.models import (
 from physics_playground.education.validation import validate_curriculum_manifest
 from physics_playground.models.simulations import InteractiveMode
 from physics_playground.registry import SIMULATION_REGISTRY
+from physics_playground.subjects.mechanics.cannonball.lesson import CANNONBALL_LESSON
 from physics_playground.validation import PhysicsValidationError
 
 SIMULATION_IDS = {simulation.id for simulation in SIMULATION_REGISTRY}

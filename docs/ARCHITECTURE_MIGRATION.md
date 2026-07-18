@@ -3,6 +3,10 @@
 Date: 2026-07-18
 Repository baseline: current working tree at audit time
 
+> Historical audit: the vertical-slice migration and July 2026 YAGNI consolidation are complete.
+> Current ownership is documented in `docs/ARCHITECTURE.md` and
+> `docs/YAGNI_SCALABILITY_AUDIT.md`; later baseline tables below are retained as migration history.
+
 ## Migration progress
 
 Stage 3 is complete. All dependency-ordered waves have been completed after the audit:

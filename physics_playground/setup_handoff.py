@@ -6,7 +6,6 @@ from collections.abc import Mapping, MutableMapping
 from dataclasses import dataclass
 from typing import Any
 
-from physics_playground.binding_models import SimulationPreset
 from physics_playground.contracts import JsonValue
 from physics_playground.state_keys import SHARED_STATE_KEYS, migrate_legacy_keys
 
@@ -37,18 +36,6 @@ def queue_setup_request(
 ) -> None:
     migrate_legacy_keys(state)
     state[SETUP_REQUEST_KEY] = request.to_dict()
-
-
-def queue_preset(state: MutableMapping[str, Any], preset: SimulationPreset) -> None:
-    queue_setup_request(
-        state,
-        SimulationSetupRequest(
-            simulation_id=preset.simulation_id,
-            parameters=preset.parameters,
-            source_label=preset.title,
-            preset_id=preset.id,
-        ),
-    )
 
 
 def consume_setup_request(

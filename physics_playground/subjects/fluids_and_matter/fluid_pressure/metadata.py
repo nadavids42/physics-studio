@@ -1,0 +1,87 @@
+"""Registry and mission metadata owned by this simulation slice."""
+
+from physics_playground.missions.models import MissionDefinition, MissionType
+from physics_playground.models.simulations import (
+    Difficulty,
+    InteractiveMode,
+    SimulationDefinition,
+    VisualMetadata,
+)
+
+SIMULATION = SimulationDefinition(
+    id="fluid_pressure",
+    title="Fluid Pressure",
+    icon="🌊",
+    description="Measure gauge and absolute pressure at different depths and in different fluids.",
+    page_module="physics_playground.subjects.fluids_and_matter.fluid_pressure.page",
+    mission_group="Fluid Pressure",
+    modes=tuple(InteractiveMode),
+    central_question="Why does pressure increase as we move deeper into a fluid?",
+    concepts=("Fluids", "Pressure", "Density"),
+    difficulty=Difficulty.BEGINNER,
+    badge_count=4,
+    renderer="shared-fluid-container",
+    model_version="fluid-pressure-1.0",
+    simulation_type="Analytical + column diagram",
+    visual=VisualMetadata(
+        "#1565C0",
+        "#E3F2FD",
+        "▥",
+        "A fluid column darkening with depth",
+    ),
+)
+
+MISSIONS = (
+    MissionDefinition(
+        id="pressure_predict",
+        simulation_id="fluid_pressure",
+        title="Predicted the depth effect",
+        description="Predict how pressure changes with depth.",
+        hints=("Think about the weight of fluid overhead.",),
+        category=MissionType.EXPLANATION,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=(),
+        hidden=False,
+        completion_rule_id="run:pressure_predict",
+        group="Fluid Pressure",
+    ),
+    MissionDefinition(
+        id="pressure_deep",
+        simulation_id="fluid_pressure",
+        title="Measured near the bottom",
+        description="Measure at least 80% of the container depth.",
+        hints=("Move the depth control close to maximum.",),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=("pressure_predict",),
+        hidden=False,
+        completion_rule_id="run:pressure_deep",
+        group="Fluid Pressure",
+    ),
+    MissionDefinition(
+        id="pressure_double",
+        simulation_id="fluid_pressure",
+        title="Created two atmospheres of gauge pressure",
+        description="Reach gauge pressure of at least 202.65 kPa.",
+        hints=("Use a dense fluid, strong gravity, or greater depth.",),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.ADVANCED,
+        prerequisites=("pressure_predict",),
+        hidden=False,
+        completion_rule_id="run:pressure_double",
+        group="Fluid Pressure",
+    ),
+    MissionDefinition(
+        id="pressure_compare",
+        simulation_id="fluid_pressure",
+        title="Compared shallow and deep pressure",
+        description="Run the depth comparison.",
+        hints=("Use Compare mode.",),
+        category=MissionType.COMPARISON,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=("pressure_predict",),
+        hidden=False,
+        completion_rule_id="run:pressure_compare",
+        group="Fluid Pressure",
+    ),
+)

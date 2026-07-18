@@ -11,12 +11,12 @@ from physics_playground.education.audience import (
     VisualDensity,
 )
 from physics_playground.education.catalog import CURRICULUM
-from physics_playground.education.lessons.cannonball import CANNONBALL_LESSON
 from physics_playground.education.models import GuidedDerivation, SimulationActivity
 from physics_playground.education.selection import select_lesson_sections
 from physics_playground.education.validation import validate_curriculum_manifest
 from physics_playground.profiles import LocalProfile, ProfileStore
 from physics_playground.registry import SIMULATION_REGISTRY
+from physics_playground.subjects.mechanics.cannonball.lesson import CANNONBALL_LESSON
 from physics_playground.subjects.mechanics.cannonball.physics import (
     ProjectileParameters,
     simulate_projectile,

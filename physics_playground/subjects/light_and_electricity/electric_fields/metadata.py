@@ -1,0 +1,87 @@
+"""Registry and mission metadata owned by this simulation slice."""
+
+from physics_playground.missions.models import MissionDefinition, MissionType
+from physics_playground.models.simulations import (
+    Difficulty,
+    InteractiveMode,
+    SimulationDefinition,
+    VisualMetadata,
+)
+
+SIMULATION = SimulationDefinition(
+    id="electric_fields",
+    title="Electric Fields",
+    icon="⚡",
+    description="Arrange positive and negative point charges, map vectors and potential, and probe forces.",
+    page_module="physics_playground.subjects.light_and_electricity.electric_fields.page",
+    mission_group="Electric Fields",
+    modes=tuple(InteractiveMode),
+    central_question="How do multiple charges shape electric field, potential, and force?",
+    concepts=("Electricity", "Fields", "Potential"),
+    difficulty=Difficulty.ADVANCED,
+    badge_count=4,
+    renderer="shared-vector-field",
+    model_version="electric-field-1.0",
+    simulation_type="Analytical + bounded field grid",
+    visual=VisualMetadata(
+        "#D32F2F",
+        "#E3F2FD",
+        "±",
+        "Positive and negative charges surrounded by field arrows",
+    ),
+)
+
+MISSIONS = (
+    MissionDefinition(
+        id="field_predict",
+        simulation_id="electric_fields",
+        title="Predicted the positive-charge field",
+        description="Predict the field direction around a positive source.",
+        hints=("Imagine releasing a tiny positive test charge.",),
+        category=MissionType.EXPLANATION,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=(),
+        hidden=False,
+        completion_rule_id="run:field_predict",
+        group="Electric Fields",
+    ),
+    MissionDefinition(
+        id="field_dipole",
+        simulation_id="electric_fields",
+        title="Built an electric dipole",
+        description="Run with at least one positive and one negative source.",
+        hints=("Give two charges opposite signs.",),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=("field_predict",),
+        hidden=False,
+        completion_rule_id="run:field_dipole",
+        group="Electric Fields",
+    ),
+    MissionDefinition(
+        id="field_zero_force",
+        simulation_id="electric_fields",
+        title="Found a nearly force-free point",
+        description="Place the test charge where the net force is tiny.",
+        hints=("Try symmetry between equal like charges, away from either singularity.",),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.ADVANCED,
+        prerequisites=("field_predict",),
+        hidden=False,
+        completion_rule_id="run:field_zero_force",
+        group="Electric Fields",
+    ),
+    MissionDefinition(
+        id="field_compare",
+        simulation_id="electric_fields",
+        title="Compared like and opposite charges",
+        description="Run the like-charge versus dipole comparison.",
+        hints=("Use Compare mode.",),
+        category=MissionType.COMPARISON,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=("field_predict",),
+        hidden=False,
+        completion_rule_id="run:field_compare",
+        group="Electric Fields",
+    ),
+)

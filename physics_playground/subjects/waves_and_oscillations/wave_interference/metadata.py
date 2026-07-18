@@ -1,0 +1,87 @@
+"""Registry and mission metadata owned by this simulation slice."""
+
+from physics_playground.missions.models import MissionDefinition, MissionType
+from physics_playground.models.simulations import (
+    Difficulty,
+    InteractiveMode,
+    SimulationDefinition,
+    VisualMetadata,
+)
+
+SIMULATION = SimulationDefinition(
+    id="wave_interference",
+    title="Wave Interference",
+    icon="🌊",
+    description="Combine traveling waves and measure constructive and destructive interference.",
+    page_module="physics_playground.subjects.waves_and_oscillations.wave_interference.page",
+    mission_group="Wave Interference",
+    modes=tuple(InteractiveMode),
+    central_question="How do amplitude and phase determine the wave we observe?",
+    concepts=("Waves", "Interference", "Superposition"),
+    difficulty=Difficulty.INTERMEDIATE,
+    badge_count=4,
+    renderer="shared-scalar-field-player",
+    model_version="wave-interference-1.0",
+    simulation_type="Analytical + field animation",
+    visual=VisualMetadata(
+        "#0072B2",
+        "#E3F2FD",
+        "∿",
+        "Multiple traveling waves combining into one field",
+    ),
+)
+
+MISSIONS = (
+    MissionDefinition(
+        id="wave_predict",
+        simulation_id="wave_interference",
+        title="Predicted constructive interference",
+        description="Predict what in-phase waves do.",
+        hints=("Add their displacements point by point.",),
+        category=MissionType.EXPLANATION,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=(),
+        hidden=False,
+        completion_rule_id="run:wave_predict",
+        group="Wave Interference",
+    ),
+    MissionDefinition(
+        id="wave_constructive",
+        simulation_id="wave_interference",
+        title="Made waves reinforce",
+        description="Create nearly complete constructive interference.",
+        hints=("Match wavelength, frequency, and phase.",),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=("wave_predict",),
+        hidden=False,
+        completion_rule_id="run:wave_constructive",
+        group="Wave Interference",
+    ),
+    MissionDefinition(
+        id="wave_destructive",
+        simulation_id="wave_interference",
+        title="Made waves cancel",
+        description="Create strong destructive interference.",
+        hints=("Use equal waves separated by 180°.",),
+        category=MissionType.DISCOVERY,
+        difficulty=Difficulty.INTERMEDIATE,
+        prerequisites=("wave_predict",),
+        hidden=False,
+        completion_rule_id="run:wave_destructive",
+        group="Wave Interference",
+    ),
+    MissionDefinition(
+        id="wave_phase_compare",
+        simulation_id="wave_interference",
+        title="Compared phase relationships",
+        description="Run the in-phase versus opposite-phase comparison.",
+        hints=("Open Compare mode.",),
+        category=MissionType.COMPARISON,
+        difficulty=Difficulty.BEGINNER,
+        prerequisites=("wave_predict",),
+        hidden=False,
+        completion_rule_id="run:wave_phase_compare",
+        group="Wave Interference",
+    ),
+)
