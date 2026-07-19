@@ -48,15 +48,15 @@ Python-owned grading, notebook, progress, and persistence services. Keep the cur
 application fully operational as the compatibility host during incremental migration.
 
 This ADR does **not** authorize a new frontend application shell, HTTP API, repository-wide page
-rewrite, or JavaScript physics implementation. The only immediate foundation is protocol version
-1 and its first consumer, the existing linked Cannonball representation.
+rewrite, or JavaScript physics implementation. The only immediate foundation is the existing linked
+Cannonball representation, and it has exactly one consumer.
 
-Protocol v1 is an envelope with:
-
-- `protocol: "physics-studio.frontend"` and integer `version: 1`;
-- simulation ID and model version;
-- representation kind and representation schema version;
-- a JSON payload validated in both Python and JavaScript.
+Since a second consumer never materialized, the envelope this section originally specified as a
+generic "protocol version 1" was renamed to what it actually is: `cannonball/linked_payload.py`'s
+single-purpose envelope for the linked-projectile view, with an integer `version` field, simulation
+ID and model version, and a JSON payload validated in both Python and JavaScript. It is not a
+general mechanism other simulations plug into; treat any future second consumer as a reason to
+design a real protocol then, not as something already built.
 
 The linked-projectile representation additionally requires one run per animation track, finite and
 equal-length time/position/velocity/acceleration arrays, strictly increasing time, and a positive
@@ -65,21 +65,21 @@ presentation state, interpolation/selection, and rendering.
 
 ## Compatibility and migration
 
-1. Streamlit continues to route simulations, execute plugins, persist profiles, and host lessons.
-2. A simulation may add a protocol adapter beside its Python vertical slice. Existing renderers
-   remain the fallback and no manifest is mechanically rewritten.
-3. Migrate one representation at a time: model result → validated protocol envelope → frontend
-   consumer. Cannonball linked representations are the only v1 consumer.
+1. Streamlit continues to route simulations, run their pages, persist profiles, and host lessons.
+2. A simulation may add a browser-side payload envelope beside its Python vertical slice. Existing
+   renderers remain the fallback and no manifest is mechanically rewritten.
+3. Migrate one representation at a time: model result → validated payload envelope → frontend
+   consumer. Cannonball linked representations remain the only consumer; a second one has not been
+   built and should not be until a concrete experience needs it (see the correction above).
 4. A future service transport may deliver the same envelope over HTTP or a local process boundary;
    transport concerns must not change the scientific result contract.
 5. Only after a dedicated shell provides equivalent accessibility, profiles, lessons, assessments,
    notebook behavior, offline/local development, and deployment may a migrated route stop using
    Streamlit.
 
-Protocol v1 is compatibility code once v2 exists. Retain its decoder while any shipped frontend,
-saved export, or supported cached application can send/read v1. Remove it only after telemetry or
-a documented support window shows no supported v1 consumer and fixtures have migrated. The current
-linked iframe embeds its envelope and does not persist it, so it needs no legacy raw-payload decoder.
+The linked-projectile envelope is single-purpose, single-consumer code, not a versioned
+compatibility surface with a deprecation schedule. The current linked iframe embeds its envelope
+and does not persist it, so there is no legacy payload to decode.
 
 ## Consequences
 

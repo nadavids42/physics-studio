@@ -6,10 +6,10 @@ WCAG-conformant product.
 
 ## Verified capabilities
 
-- The two accepted ADRs match the implementation boundary: Python remains authoritative for
-  physics; Streamlit is the compatibility host; Gas Laws and Cannonball use the typed plugin and
-  shared runtime; the linked projectile experience uses the versioned frontend protocol. Semantic
-  architecture and import-cycle tests pass.
+- The accepted ADR matches the implementation boundary: Python remains authoritative for physics;
+  Streamlit is the compatibility host; all 22 simulations use the plain vertical-slice page
+  pattern; the Cannonball linked-projectile view uses its own single-consumer payload envelope,
+  not a general protocol. Semantic architecture and import-cycle tests pass.
 - All 22 simulations remain independently discoverable and runnable. Stable IDs and slice-owned
   model versions feed registry metadata, plugins, notebook trials, cache keys, and replay.
 - The active Mechanics curriculum contains five connected lessons from scientific models and
@@ -24,7 +24,7 @@ WCAG-conformant product.
   transactional, malformed child records are quarantined, and export/import round trips are
   tested.
 - Notebook trials record simulation ID, canonical parameters, seed where applicable, and model
-  version. Setup handoff and Cannonball replay preserve deterministic targets and committed state.
+  version. Setup handoff and Cannonball replay preserve deterministic targets.
 - Automated Chromium checks pass for keyboard behavior, reduced motion, high contrast/forced
   colors, linked readouts, narrow viewports, lifecycle cleanup, and visual baselines. The 320 px
   linked experience has no horizontal overflow. Deterministic bundle, payload, sample, cache, and
@@ -76,12 +76,13 @@ locally re-created in this audit.
 - The import/distribution name remains `physics_playground`; changing it requires a versioned
   compatibility plan.
 - `InteractiveMode`/`SimulationMode` and Kid/Expert import shims, legacy session-key migration,
-  setup-handoff compatibility, `LocalProfile`/`ProfileStore`, legacy profile tables/imports, and
-  frontend protocol v1 remain supported compatibility code with removal conditions documented in
-  ADR-002, architecture, and persistence documentation.
+  setup-handoff compatibility, `LocalProfile`/`ProfileStore`, and legacy profile tables/imports
+  remain supported compatibility code with removal conditions documented in ADR-002, architecture,
+  and persistence documentation.
 - MyPy is a strict 18-module ratchet, not repository-wide type coverage. Browser delivery still
-  uses Streamlit component documents while the dedicated frontend protocol is introduced one
-  simulation at a time.
+  uses Streamlit component documents. The Cannonball linked-projectile view is the only simulation
+  with a dedicated browser-side payload; it has one consumer and is not a general mechanism other
+  simulations plug into.
 
 ## Known educational gaps
 

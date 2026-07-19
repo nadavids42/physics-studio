@@ -9,24 +9,19 @@ export const QUANTITY_COLORS = Object.freeze({
   vertical: "#C43C39",
 });
 
-export const FRONTEND_PROTOCOL = "physics-studio.frontend";
-export const FRONTEND_PROTOCOL_VERSION = 1;
+export const LINKED_PAYLOAD_KIND = "cannonball-linked-projectile";
+export const LINKED_PAYLOAD_VERSION = 1;
 
-export function validateFrontendEnvelope(envelope) {
+export function validateLinkedPayloadEnvelope(envelope) {
   if (!envelope || typeof envelope !== "object" || Array.isArray(envelope))
-    throw new TypeError("Frontend protocol envelope must be an object.");
+    throw new TypeError("Linked payload envelope must be an object.");
   if (
-    envelope.protocol !== FRONTEND_PROTOCOL ||
-    envelope.version !== FRONTEND_PROTOCOL_VERSION
+    envelope.kind !== LINKED_PAYLOAD_KIND ||
+    envelope.version !== LINKED_PAYLOAD_VERSION
   )
-    throw new TypeError("Unsupported frontend protocol version.");
-  if (
-    !envelope.simulation?.id ||
-    !envelope.simulation?.modelVersion ||
-    envelope.representation?.kind !== "linked-projectile" ||
-    envelope.representation?.version !== 1
-  )
-    throw new TypeError("Invalid linked-projectile protocol metadata.");
+    throw new TypeError("Unsupported linked-projectile payload version.");
+  if (!envelope.simulation?.id || !envelope.simulation?.modelVersion)
+    throw new TypeError("Invalid linked-projectile payload metadata.");
   const config = envelope.payload;
   const runs = config?.representations?.runs;
   if (!Number.isFinite(config?.durationMs) || config.durationMs <= 0)
@@ -319,7 +314,7 @@ export class LinkedProjectileRuntime {
 
 export function mountLinkedProjectile(envelope, environment = globalThis) {
   return new LinkedProjectileRuntime(
-    validateFrontendEnvelope(envelope),
+    validateLinkedPayloadEnvelope(envelope),
     environment,
   );
 }

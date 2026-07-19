@@ -15,7 +15,6 @@ from physics_playground.education.models import (
     EducationEventKind,
     EducationProgressEvent,
     QuestionKind,
-    SimulationActivity,
 )
 from physics_playground.education.validation import validate_curriculum_manifest
 from physics_playground.models.simulations import LearningMode
@@ -245,16 +244,3 @@ def test_progress_event_is_typed_without_presentation_state() -> None:
     )
     assert event.kind is EducationEventKind.ACTIVITY_COMPLETED
     assert event.completed and event.score == 1.0
-
-
-def test_activity_contract_accepts_renderer_independent_presets() -> None:
-    activity = SimulationActivity(
-        "activity",
-        ActivityPhase.EXPLORATION,
-        "cannonball",
-        "Explore",
-        ("Run the model.",),
-        LearningMode.EXPLORE,
-        {"initial_speed_m_s": 12.0, "drag_enabled": False},
-    )
-    assert activity.parameter_preset["initial_speed_m_s"] == 12.0

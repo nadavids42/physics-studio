@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 from typing import TypeAlias
@@ -291,7 +291,6 @@ class SimulationActivity:
     title: str
     instructions: tuple[str, ...]
     mode: LearningMode | None = None
-    parameter_preset: dict[str, float | int | str | bool] = field(default_factory=dict)
     observation_prompt: str = ""
     expected_reflection: str = ""
     applicable_depths: frozenset[MathematicalDepth] = ALL_MATHEMATICAL_DEPTHS
