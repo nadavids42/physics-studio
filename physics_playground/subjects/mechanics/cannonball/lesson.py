@@ -30,6 +30,12 @@ from physics_playground.education.models import (
     WorkedExample,
 )
 from physics_playground.models.simulations import LearningMode
+from physics_playground.subjects.mechanics.cumulative_assessment import (
+    CUMULATIVE_ASSESSMENT_LESSON,
+)
+from physics_playground.subjects.mechanics.cumulative_assessment import (
+    OBJECTIVES as CUMULATIVE_OBJECTIVES,
+)
 from physics_playground.subjects.mechanics.foundations_lesson import (
     FOUNDATION_CONCEPTS,
     MODELS_MEASUREMENTS_LESSON,
@@ -37,7 +43,13 @@ from physics_playground.subjects.mechanics.foundations_lesson import (
 from physics_playground.subjects.mechanics.kinematics_lessons import (
     KINEMATICS_CONCEPTS,
     KINEMATICS_LESSONS,
-    VECTORS_LESSON,
+)
+from physics_playground.subjects.mechanics.two_d_motion_lesson import (
+    OBJECTIVES as TWO_D_MOTION_OBJECTIVES,
+)
+from physics_playground.subjects.mechanics.two_d_motion_lesson import (
+    TWO_D_MOTION_CONCEPTS,
+    TWO_D_MOTION_LESSON,
 )
 
 PROJECTILE_CONCEPTS = (
@@ -264,10 +276,11 @@ CANNONBALL_LESSON = Lesson(
             "Constant-acceleration graph reasoning supports the two component equations.",
         ),
         Prerequisite(
-            "trigonometry-prerequisite",
+            "two-d-motion-prerequisite",
             PrerequisiteKind.LESSON,
-            VECTORS_LESSON.id,
-            "Resolving the launch velocity uses sine and cosine in a right triangle; Vectors and components teaches that decomposition before it is required here.",
+            TWO_D_MOTION_LESSON.id,
+            "Resolving the launch velocity and combining independent components is taught in 2D "
+            "motion before the full range derivation is required here.",
         ),
         Prerequisite(
             "algebra-prerequisite",
@@ -380,8 +393,8 @@ CANNONBALL_LESSON = Lesson(
     ACTIVITIES,
     ContentProfile(ContentDepth.STANDARD, ContentVoice.APPROACHABLE),
     55,
-    None,
-    "Forces on an inclined plane",
+    "cumulative-mechanics-check",
+    "Cumulative check: models through projectile motion",
 )
 
 CANNONBALL_ASSESSMENTS = (
@@ -434,7 +447,7 @@ MECHANICS_SUBJECT = Subject(
     "mechanics",
     "Mechanics",
     "Use forces, motion, energy, and momentum to explain how physical systems change.",
-    (*FOUNDATION_CONCEPTS, *KINEMATICS_CONCEPTS, *PROJECTILE_CONCEPTS),
+    (*FOUNDATION_CONCEPTS, *KINEMATICS_CONCEPTS, *TWO_D_MOTION_CONCEPTS, *PROJECTILE_CONCEPTS),
     (
         Unit(
             "mechanics-foundations",
@@ -453,9 +466,19 @@ MECHANICS_SUBJECT = Subject(
         Unit(
             "motion-in-two-dimensions",
             "Motion in two dimensions",
-            "Connect vector components to trajectories and evidence.",
-            tuple(objective.id for objective in OBJECTIVES),
-            (CANNONBALL_LESSON,),
+            "Connect vector components to independent-component motion, trajectories, and evidence.",
+            (
+                *(objective.id for objective in TWO_D_MOTION_OBJECTIVES),
+                *(objective.id for objective in OBJECTIVES),
+            ),
+            (TWO_D_MOTION_LESSON, CANNONBALL_LESSON),
+        ),
+        Unit(
+            "cumulative-review",
+            "Cumulative review",
+            "Check evidence of mastery across the full lesson sequence in one cumulative check.",
+            tuple(objective.id for objective in CUMULATIVE_OBJECTIVES),
+            (CUMULATIVE_ASSESSMENT_LESSON,),
         ),
     ),
 )

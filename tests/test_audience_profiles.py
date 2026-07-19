@@ -125,7 +125,18 @@ def test_pre_audience_content_without_depth_metadata_defaults_to_all_depths():
     subject = CURRICULUM.subjects[0]
     manifest = replace(
         CURRICULUM,
-        subjects=(replace(subject, units=(replace(unit, lessons=(lesson,)),)),),
+        subjects=(
+            replace(
+                subject,
+                units=(
+                    replace(
+                        unit,
+                        lessons=(lesson,),
+                        objective_ids=tuple(objective.id for objective in lesson.objectives),
+                    ),
+                ),
+            ),
+        ),
     )
 
     validate_curriculum_manifest(

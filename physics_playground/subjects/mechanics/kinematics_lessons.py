@@ -734,8 +734,8 @@ VECTORS_LESSON = Lesson(
     ),
     VECTORS_ACTIVITIES,
     estimated_minutes=45,
-    next_lesson_id="projectile-motion-from-components",
-    next_lesson_title="Projectile motion from components",
+    next_lesson_id="m07-two-dimensional-motion",
+    next_lesson_title="2D motion: combining independent components",
 )
 
 KINEMATICS_LESSONS = (POSITION_LESSON, GRAPH_LESSON, CONSTANT_LESSON, VECTORS_LESSON)

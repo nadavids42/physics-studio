@@ -23,7 +23,7 @@ from physics_playground.education.audience import (
     VisualDensity,
     applies_at_depth,
 )
-from physics_playground.education.catalog import ASSESSMENTS_BY_ID
+from physics_playground.education.catalog import ASSESSMENTS_BY_ID, LESSONS_BY_ID
 from physics_playground.education.models import (
     ActivityPhase,
     CheckpointQuestion,
@@ -33,6 +33,7 @@ from physics_playground.education.models import (
     GuidedDerivation,
     Lesson,
     MisconceptionCallout,
+    PrerequisiteKind,
     QuestionKind,
     SimulationActivity,
     WorkedExample,
@@ -453,8 +454,51 @@ def _complete_and_navigate(
     st.session_state[navigation_key] = next_section_id or section_id
 
 
+def _unmet_lesson_prerequisites(lesson: Lesson) -> tuple[Lesson, ...]:
+    progress_by_lesson = _progress_map()
+    return tuple(
+        LESSONS_BY_ID[prerequisite.reference_id]
+        for prerequisite in lesson.prerequisites
+        if prerequisite.required
+        and prerequisite.kind is PrerequisiteKind.LESSON
+        and prerequisite.reference_id in LESSONS_BY_ID
+        and not (
+            prerequisite.reference_id in progress_by_lesson
+            and progress_by_lesson[prerequisite.reference_id].completed
+        )
+    )
+
+
+def _open_prerequisite_lesson(prerequisite: Lesson) -> None:
+    simulation_id = prerequisite.simulation_ids[0]
+    st.session_state[SHARED_STATE_KEYS.navigation_active] = simulation_id
+    st.session_state[SHARED_STATE_KEYS.navigation_active_lesson] = prerequisite.id
+    st.query_params["simulation"] = simulation_id
+    st.query_params["lesson"] = prerequisite.id
+
+
+def _render_locked_lesson(lesson: Lesson, unmet: tuple[Lesson, ...]) -> None:
+    st.header(f"Guided lesson: {lesson.title}")
+    st.warning(
+        "This lesson unlocks after you complete: "
+        + ", ".join(prerequisite.title for prerequisite in unmet)
+    )
+    for prerequisite in unmet:
+        st.button(
+            f"Open {prerequisite.title}",
+            key=feature_key("education", f"open-prerequisite-{lesson.id}-{prerequisite.id}"),
+            on_click=_open_prerequisite_lesson,
+            args=(prerequisite,),
+        )
+
+
 def render_learning_pathway(lesson: Lesson) -> None:
     """Render orientation or one resumable lesson section at a time."""
+
+    unmet_prerequisites = _unmet_lesson_prerequisites(lesson)
+    if unmet_prerequisites:
+        _render_locked_lesson(lesson, unmet_prerequisites)
+        return
 
     progress = get_pathway_progress(lesson)
     preferences = get_accessibility_settings().instructional

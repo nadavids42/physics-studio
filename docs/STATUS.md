@@ -7,10 +7,14 @@ any line here.
 
 - 22 simulations (`python3 -c "from physics_playground.registry import SIMULATION_REGISTRY as r; print(len(r))"`),
   each with Explore, Compare, Analyze, and Model modes.
-- 6 curriculum lessons (`python3 -c "from physics_playground.education.catalog import LESSONS_BY_ID as l; print(len(l))"`):
+- 8 curriculum lessons (`python3 -c "from physics_playground.education.catalog import LESSONS_BY_ID as l; print(len(l))"`):
   measurement/models, position/velocity, motion graphs, constant acceleration, vectors and
-  components, and projectile motion from components. All Mechanics; no other subject has an
-  authored lesson.
+  components, 2D motion, projectile motion from components, and a cumulative check spanning the
+  sequence. All Mechanics; no other subject has an authored lesson. A learner must complete each
+  lesson's required LESSON prerequisite before the next one's guided pathway unlocks — verified by
+  `physics_playground.education.progress.prerequisites_satisfied` and enforced live in
+  `physics_playground/presentation/pathway_ui.py`; the underlying simulation itself stays directly
+  reachable even when its pathway is locked.
 - One browser-side payload view: the Cannonball linked-projectile representation
   (`physics_playground/subjects/mechanics/cannonball/linked_payload.py`), with exactly one
   consumer, enforced by `tests/test_cannonball_linked_payload.py`.
@@ -19,10 +23,10 @@ any line here.
 
 ## Test suite
 
-- `pytest -ra` without `CHROMIUM_BIN` set: 546 passed, 3 skipped (the browser-only tests, with an
+- `pytest -ra` without `CHROMIUM_BIN` set: 560 passed, 3 skipped (the browser-only tests, with an
   explicit loud skip reason and a terminal warning; see `tests/conftest.py`).
-- `pytest -ra` with `CHROMIUM_BIN` set to a real Chromium binary: 549 passed, 0 skipped.
-- `mypy`: checks 22 of 225 `.py` files under `physics_playground/` (an explicit ratchet list in
+- `pytest -ra` with `CHROMIUM_BIN` set to a real Chromium binary: 563 passed, 0 skipped.
+- `mypy`: checks 22 of 227 `.py` files under `physics_playground/` (an explicit ratchet list in
   `pyproject.toml`, not the whole package).
 - Frontend: `npm test` runs 21 Vitest tests across 5 files; `npm run lint` and `npm run
   build:check` also pass.

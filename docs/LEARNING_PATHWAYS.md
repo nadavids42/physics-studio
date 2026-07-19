@@ -11,6 +11,16 @@ range-versus-angle graph, derived progressively, checked dimensionally, and chal
 model. The simulation's Explore, Compare, Analyze, and Model controls remain directly available
 below the pathway.
 
+## Prerequisite gating
+
+A lesson's required `PrerequisiteKind.LESSON` prerequisites must be complete before its guided
+pathway renders. `physics_playground.education.progress.prerequisites_satisfied` is the pure check;
+`physics_playground/presentation/pathway_ui.py`'s `render_learning_pathway` calls it first and, if
+unmet, renders a locked notice naming the missing lesson(s) with a button to open each one, instead
+of the pathway. This gates only the guided lesson pathway — the underlying simulation's Explore,
+Compare, Analyze, and Model modes stay directly reachable, matching the existing rule that
+recommendations never hide or gate other content.
+
 ## Progress and persistence
 
 `PathwayProgress` is a renderer-independent immutable value. It records completed activities,

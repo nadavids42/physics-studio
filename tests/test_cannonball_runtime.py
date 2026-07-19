@@ -3,10 +3,12 @@ from __future__ import annotations
 import pytest
 from streamlit.testing.v1 import AppTest
 
+from physics_playground.education.progress import PathwayProgress
 from physics_playground.notebook import ExperimentNotebook
 from physics_playground.state_keys import SHARED_STATE_KEYS, feature_key, simulation_key
 from physics_playground.subjects.mechanics.cannonball.interactions import target_for_seed
 from physics_playground.subjects.mechanics.cannonball.physics import ProjectileParameters
+from physics_playground.subjects.mechanics.two_d_motion_lesson import TWO_D_MOTION_LESSON
 from physics_playground.units import EARTH_GRAVITY_M_S2
 
 
@@ -31,6 +33,10 @@ def test_lesson_activity_selects_runtime_mode(monkeypatch: pytest.MonkeyPatch, t
     app.session_state[feature_key("education", "projectile-motion-from-components.section")] = (
         "worked-example"
     )
+    app.session_state[SHARED_STATE_KEYS.education_progress] = {
+        "m05-constant-acceleration": PathwayProgress("m05-constant-acceleration", completed=True),
+        TWO_D_MOTION_LESSON.id: PathwayProgress(TWO_D_MOTION_LESSON.id, completed=True),
+    }
     app.run(timeout=30)
     next(button for button in app.button if button.label == "Open Analyze mode").click().run(
         timeout=30

@@ -4,8 +4,10 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from physics_playground.accessibility_settings import AccessibilitySettings
+from physics_playground.education.progress import PathwayProgress
 from physics_playground.state_keys import SHARED_STATE_KEYS, simulation_key
 from physics_playground.subjects.mechanics.foundations_lesson import MODELS_MEASUREMENTS_LESSON
+from physics_playground.subjects.mechanics.two_d_motion_lesson import TWO_D_MOTION_LESSON
 
 LESSON_ID = "projectile-motion-from-components"
 
@@ -56,12 +58,38 @@ def test_stable_query_identifiers_open_simulation_and_lesson(monkeypatch, tmp_pa
     app = _app(monkeypatch, tmp_path)
     app.query_params["simulation"] = "cannonball"
     app.query_params["lesson"] = LESSON_ID
+    app.session_state[SHARED_STATE_KEYS.education_progress] = {
+        "m05-constant-acceleration": PathwayProgress("m05-constant-acceleration", completed=True),
+        TWO_D_MOTION_LESSON.id: PathwayProgress(TWO_D_MOTION_LESSON.id, completed=True),
+    }
     app.run(timeout=30)
 
     assert not app.exception
     assert any(header.value == "Cannonball Launcher — Projectile Motion" for header in app.header)
     assert any(header.value.startswith("Guided lesson:") for header in app.header)
     assert any(selectbox.label == "Lesson navigation" for selectbox in app.selectbox)
+
+
+def test_incomplete_prerequisites_block_the_lesson_pathway_not_the_simulation(
+    monkeypatch, tmp_path
+) -> None:
+    """A learner who jumps straight to projectile motion sees a locked pathway,
+    but the underlying Cannonball simulation itself stays reachable."""
+
+    app = _app(monkeypatch, tmp_path)
+    app.query_params["simulation"] = "cannonball"
+    app.query_params["lesson"] = LESSON_ID
+    app.run(timeout=30)
+
+    assert not app.exception
+    assert any(header.value == "Cannonball Launcher — Projectile Motion" for header in app.header)
+    assert any(header.value.startswith("Guided lesson:") for header in app.header)
+    assert not any(selectbox.label == "Lesson navigation" for selectbox in app.selectbox)
+    assert any("unlocks after you complete" in warning.value for warning in app.warning)
+    assert any(
+        button.label == "Open 2D motion: combining independent components" for button in app.button
+    )
+    assert any(radio.label == "Learning mode" for radio in app.radio)
 
 
 @pytest.mark.parametrize(
