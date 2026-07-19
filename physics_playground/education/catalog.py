@@ -7,10 +7,12 @@ from physics_playground.subjects.mechanics.cannonball.lesson import (
     CANNONBALL_ASSESSMENTS,
     MECHANICS_SUBJECT,
 )
+from physics_playground.subjects.mechanics.cumulative_assessment import CUMULATIVE_ASSESSMENTS
 from physics_playground.subjects.mechanics.foundations_lesson import (
     MODELS_MEASUREMENTS_ASSESSMENTS,
 )
 from physics_playground.subjects.mechanics.kinematics_lessons import KINEMATICS_ASSESSMENTS
+from physics_playground.subjects.mechanics.two_d_motion_lesson import TWO_D_MOTION_ASSESSMENTS
 
 CURRICULUM = CurriculumManifest(
     id="physics-studio-core",
@@ -28,7 +30,9 @@ LESSONS_BY_ID = {
 ASSESSMENTS = (
     *MODELS_MEASUREMENTS_ASSESSMENTS,
     *KINEMATICS_ASSESSMENTS,
+    *TWO_D_MOTION_ASSESSMENTS,
     *CANNONBALL_ASSESSMENTS,
+    *CUMULATIVE_ASSESSMENTS,
 )
 ASSESSMENTS_BY_ID = {item.id: item for item in ASSESSMENTS}
 

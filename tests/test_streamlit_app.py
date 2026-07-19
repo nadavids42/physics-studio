@@ -4,8 +4,10 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from physics_playground.accessibility_settings import AccessibilitySettings
+from physics_playground.education.progress import PathwayProgress
 from physics_playground.state_keys import SHARED_STATE_KEYS, simulation_key
 from physics_playground.subjects.mechanics.foundations_lesson import MODELS_MEASUREMENTS_LESSON
+from physics_playground.subjects.mechanics.two_d_motion_lesson import TWO_D_MOTION_LESSON
 
 LESSON_ID = "projectile-motion-from-components"
 
@@ -56,12 +58,38 @@ def test_stable_query_identifiers_open_simulation_and_lesson(monkeypatch, tmp_pa
     app = _app(monkeypatch, tmp_path)
     app.query_params["simulation"] = "cannonball"
     app.query_params["lesson"] = LESSON_ID
+    app.session_state[SHARED_STATE_KEYS.education_progress] = {
+        "m05-constant-acceleration": PathwayProgress("m05-constant-acceleration", completed=True),
+        TWO_D_MOTION_LESSON.id: PathwayProgress(TWO_D_MOTION_LESSON.id, completed=True),
+    }
     app.run(timeout=30)
 
     assert not app.exception
     assert any(header.value == "Cannonball Launcher — Projectile Motion" for header in app.header)
     assert any(header.value.startswith("Guided lesson:") for header in app.header)
     assert any(selectbox.label == "Lesson navigation" for selectbox in app.selectbox)
+
+
+def test_incomplete_prerequisites_block_the_lesson_pathway_not_the_simulation(
+    monkeypatch, tmp_path
+) -> None:
+    """A learner who jumps straight to projectile motion sees a locked pathway,
+    but the underlying Cannonball simulation itself stays reachable."""
+
+    app = _app(monkeypatch, tmp_path)
+    app.query_params["simulation"] = "cannonball"
+    app.query_params["lesson"] = LESSON_ID
+    app.run(timeout=30)
+
+    assert not app.exception
+    assert any(header.value == "Cannonball Launcher — Projectile Motion" for header in app.header)
+    assert any(header.value.startswith("Guided lesson:") for header in app.header)
+    assert not any(selectbox.label == "Lesson navigation" for selectbox in app.selectbox)
+    assert any("unlocks after you complete" in warning.value for warning in app.warning)
+    assert any(
+        button.label == "Open 2D motion: combining independent components" for button in app.button
+    )
+    assert any(radio.label == "Learning mode" for radio in app.radio)
 
 
 @pytest.mark.parametrize(
@@ -80,7 +108,7 @@ def test_representative_subject_pages_smoke_without_errors(
     assert any(button.label == "← Back to discovery" for button in app.button)
 
 
-def test_cannonball_setup_is_committed_and_notes_do_not_rerun_player(monkeypatch, tmp_path) -> None:
+def test_cannonball_setup_applies_and_notes_do_not_rerun_player(monkeypatch, tmp_path) -> None:
     app = _app(monkeypatch, tmp_path)
     app.query_params["simulation"] = "cannonball"
     app.session_state[simulation_key("cannonball", "quiz_revealed")] = True
@@ -91,24 +119,12 @@ def test_cannonball_setup_is_committed_and_notes_do_not_rerun_player(monkeypatch
     assert any(button.label == "Apply launch setup" for button in app.button)
     speed = next(item for item in app.slider if item.label == "Launch speed (m/s)")
     assert speed.value == 31.0
-    assert (
-        app.session_state[simulation_key("cannonball", "editing_parameters")].launch_speed_m_s
-        == 31.0
-    )
-    assert (
-        app.session_state[simulation_key("cannonball", "committed_parameters")].launch_speed_m_s
-        == 31.0
-    )
     original_setup_document = app.get("iframe")[0].proto.srcdoc
     speed.set_value(33.0)
     next(button for button in app.button if button.label == "Apply launch setup").click().run(
         timeout=30
     )
     assert app.session_state[simulation_key("cannonball", "speed")] == 33.0
-    assert (
-        app.session_state[simulation_key("cannonball", "committed_parameters")].launch_speed_m_s
-        == 33.0
-    )
     assert app.get("iframe")[0].proto.srcdoc != original_setup_document
     iframe_before = app.get("iframe")[0].proto.srcdoc
     observation = next(

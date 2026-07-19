@@ -85,10 +85,12 @@ def test_bundle_and_typical_payload_are_bounded() -> None:
     assert payload_bytes < 50_000
 
 
+@pytest.mark.skipif(
+    not os.environ.get("CHROMIUM_BIN"),
+    reason="SKIPPED: browser tests require CHROMIUM_BIN; this run has NO browser coverage.",
+)
 def test_linked_runtime_keyboard_accessibility_and_frame_time_in_chromium(tmp_path) -> None:
-    browser = os.environ.get("CHROMIUM_BIN")
-    if not browser:
-        pytest.skip("Chromium is required for linked-runtime browser verification.")
+    browser = os.environ["CHROMIUM_BIN"]
     document = build_linked_projectile_document((("Run A", _result(30)), ("Run B", _result(60))))
     audit = """
 <script>setTimeout(()=>{const runtime=window.linkedProjectile;const graph=document.querySelector('.linked-graph');

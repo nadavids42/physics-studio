@@ -76,10 +76,14 @@ files = [
     "physics_playground/education",
     "physics_playground/history.py",
     "physics_playground/integrators.py",
+    "physics_playground/learning_store.py",
     "physics_playground/notebook.py",
     "physics_playground/setup_handoff.py",
-    "physics_playground/simulation_plugin.py",
-    "physics_playground/simulation_plugin_validation.py",
+    "physics_playground/subjects/fluids_and_matter/gas_laws/page.py",
+    "physics_playground/subjects/mechanics/cannonball/lesson.py",
+    "physics_playground/subjects/mechanics/cannonball/page.py",
+    "physics_playground/subjects/mechanics/foundations_lesson.py",
+    "physics_playground/subjects/mechanics/kinematics_lessons.py",
     "physics_playground/units.py",
     "physics_playground/validation.py",
 ]
@@ -93,3 +97,8 @@ warn_redundant_casts = true
 warn_return_any = true
 warn_unreachable = true
 warn_unused_configs = true
+follow_imports = "silent"
+
+[[tool.mypy.overrides]]
+module = ["streamlit", "streamlit.*", "matplotlib", "matplotlib.*", "cycler", "numpy", "numpy.*"]
+ignore_missing_imports = true

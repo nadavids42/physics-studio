@@ -1,4 +1,13 @@
-"""Pure progress operations for lesson pathways."""
+"""Pure progress operations for lesson pathways.
+
+Predictions, reflections, and free-text activity responses are the learner's own
+ungraded words. Saving one advances lesson *completion* (it satisfies a required
+activity), but it is never graded and never counts as evidence of objective
+*mastery*. Mastery comes only from graded multiple-choice, multiple-select, and
+numeric checkpoint attempts, computed in ``physics_playground.education.assessments``.
+A minimum-length check below exists only to reject placeholder junk (e.g. "x"); it
+is not a grading heuristic and makes no claim about the quality of the reasoning.
+"""
 
 from __future__ import annotations
 
@@ -7,6 +16,19 @@ from dataclasses import dataclass, replace
 from typing import Any
 
 from physics_playground.education.models import Lesson, PrerequisiteKind
+
+MINIMUM_REFLECTION_LENGTH = 15
+
+
+def _require_reflection_text(response: str, label: str) -> str:
+    text = response.strip()
+    if not text:
+        raise ValueError(f"{label} cannot be blank.")
+    if len(text) < MINIMUM_REFLECTION_LENGTH:
+        raise ValueError(
+            f"{label} must be at least {MINIMUM_REFLECTION_LENGTH} characters, not a placeholder."
+        )
+    return text
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,11 +72,12 @@ class PathwayProgress:
         required_checkpoint_ids: tuple[str, ...],
         required_section_ids: tuple[str, ...] = (),
     ) -> PathwayProgress:
-        """Record reasoning evidence before completing an evidence-bearing activity."""
+        """Record the learner's free-text reflection before completing this activity.
 
-        text = response.strip()
-        if not text:
-            raise ValueError("Activity evidence cannot be blank.")
+        This is an ungraded reflection: it gates completion, not mastery.
+        """
+
+        text = _require_reflection_text(response, "Activity reflection")
         responses = dict(self.activity_responses)
         responses[activity_id] = text
         return replace(self, activity_responses=tuple(responses.items())).complete_activity(
@@ -100,9 +123,7 @@ class PathwayProgress:
         required_checkpoint_ids: tuple[str, ...],
         required_section_ids: tuple[str, ...] = (),
     ) -> PathwayProgress:
-        text = response.strip()
-        if not text:
-            raise ValueError("Prediction cannot be blank.")
+        text = _require_reflection_text(response, "Prediction")
         progress = replace(self, prediction=text)
         return progress.complete_activity(
             prediction_activity_id,
@@ -130,9 +151,7 @@ class PathwayProgress:
         required_checkpoint_ids: tuple[str, ...],
         required_section_ids: tuple[str, ...] = (),
     ) -> PathwayProgress:
-        text = response.strip()
-        if not text:
-            raise ValueError("Reflection cannot be blank.")
+        text = _require_reflection_text(response, "Reflection")
         progress = replace(self, reflection=text)
         return progress.complete_activity(
             reflection_activity_id,

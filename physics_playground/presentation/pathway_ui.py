@@ -13,7 +13,6 @@ from physics_playground.education.assessments import (
     AssessmentAttempt,
     AssessmentResponse,
     GradingStatus,
-    ObjectiveEvidenceRecord,
     deterministic_variant_id,
     submit_response,
 )
@@ -24,7 +23,7 @@ from physics_playground.education.audience import (
     VisualDensity,
     applies_at_depth,
 )
-from physics_playground.education.catalog import ASSESSMENTS_BY_ID
+from physics_playground.education.catalog import ASSESSMENTS_BY_ID, LESSONS_BY_ID
 from physics_playground.education.models import (
     ActivityPhase,
     CheckpointQuestion,
@@ -34,11 +33,12 @@ from physics_playground.education.models import (
     GuidedDerivation,
     Lesson,
     MisconceptionCallout,
+    PrerequisiteKind,
     QuestionKind,
     SimulationActivity,
     WorkedExample,
 )
-from physics_playground.education.progress import PathwayProgress
+from physics_playground.education.progress import MINIMUM_REFLECTION_LENGTH, PathwayProgress
 from physics_playground.presentation.accessibility_ui import get_accessibility_settings
 from physics_playground.presentation.profile_ui import get_notebook
 from physics_playground.state_keys import SHARED_STATE_KEYS, feature_key, simulation_key
@@ -110,26 +110,6 @@ def _save_progress(
 
 def _learner_id() -> str:
     return str(st.session_state.get(SHARED_STATE_KEYS.profiles_active_id, "session"))
-
-
-def _record_objective_evidence(
-    lesson: Lesson, objective_ids: tuple[str, ...], source_id: str, source_kind: str
-) -> None:
-    key = feature_key("education", "objective_evidence")
-    records = st.session_state.setdefault(key, [])
-    now = datetime.now(UTC)
-    for objective_id in objective_ids:
-        records.append(
-            ObjectiveEvidenceRecord(
-                id=uuid4().hex,
-                learner_id=_learner_id(),
-                lesson_id=lesson.id,
-                objective_id=objective_id,
-                source_id=source_id,
-                source_kind=source_kind,
-                recorded_at=now,
-            )
-        )
 
 
 def _render_diagram(diagram: DiagramSpec) -> None:
@@ -318,8 +298,8 @@ def _render_activity(
         st.markdown(f"{prefix} {instruction}")
     if activity.observation_prompt:
         st.info(activity.observation_prompt)
-    if preferences.visual_density is VisualDensity.DETAILED and activity.completion_evidence:
-        st.caption(f"Evidence to record: {activity.completion_evidence}")
+    if preferences.visual_density is VisualDensity.DETAILED and activity.expected_reflection:
+        st.caption(f"What your reflection should include: {activity.expected_reflection}")
     activities, checkpoints = _requirements(lesson, preferences.mathematical_depth)
     if activity.phase is ActivityPhase.PREDICTION:
         if progress.prediction is not None:
@@ -338,9 +318,13 @@ def _render_activity(
             return progress
         prediction_key = feature_key("education", f"{lesson.id}.prediction")
         prediction = st.text_area("Record your prediction and physical reason", key=prediction_key)
+        st.caption(
+            f"Write at least {MINIMUM_REFLECTION_LENGTH} characters — this is your own "
+            "reasoning, not a graded answer."
+        )
         if st.button(
             "Save prediction",
-            disabled=not prediction.strip(),
+            disabled=len(prediction.strip()) < MINIMUM_REFLECTION_LENGTH,
             key=feature_key("education", f"{lesson.id}.save_prediction"),
         ):
             updated = progress.save_prediction(
@@ -355,7 +339,6 @@ def _render_activity(
                 kind=EducationEventKind.ACTIVITY_COMPLETED,
                 activity_id=activity.id,
             )
-            _record_objective_evidence(lesson, activity.objective_ids, activity.id, "prediction")
             return updated
         return progress
     if activity.phase is ActivityPhase.REFLECTION:
@@ -364,11 +347,12 @@ def _render_activity(
         if reflection_key not in st.session_state:
             st.session_state[reflection_key] = initial
         response = st.text_area("Notebook reflection", key=reflection_key)
+        st.caption(f"Write at least {MINIMUM_REFLECTION_LENGTH} characters, not a placeholder.")
         if complete:
             st.success("Reflection saved to your notebook.")
         if st.button(
             "Save notebook reflection",
-            disabled=not response.strip(),
+            disabled=len(response.strip()) < MINIMUM_REFLECTION_LENGTH,
             key=feature_key("education", f"{lesson.id}.save_reflection"),
         ):
             updated = progress.save_reflection(
@@ -389,7 +373,6 @@ def _render_activity(
                 activity_id=activity.id,
             )
             publish(NotebookChanged(reflection.id))
-            _record_objective_evidence(lesson, activity.objective_ids, activity.id, "reflection")
             return updated
         return progress
     if activity.mode is not None and st.button(
@@ -403,14 +386,15 @@ def _render_activity(
     if complete:
         st.success("Activity complete.")
     elif activity.evidence_prompt:
-        response_key = feature_key("education", f"{lesson.id}.{activity.id}.evidence")
+        response_key = feature_key("education", f"{lesson.id}.{activity.id}.reflection")
         saved = dict(progress.activity_responses).get(activity.id, "")
         if response_key not in st.session_state:
             st.session_state[response_key] = saved
         response = st.text_area(activity.evidence_prompt, key=response_key)
+        st.caption(f"Write at least {MINIMUM_REFLECTION_LENGTH} characters, not a placeholder.")
         if st.button(
-            "Save observation evidence",
-            disabled=not response.strip(),
+            "Save observation reflection",
+            disabled=len(response.strip()) < MINIMUM_REFLECTION_LENGTH,
             key=feature_key("education", f"{activity.id}.complete"),
         ):
             updated = progress.save_activity_response(
@@ -425,7 +409,6 @@ def _render_activity(
                 kind=EducationEventKind.ACTIVITY_COMPLETED,
                 activity_id=activity.id,
             )
-            _record_objective_evidence(lesson, activity.objective_ids, activity.id, "observation")
             return updated
     elif st.button(
         "Mark activity complete",
@@ -442,7 +425,6 @@ def _render_activity(
             kind=EducationEventKind.ACTIVITY_COMPLETED,
             activity_id=activity.id,
         )
-        _record_objective_evidence(lesson, activity.objective_ids, activity.id, "activity")
         return updated
     return progress
 
@@ -472,8 +454,51 @@ def _complete_and_navigate(
     st.session_state[navigation_key] = next_section_id or section_id
 
 
+def _unmet_lesson_prerequisites(lesson: Lesson) -> tuple[Lesson, ...]:
+    progress_by_lesson = _progress_map()
+    return tuple(
+        LESSONS_BY_ID[prerequisite.reference_id]
+        for prerequisite in lesson.prerequisites
+        if prerequisite.required
+        and prerequisite.kind is PrerequisiteKind.LESSON
+        and prerequisite.reference_id in LESSONS_BY_ID
+        and not (
+            prerequisite.reference_id in progress_by_lesson
+            and progress_by_lesson[prerequisite.reference_id].completed
+        )
+    )
+
+
+def _open_prerequisite_lesson(prerequisite: Lesson) -> None:
+    simulation_id = prerequisite.simulation_ids[0]
+    st.session_state[SHARED_STATE_KEYS.navigation_active] = simulation_id
+    st.session_state[SHARED_STATE_KEYS.navigation_active_lesson] = prerequisite.id
+    st.query_params["simulation"] = simulation_id
+    st.query_params["lesson"] = prerequisite.id
+
+
+def _render_locked_lesson(lesson: Lesson, unmet: tuple[Lesson, ...]) -> None:
+    st.header(f"Guided lesson: {lesson.title}")
+    st.warning(
+        "This lesson unlocks after you complete: "
+        + ", ".join(prerequisite.title for prerequisite in unmet)
+    )
+    for prerequisite in unmet:
+        st.button(
+            f"Open {prerequisite.title}",
+            key=feature_key("education", f"open-prerequisite-{lesson.id}-{prerequisite.id}"),
+            on_click=_open_prerequisite_lesson,
+            args=(prerequisite,),
+        )
+
+
 def render_learning_pathway(lesson: Lesson) -> None:
     """Render orientation or one resumable lesson section at a time."""
+
+    unmet_prerequisites = _unmet_lesson_prerequisites(lesson)
+    if unmet_prerequisites:
+        _render_locked_lesson(lesson, unmet_prerequisites)
+        return
 
     progress = get_pathway_progress(lesson)
     preferences = get_accessibility_settings().instructional
@@ -649,7 +674,7 @@ def render_learning_pathway(lesson: Lesson) -> None:
         ),
     )
     if progress.completed:
-        st.success("Lesson complete. Progress and evidence are saved.")
+        st.success("Lesson complete. Your progress and responses are saved.")
         st.subheader("Recommended next step")
         st.write(lesson.next_lesson_title)
     else:

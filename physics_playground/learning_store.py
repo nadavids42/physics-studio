@@ -1,10 +1,17 @@
-"""Backend-neutral learning repositories and the normalized SQLite implementation."""
+"""Backend-neutral learning repositories and a single-learner local SQLite implementation.
+
+Each domain (attempts, trials, notebook entries, evidence, ...) is a table keyed by
+learner and record ID, storing the record as a JSON payload blob plus a small number
+of columns promoted for filtering. This is local, single-learner storage with schema
+versioning, not a normalized relational schema, and it makes no claim about
+multi-learner or classroom-scale query performance.
+"""
 
 from __future__ import annotations
 
 import json
 import sqlite3
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -12,7 +19,7 @@ from typing import Protocol
 
 from physics_playground.serialization import dumps
 
-STORE_SCHEMA_VERSION = 4
+STORE_SCHEMA_VERSION = 5
 EXPORT_SCHEMA_VERSION = 1
 Record = Mapping[str, object]
 
@@ -75,7 +82,7 @@ class PreferenceRepository(Protocol):
 
 
 class SQLiteLearningStore:
-    """Transactional normalized store; suitable for local and single-user operation."""
+    """Transactional local SQLite store for one learner's JSON-payload records at a time."""
 
     def __init__(self, path: Path | str):
         self.path = Path(path)
@@ -90,7 +97,7 @@ class SQLiteLearningStore:
         return db
 
     @contextmanager
-    def transaction(self):
+    def transaction(self) -> Iterator[sqlite3.Connection]:
         db = self.connect()
         try:
             db.execute("BEGIN IMMEDIATE")
@@ -110,9 +117,11 @@ class SQLiteLearningStore:
                     f"Learning database schema {version} is newer than supported schema {STORE_SCHEMA_VERSION}."
                 )
             self._ensure_legacy_profile_table(db, version)
-            self._create_normalized_tables(db)
+            self._create_tables(db)
+            self._ensure_assessment_attempt_columns(db)
             if version < STORE_SCHEMA_VERSION:
                 self._migrate_legacy_profiles(db)
+                self._backfill_assessment_attempt_columns(db)
                 db.execute(f"PRAGMA user_version={STORE_SCHEMA_VERSION}")
 
     @staticmethod
@@ -126,12 +135,12 @@ class SQLiteLearningStore:
                 db.execute("ALTER TABLE profiles ADD COLUMN updated_at TEXT NOT NULL DEFAULT ''")
 
     @staticmethod
-    def _create_normalized_tables(db: sqlite3.Connection) -> None:
+    def _create_tables(db: sqlite3.Connection) -> None:
         statements = (
             "CREATE TABLE IF NOT EXISTS learners (id TEXT PRIMARY KEY, display_name TEXT NOT NULL, schema_version INTEGER NOT NULL)",
             "CREATE TABLE IF NOT EXISTS preferences (learner_id TEXT PRIMARY KEY REFERENCES learners(id) ON DELETE CASCADE, payload TEXT NOT NULL, schema_version INTEGER NOT NULL)",
             "CREATE TABLE IF NOT EXISTS lesson_progress (learner_id TEXT NOT NULL REFERENCES learners(id) ON DELETE CASCADE, lesson_id TEXT NOT NULL, payload TEXT NOT NULL, schema_version INTEGER NOT NULL, PRIMARY KEY(learner_id,lesson_id))",
-            "CREATE TABLE IF NOT EXISTS assessment_attempts (learner_id TEXT NOT NULL REFERENCES learners(id) ON DELETE CASCADE, record_id TEXT NOT NULL, payload TEXT NOT NULL, schema_version INTEGER NOT NULL, PRIMARY KEY(learner_id,record_id))",
+            "CREATE TABLE IF NOT EXISTS assessment_attempts (learner_id TEXT NOT NULL REFERENCES learners(id) ON DELETE CASCADE, record_id TEXT NOT NULL, payload TEXT NOT NULL, schema_version INTEGER NOT NULL, lesson_id TEXT NOT NULL DEFAULT '', submitted_at TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT '', PRIMARY KEY(learner_id,record_id))",
             "CREATE TABLE IF NOT EXISTS experiment_trials (learner_id TEXT NOT NULL REFERENCES learners(id) ON DELETE CASCADE, record_id TEXT NOT NULL, payload TEXT NOT NULL, schema_version INTEGER NOT NULL, PRIMARY KEY(learner_id,record_id))",
             "CREATE TABLE IF NOT EXISTS notebook_entries (learner_id TEXT NOT NULL REFERENCES learners(id) ON DELETE CASCADE, record_id TEXT NOT NULL, payload TEXT NOT NULL, schema_version INTEGER NOT NULL, PRIMARY KEY(learner_id,record_id))",
             "CREATE TABLE IF NOT EXISTS achievements (learner_id TEXT NOT NULL REFERENCES learners(id) ON DELETE CASCADE, achievement_id TEXT NOT NULL, schema_version INTEGER NOT NULL, PRIMARY KEY(learner_id,achievement_id))",
@@ -141,6 +150,64 @@ class SQLiteLearningStore:
         )
         for statement in statements:
             db.execute(statement)
+
+    @staticmethod
+    def _ensure_assessment_attempt_columns(db: sqlite3.Connection) -> None:
+        """Add the columns promoted from the payload for existing databases.
+
+        ``CREATE TABLE IF NOT EXISTS`` above leaves an already-created table untouched,
+        so a database created before schema 5 needs these columns added explicitly.
+        """
+
+        columns = {row[1] for row in db.execute("PRAGMA table_info(assessment_attempts)")}
+        for column in ("lesson_id", "submitted_at", "status"):
+            if column not in columns:
+                db.execute(
+                    f"ALTER TABLE assessment_attempts ADD COLUMN {column} TEXT NOT NULL DEFAULT ''"
+                )
+        db.execute(
+            "CREATE INDEX IF NOT EXISTS idx_assessment_attempts_lesson_id "
+            "ON assessment_attempts(learner_id, lesson_id)"
+        )
+        db.execute(
+            "CREATE INDEX IF NOT EXISTS idx_assessment_attempts_submitted_at "
+            "ON assessment_attempts(submitted_at)"
+        )
+
+    @staticmethod
+    def _backfill_assessment_attempt_columns(db: sqlite3.Connection) -> None:
+        """Populate the promoted columns for rows written before schema 5."""
+
+        rows = db.execute(
+            "SELECT learner_id, record_id, payload FROM assessment_attempts "
+            "WHERE lesson_id='' AND submitted_at='' AND status=''"
+        ).fetchall()
+        for learner_id, record_id, raw in rows:
+            try:
+                payload = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(payload, dict):
+                continue
+            lesson_id, submitted_at, status = SQLiteLearningStore._assessment_attempt_columns(
+                payload
+            )
+            db.execute(
+                "UPDATE assessment_attempts SET lesson_id=?, submitted_at=?, status=? "
+                "WHERE learner_id=? AND record_id=?",
+                (lesson_id, submitted_at, status, learner_id, record_id),
+            )
+
+    @staticmethod
+    def _assessment_attempt_columns(value: Record) -> tuple[str, str, str]:
+        lesson_id = value.get("lesson_id")
+        submitted_at = value.get("submitted_at")
+        status = value.get("status")
+        return (
+            lesson_id if isinstance(lesson_id, str) else "",
+            submitted_at if isinstance(submitted_at, str) else "",
+            status if isinstance(status, str) else "",
+        )
 
     def _migrate_legacy_profiles(self, db: sqlite3.Connection) -> None:
         for profile_id, display_name, raw in db.execute(
@@ -184,6 +251,12 @@ class SQLiteLearningStore:
             db, learner_id, "objective_evidence", payload.get("objective_evidence", ())
         )
         preferences = payload.get("accessibility_settings", {})
+        badges = payload.get("badges_earned", ())
+        badges_earned = (
+            tuple(str(item) for item in badges if isinstance(item, str))
+            if isinstance(badges, (list, tuple))
+            else ()
+        )
         return LearnerData(
             LearnerIdentity(learner_id, display_name),
             dict(preferences) if isinstance(preferences, Mapping) else {},
@@ -191,7 +264,7 @@ class SQLiteLearningStore:
             attempts,
             trials,
             entries,
-            tuple(str(item) for item in payload.get("badges_earned", ()) if isinstance(item, str)),
+            badges_earned,
             {
                 key: value
                 for key, value in payload.items()
@@ -252,7 +325,7 @@ class SQLiteLearningStore:
         self._replace_single(db, "preferences", learner_id, data.preferences)
         self._replace_single(db, "learner_state", learner_id, data.ui_state)
         self._replace_keyed(db, "lesson_progress", learner_id, data.lesson_progress)
-        self._replace_records(db, "assessment_attempts", learner_id, data.assessment_attempts)
+        self._replace_assessment_attempts(db, learner_id, data.assessment_attempts)
         self._replace_records(db, "experiment_trials", learner_id, data.experiment_trials)
         self._replace_records(db, "notebook_entries", learner_id, data.notebook_entries)
         self._replace_records(db, "objective_evidence", learner_id, data.objective_evidence)
@@ -296,6 +369,25 @@ class SQLiteLearningStore:
                 raise ValueError(f"{table} records require a string id.")
             rows.append((learner_id, record_id, dumps(value)))
         db.executemany(f"INSERT INTO {table} VALUES(?,?,?,1)", rows)
+
+    @classmethod
+    def _replace_assessment_attempts(
+        cls, db: sqlite3.Connection, learner_id: str, values: tuple[Record, ...]
+    ) -> None:
+        db.execute("DELETE FROM assessment_attempts WHERE learner_id=?", (learner_id,))
+        rows = []
+        for value in values:
+            record_id = value.get("id")
+            if not isinstance(record_id, str) or not record_id:
+                raise ValueError("assessment_attempts records require a string id.")
+            lesson_id, submitted_at, status = cls._assessment_attempt_columns(value)
+            rows.append((learner_id, record_id, dumps(value), lesson_id, submitted_at, status))
+        db.executemany(
+            "INSERT INTO assessment_attempts"
+            "(learner_id,record_id,payload,schema_version,lesson_id,submitted_at,status) "
+            "VALUES(?,?,?,1,?,?,?)",
+            rows,
+        )
 
     def list_identities(self) -> tuple[LearnerIdentity, ...]:
         with self.connect() as db:
@@ -375,7 +467,20 @@ class SQLiteLearningStore:
         return self._load_json_rows("assessment_attempts", learner_id)
 
     def append_assessment_attempt(self, learner_id: str, attempt: Record) -> None:
-        self._append_record("assessment_attempts", learner_id, attempt)
+        record_id = attempt.get("id")
+        if not isinstance(record_id, str) or not record_id:
+            raise ValueError("assessment_attempts records require a string id.")
+        lesson_id, submitted_at, status = self._assessment_attempt_columns(attempt)
+        with self.transaction() as db:
+            db.execute(
+                "INSERT INTO assessment_attempts"
+                "(learner_id,record_id,payload,schema_version,lesson_id,submitted_at,status) "
+                "VALUES(?,?,?,1,?,?,?) "
+                "ON CONFLICT(learner_id,record_id) DO UPDATE SET "
+                "payload=excluded.payload,schema_version=1,lesson_id=excluded.lesson_id,"
+                "submitted_at=excluded.submitted_at,status=excluded.status",
+                (learner_id, record_id, dumps(attempt), lesson_id, submitted_at, status),
+            )
 
     def get_experiment_trials(self, learner_id: str) -> tuple[Record, ...]:
         return self._load_json_rows("experiment_trials", learner_id)

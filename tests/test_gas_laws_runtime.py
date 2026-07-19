@@ -8,9 +8,12 @@ from streamlit.testing.v1 import AppTest
 
 from physics_playground.missions.service import MissionProgress
 from physics_playground.notebook import ExperimentNotebook
+from physics_playground.presentation.learning_modes import run_model_safely
 from physics_playground.state_keys import SHARED_STATE_KEYS, simulation_key
-from physics_playground.subjects.fluids_and_matter.gas_laws.page import RUNTIME
-from physics_playground.subjects.fluids_and_matter.gas_laws.physics import GasLawParameters
+from physics_playground.subjects.fluids_and_matter.gas_laws.physics import (
+    GasLawParameters,
+    simulate,
+)
 
 
 def _gas_app(monkeypatch: pytest.MonkeyPatch, tmp_path, mode: str = "Explore") -> AppTest:
@@ -62,22 +65,20 @@ def test_explore_records_notebook_and_processes_missions(
     assert {"gas_predict", "gas_boyle"} <= progress.completed
 
 
-def test_invalid_parameters_use_standard_runtime_error_presentation() -> None:
+def test_invalid_parameters_use_standard_error_presentation() -> None:
     with (
         patch("streamlit.error") as error,
         patch("streamlit.expander", return_value=nullcontext()),
         patch("streamlit.code"),
     ):
-        result = RUNTIME.execute(GasLawParameters(amount_mol=0.0))
+        result = run_model_safely(lambda: simulate(GasLawParameters(amount_mol=0.0)))
 
     assert result is None
     error.assert_called_once()
     assert "could not finish safely" in error.call_args.args[0]
 
 
-def test_committed_run_is_stable_across_unrelated_rerun(
-    monkeypatch: pytest.MonkeyPatch, tmp_path
-) -> None:
+def test_result_is_stable_across_unrelated_rerun(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
     app = _gas_app(monkeypatch, tmp_path).run(timeout=30)
     amount = next(item for item in app.slider if item.label == "Amount (mol)")
     amount.set_value(1.5)
@@ -85,9 +86,6 @@ def test_committed_run_is_stable_across_unrelated_rerun(
         timeout=30
     )
 
-    committed_key = simulation_key("gas_laws", "committed_parameters")
-    version_key = simulation_key("gas_laws", "committed_model_version")
-    committed = app.session_state[committed_key]
     notebook = app.session_state[SHARED_STATE_KEYS.notebook]
     iframe_before = app.get("iframe")[0].proto.srcdoc
     observation = next(
@@ -95,8 +93,6 @@ def test_committed_run_is_stable_across_unrelated_rerun(
     )
     observation.set_value("Unrelated note edit").run(timeout=30)
 
-    assert app.session_state[committed_key] == committed
-    assert committed.amount_mol == 1.5
-    assert app.session_state[version_key] == "gas-laws-1.0"
+    assert next(item for item in app.slider if item.label == "Amount (mol)").value == 1.5
     assert len(notebook.trials) == 1
     assert app.get("iframe")[0].proto.srcdoc == iframe_before

@@ -110,12 +110,6 @@ def test_every_page_uses_namespaced_simulation_state() -> None:
     for manifest in EXPANSION_MANIFESTS:
         page_path = Path(manifest.page_entrypoint.rsplit(".", 1)[0].replace(".", "/") + ".py")
         source = page_path.read_text()
-        owns_keys_locally = (
-            "from physics_playground.state_keys import" in source
-            and "simulation_key" in source
-            and "def state_key" in source
-        )
-        delegates_keys_to_runtime = (
-            "StreamlitSimulationRuntime" in source and "RUNTIME.key" in source
-        )
-        assert owns_keys_locally or delegates_keys_to_runtime
+        assert "from physics_playground.state_keys import" in source
+        assert "simulation_key" in source
+        assert "def state_key" in source

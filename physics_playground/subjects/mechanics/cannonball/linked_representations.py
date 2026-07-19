@@ -10,8 +10,10 @@ import numpy as np
 from physics_playground.application_callbacks import get_player_preferences
 from physics_playground.canvas.player import PLAYER_CSS
 from physics_playground.frontend_assets import load_javascript_asset
-from physics_playground.frontend_protocol import linked_projectile_envelope
 from physics_playground.serialization import to_jsonable
+from physics_playground.subjects.mechanics.cannonball.linked_payload import (
+    linked_payload_envelope,
+)
 from physics_playground.subjects.mechanics.cannonball.physics import ProjectileResult
 from physics_playground.visual.css import shared_css
 from physics_playground.visual.tokens import DARK_THEME, LIGHT_THEME, theme_payload
@@ -117,7 +119,7 @@ def build_linked_projectile_document(
     model_versions = {result.model_version for _, result in results}
     if len(model_versions) != 1:
         raise ValueError("Linked comparison runs must use one model version.")
-    envelope = linked_projectile_envelope(
+    envelope = linked_payload_envelope(
         simulation_id="cannonball",
         model_version=model_versions.pop(),
         payload=config,

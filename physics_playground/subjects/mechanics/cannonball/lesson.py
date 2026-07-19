@@ -30,6 +30,12 @@ from physics_playground.education.models import (
     WorkedExample,
 )
 from physics_playground.models.simulations import LearningMode
+from physics_playground.subjects.mechanics.cumulative_assessment import (
+    CUMULATIVE_ASSESSMENT_LESSON,
+)
+from physics_playground.subjects.mechanics.cumulative_assessment import (
+    OBJECTIVES as CUMULATIVE_OBJECTIVES,
+)
 from physics_playground.subjects.mechanics.foundations_lesson import (
     FOUNDATION_CONCEPTS,
     MODELS_MEASUREMENTS_LESSON,
@@ -37,6 +43,13 @@ from physics_playground.subjects.mechanics.foundations_lesson import (
 from physics_playground.subjects.mechanics.kinematics_lessons import (
     KINEMATICS_CONCEPTS,
     KINEMATICS_LESSONS,
+)
+from physics_playground.subjects.mechanics.two_d_motion_lesson import (
+    OBJECTIVES as TWO_D_MOTION_OBJECTIVES,
+)
+from physics_playground.subjects.mechanics.two_d_motion_lesson import (
+    TWO_D_MOTION_CONCEPTS,
+    TWO_D_MOTION_LESSON,
 )
 
 PROJECTILE_CONCEPTS = (
@@ -93,7 +106,6 @@ ACTIVITIES = (
             "Record a physical reason for the prediction.",
         ),
         LearningMode.EXPLORE,
-        {"initial_speed_m_s": 20.0, "launch_angle_deg": 45.0, "drag_enabled": False},
         "Which component tradeoff controls the range?",
         "A recorded angle prediction and explanation.",
         objective_ids=("projectile-range",),
@@ -109,7 +121,6 @@ ACTIVITIES = (
             "Relate each outcome to v_x and v_y.",
         ),
         LearningMode.EXPLORE,
-        {"initial_speed_m_s": 20.0, "drag_enabled": False},
         "What changes, and what stays symmetric around 45°?",
         "Three completed runs with component-based observations.",
         objective_ids=("projectile-components",),
@@ -125,7 +136,6 @@ ACTIVITIES = (
             "Explain their equal ideal ranges and different peak heights.",
         ),
         LearningMode.COMPARE,
-        {"initial_speed_m_s": 20.0, "drag_enabled": False},
         "Why can two visibly different paths land at the same range?",
         "A comparison citing both horizontal speed and flight time.",
         objective_ids=("projectile-components", "projectile-range"),
@@ -141,7 +151,6 @@ ACTIVITIES = (
             "Check the symmetry of complementary angles.",
         ),
         LearningMode.ANALYZE,
-        {"initial_speed_m_s": 20.0, "drag_enabled": False},
         "How does the graph encode sin(2 theta)?",
         "A graph-based estimate of the maximizing angle.",
         objective_ids=("projectile-range",),
@@ -157,7 +166,6 @@ ACTIVITIES = (
             "State which assumptions changed and which equations no longer apply directly.",
         ),
         LearningMode.MODEL,
-        {"initial_speed_m_s": 20.0, "launch_angle_deg": 45.0},
         "Which ideal conclusions survive when drag is included?",
         "A model comparison naming assumptions and evidence.",
         objective_ids=("projectile-model-limits",),
@@ -173,7 +181,6 @@ ACTIVITIES = (
             "Name one real launch where the point-mass, flat-ground model would be inadequate.",
         ),
         None,
-        {},
         "What did the living figure reveal that the equation alone did not?",
         "A claim-evidence-limitation reflection.",
         objective_ids=("projectile-model-limits",),
@@ -269,10 +276,11 @@ CANNONBALL_LESSON = Lesson(
             "Constant-acceleration graph reasoning supports the two component equations.",
         ),
         Prerequisite(
-            "trigonometry-prerequisite",
-            PrerequisiteKind.SKILL,
-            "right-triangle-trigonometry",
-            "Resolving the launch velocity uses sine and cosine in a right triangle; the lesson introduces the physics meaning of the components.",
+            "two-d-motion-prerequisite",
+            PrerequisiteKind.LESSON,
+            TWO_D_MOTION_LESSON.id,
+            "Resolving the launch velocity and combining independent components is taught in 2D "
+            "motion before the full range derivation is required here.",
         ),
         Prerequisite(
             "algebra-prerequisite",
@@ -385,8 +393,8 @@ CANNONBALL_LESSON = Lesson(
     ACTIVITIES,
     ContentProfile(ContentDepth.STANDARD, ContentVoice.APPROACHABLE),
     55,
-    None,
-    "Forces on an inclined plane",
+    "cumulative-mechanics-check",
+    "Cumulative check: models through projectile motion",
 )
 
 CANNONBALL_ASSESSMENTS = (
@@ -439,7 +447,7 @@ MECHANICS_SUBJECT = Subject(
     "mechanics",
     "Mechanics",
     "Use forces, motion, energy, and momentum to explain how physical systems change.",
-    (*FOUNDATION_CONCEPTS, *KINEMATICS_CONCEPTS, *PROJECTILE_CONCEPTS),
+    (*FOUNDATION_CONCEPTS, *KINEMATICS_CONCEPTS, *TWO_D_MOTION_CONCEPTS, *PROJECTILE_CONCEPTS),
     (
         Unit(
             "mechanics-foundations",
@@ -458,9 +466,19 @@ MECHANICS_SUBJECT = Subject(
         Unit(
             "motion-in-two-dimensions",
             "Motion in two dimensions",
-            "Connect vector components to trajectories and evidence.",
-            tuple(objective.id for objective in OBJECTIVES),
-            (CANNONBALL_LESSON,),
+            "Connect vector components to independent-component motion, trajectories, and evidence.",
+            (
+                *(objective.id for objective in TWO_D_MOTION_OBJECTIVES),
+                *(objective.id for objective in OBJECTIVES),
+            ),
+            (TWO_D_MOTION_LESSON, CANNONBALL_LESSON),
+        ),
+        Unit(
+            "cumulative-review",
+            "Cumulative review",
+            "Check evidence of mastery across the full lesson sequence in one cumulative check.",
+            tuple(objective.id for objective in CUMULATIVE_OBJECTIVES),
+            (CUMULATIVE_ASSESSMENT_LESSON,),
         ),
     ),
 )

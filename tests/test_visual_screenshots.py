@@ -1,4 +1,20 @@
-"""Small perceptual regression suite rendered by a real browser."""
+"""Small perceptual regression suite rendered by a real browser.
+
+The baselines in ``visual_baselines.json`` were captured with Chromium
+141.0.7390.37 (the Playwright-managed build at revision 1194, e.g.
+``/opt/pw-browsers/chromium-1194/chrome-linux/chrome``). Perceptual hashes are
+not stable across different Chromium builds/versions — font hinting, control
+sizing, and canvas rasterization all shift enough to move the dhash distance
+well past the comparison threshold even though the rendering is correct. If
+this suite fails against a browser whose ``--version`` output differs from
+the one above, recapture rather than loosen the threshold further: point
+``CHROMIUM_BIN`` at that exact build and run
+``CHROMIUM_BIN=/path/to/chromium PHYSICS_UPDATE_VISUAL_BASELINES=1 pytest
+tests/test_visual_screenshots.py`` once (it intentionally fails after writing
+so the diff gets reviewed), inspect the rendered PNGs in the pytest tmp
+directory to confirm nothing is actually broken, then commit the updated
+``visual_baselines.json`` alongside a note of the new pinned build.
+"""
 
 from __future__ import annotations
 
@@ -175,10 +191,6 @@ def _distance(left: str, right: str) -> int:
     return (int(left, 16) ^ int(right, 16)).bit_count()
 
 
-def _browser() -> str | None:
-    return os.environ.get("CHROMIUM_BIN")
-
-
 def _render(case, destination: Path, browser: str) -> Fingerprint:
     scene, config, preferences, viewport = case
     configure_application_callbacks(ApplicationCallbacks(player_preferences=lambda: preferences))
@@ -213,10 +225,12 @@ def _render(case, destination: Path, browser: str) -> Fingerprint:
     return _fingerprint(destination)
 
 
+@pytest.mark.skipif(
+    not os.environ.get("CHROMIUM_BIN"),
+    reason="SKIPPED: browser tests require CHROMIUM_BIN; this run has NO browser coverage.",
+)
 def test_representative_browser_renderings(tmp_path) -> None:
-    browser = _browser()
-    if not browser:
-        pytest.skip("Chromium is required for perceptual visual regression checks.")
+    browser = os.environ["CHROMIUM_BIN"]
     expected = json.loads(BASELINES.read_text(encoding="utf-8"))
     actual = {
         name: asdict(_render(case, tmp_path / f"{name}.png", browser))

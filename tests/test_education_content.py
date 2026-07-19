@@ -15,7 +15,6 @@ from physics_playground.education.models import (
     EducationEventKind,
     EducationProgressEvent,
     QuestionKind,
-    SimulationActivity,
 )
 from physics_playground.education.validation import validate_curriculum_manifest
 from physics_playground.models.simulations import LearningMode
@@ -24,8 +23,12 @@ from physics_playground.subjects.mechanics.cannonball.lesson import (
     CANNONBALL_ASSESSMENTS,
     CANNONBALL_LESSON,
 )
+from physics_playground.subjects.mechanics.cumulative_assessment import (
+    CUMULATIVE_ASSESSMENT_LESSON,
+)
 from physics_playground.subjects.mechanics.foundations_lesson import MODELS_MEASUREMENTS_LESSON
 from physics_playground.subjects.mechanics.kinematics_lessons import KINEMATICS_LESSONS
+from physics_playground.subjects.mechanics.two_d_motion_lesson import TWO_D_MOTION_LESSON
 from physics_playground.validation import PhysicsValidationError
 
 SIMULATION_IDS = {simulation.id for simulation in SIMULATION_REGISTRY}
@@ -51,7 +54,9 @@ def test_builtin_curriculum_is_valid_and_cataloged() -> None:
     assert LESSONS_BY_ID == {
         MODELS_MEASUREMENTS_LESSON.id: MODELS_MEASUREMENTS_LESSON,
         **{lesson.id: lesson for lesson in KINEMATICS_LESSONS},
+        TWO_D_MOTION_LESSON.id: TWO_D_MOTION_LESSON,
         CANNONBALL_LESSON.id: CANNONBALL_LESSON,
+        CUMULATIVE_ASSESSMENT_LESSON.id: CUMULATIVE_ASSESSMENT_LESSON,
     }
 
 
@@ -245,16 +250,3 @@ def test_progress_event_is_typed_without_presentation_state() -> None:
     )
     assert event.kind is EducationEventKind.ACTIVITY_COMPLETED
     assert event.completed and event.score == 1.0
-
-
-def test_activity_contract_accepts_renderer_independent_presets() -> None:
-    activity = SimulationActivity(
-        "activity",
-        ActivityPhase.EXPLORATION,
-        "cannonball",
-        "Explore",
-        ("Run the model.",),
-        LearningMode.EXPLORE,
-        {"initial_speed_m_s": 12.0, "drag_enabled": False},
-    )
-    assert activity.parameter_preset["initial_speed_m_s"] == 12.0

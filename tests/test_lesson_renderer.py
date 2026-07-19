@@ -8,6 +8,7 @@ from physics_playground.education.assessments import (
 )
 from physics_playground.education.progress import PathwayProgress
 from physics_playground.state_keys import SHARED_STATE_KEYS, feature_key, simulation_key
+from physics_playground.subjects.mechanics.two_d_motion_lesson import TWO_D_MOTION_LESSON
 
 LESSON_ID = "projectile-motion-from-components"
 
@@ -18,6 +19,10 @@ def lesson_app(monkeypatch, tmp_path) -> AppTest:
     app = AppTest.from_file("app.py")
     app.query_params["simulation"] = "cannonball"
     app.query_params["lesson"] = LESSON_ID
+    app.session_state[SHARED_STATE_KEYS.education_progress] = {
+        "m05-constant-acceleration": PathwayProgress("m05-constant-acceleration", completed=True),
+        TWO_D_MOTION_LESSON.id: PathwayProgress(TWO_D_MOTION_LESSON.id, completed=True),
+    }
     return app.run(timeout=30)
 
 

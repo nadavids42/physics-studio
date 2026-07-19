@@ -66,8 +66,8 @@ class VariantAnswer:
 class MasteryRule:
     """Explicit evidence rule; activity completion is intentionally absent."""
 
-    required_correct_attempts: int = 1
-    within_most_recent_attempts: int = 2
+    required_correct_attempts: int = 2
+    within_most_recent_attempts: int = 3
 
 
 @dataclass(frozen=True, slots=True)
@@ -176,8 +176,8 @@ class AssessmentDefinition:
                 if isinstance(item, dict)
             ),
             mastery_rule=MasteryRule(
-                int(rule.get("required_correct_attempts", 1)),
-                int(rule.get("within_most_recent_attempts", 2)),
+                int(rule.get("required_correct_attempts", 2)),
+                int(rule.get("within_most_recent_attempts", 3)),
             ),
         )
 

@@ -2,8 +2,12 @@ from physics_playground.education.progress import PathwayProgress
 from physics_playground.expansion_catalog import EXPANSION_MANIFESTS
 from physics_playground.presentation.navigation import NAVIGATION_SUBJECTS, recommended_lesson
 from physics_playground.subjects.mechanics.cannonball.lesson import CANNONBALL_LESSON
+from physics_playground.subjects.mechanics.cumulative_assessment import (
+    CUMULATIVE_ASSESSMENT_LESSON,
+)
 from physics_playground.subjects.mechanics.foundations_lesson import MODELS_MEASUREMENTS_LESSON
 from physics_playground.subjects.mechanics.kinematics_lessons import KINEMATICS_LESSONS
+from physics_playground.subjects.mechanics.two_d_motion_lesson import TWO_D_MOTION_LESSON
 
 
 def test_navigation_catalog_uses_every_validated_simulation_once():
@@ -27,7 +31,11 @@ def test_curriculum_lessons_are_joined_to_their_subject_and_recommended_optional
                 MODELS_MEASUREMENTS_LESSON.id: PathwayProgress(
                     MODELS_MEASUREMENTS_LESSON.id, completed=True
                 ),
+                TWO_D_MOTION_LESSON.id: PathwayProgress(TWO_D_MOTION_LESSON.id, completed=True),
                 CANNONBALL_LESSON.id: PathwayProgress(CANNONBALL_LESSON.id, completed=True),
+                CUMULATIVE_ASSESSMENT_LESSON.id: PathwayProgress(
+                    CUMULATIVE_ASSESSMENT_LESSON.id, completed=True
+                ),
                 **{
                     lesson.id: PathwayProgress(lesson.id, completed=True)
                     for lesson in KINEMATICS_LESSONS

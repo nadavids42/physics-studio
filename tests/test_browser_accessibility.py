@@ -19,14 +19,12 @@ from physics_playground.application_callbacks import (
 from physics_playground.canvas.player import build_player_document
 
 
-def _browser() -> str | None:
-    return os.environ.get("CHROMIUM_BIN")
-
-
+@pytest.mark.skipif(
+    not os.environ.get("CHROMIUM_BIN"),
+    reason="SKIPPED: browser tests require CHROMIUM_BIN; this run has NO browser coverage.",
+)
 def test_player_keyboard_names_motion_and_responsive_behavior_in_chromium(tmp_path) -> None:
-    browser = _browser()
-    if not browser:
-        pytest.skip("Chromium is required for browser accessibility verification.")
+    browser = os.environ["CHROMIUM_BIN"]
     configure_application_callbacks(
         ApplicationCallbacks(
             player_preferences=lambda: PlayerPreferences(

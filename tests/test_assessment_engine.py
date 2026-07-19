@@ -187,6 +187,73 @@ def test_mastery_uses_explicit_recent_attempt_rule_not_action_completion() -> No
     assert third.mastery[0].status is MasteryStatus.DEMONSTRATED
 
 
+def test_default_mastery_rule_requires_two_correct_within_three_attempts() -> None:
+    assert MasteryRule() == MasteryRule(required_correct_attempts=2, within_most_recent_attempts=3)
+
+
+def test_a_single_lucky_answer_no_longer_demonstrates_mastery_by_default() -> None:
+    """A 3-option multiple-choice question has a 33% guess floor; one correct
+    attempt must not be enough to claim DEMONSTRATED mastery."""
+
+    item = definition(QuestionKind.MULTIPLE_CHOICE, correct_choice_ids=("b",))
+    lucky = submit(item, AssessmentResponse(selected_choice_ids=("b",)))
+    assert lucky.attempt.correct
+    assert lucky.mastery[0].status is MasteryStatus.DEVELOPING
+    assert lucky.mastery[0].status is not MasteryStatus.DEMONSTRATED
+
+    confirmed = submit(
+        item,
+        AssessmentResponse(selected_choice_ids=("b",)),
+        attempt_id="attempt-2",
+        prior=(lucky.attempt,),
+    )
+    assert confirmed.mastery[0].status is MasteryStatus.DEMONSTRATED
+
+
+def test_every_catalog_assessment_is_still_achievable_under_the_default_rule() -> None:
+    """A learner who keeps answering correctly must still be able to reach
+    DEMONSTRATED mastery on every graded checkpoint in the shipped curriculum."""
+
+    from physics_playground.education.catalog import ASSESSMENTS_BY_ID
+
+    for item in ASSESSMENTS_BY_ID.values():
+        if item.kind is QuestionKind.SHORT_RESPONSE:
+            continue  # Self-review questions are never graded correct; excluded by design.
+        assert item.mastery_rule == MasteryRule()
+        attempts: list[AssessmentAttempt] = []
+        result = None
+        for attempt_number in range(1, item.mastery_rule.required_correct_attempts + 1):
+            variant_id = deterministic_variant_id(
+                item, learner_id="learner", attempt_number=attempt_number
+            )
+            if variant_id == "default":
+                choice_ids, numeric_value = item.correct_choice_ids, item.expected_numeric_value
+            else:
+                variant = next(v for v in item.variants if v.id == variant_id)
+                choice_ids, numeric_value = (
+                    variant.correct_choice_ids,
+                    variant.expected_numeric_value,
+                )
+            response = (
+                AssessmentResponse(numeric_value=numeric_value, unit=item.canonical_unit)
+                if item.kind is QuestionKind.NUMERIC
+                else AssessmentResponse(selected_choice_ids=choice_ids)
+            )
+            result = submit(
+                item,
+                response,
+                attempt_id=f"attempt-{attempt_number}",
+                prior=tuple(attempts),
+                variant_id=variant_id,
+            )
+            assert result.attempt.correct, f"{item.id} attempt {attempt_number} was not correct"
+            attempts.append(result.attempt)
+        assert result is not None
+        assert all(mastery.status is MasteryStatus.DEMONSTRATED for mastery in result.mastery), (
+            item.id
+        )
+
+
 def test_deterministic_variants_are_stable_and_server_checked() -> None:
     item = definition(
         QuestionKind.NUMERIC,

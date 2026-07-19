@@ -34,7 +34,9 @@ def _requirements() -> tuple[tuple[str, ...], tuple[str, ...]]:
 def test_pathway_contains_the_complete_required_sequence() -> None:
     assert tuple(item.phase for item in CANNONBALL_LESSON.activity_sequence) == tuple(ActivityPhase)
     assert CANNONBALL_LESSON.sections[0].narrative.startswith("A projectile")
-    assert CANNONBALL_LESSON.next_lesson_title == "Forces on an inclined plane"
+    assert (
+        CANNONBALL_LESSON.next_lesson_title == "Cumulative check: models through projectile motion"
+    )
     assert "cannonball" in CANNONBALL_LESSON.simulation_ids
 
 

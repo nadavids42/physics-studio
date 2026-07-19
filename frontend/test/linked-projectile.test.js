@@ -7,7 +7,7 @@ import {
   nearestIndex,
   sharedDomains,
   stateAt,
-  validateFrontendEnvelope,
+  validateLinkedPayloadEnvelope,
 } from "../src/linked-projectile.js";
 
 const run = {
@@ -43,12 +43,11 @@ describe("linked projectile state", () => {
   });
 });
 
-describe("frontend protocol", () => {
+describe("linked payload envelope", () => {
   const envelope = () => ({
-    protocol: "physics-studio.frontend",
+    kind: "cannonball-linked-projectile",
     version: 1,
     simulation: { id: "cannonball", modelVersion: "projectile-2.0" },
-    representation: { kind: "linked-projectile", version: 1 },
     payload: {
       durationMs: 3200,
       tracks: [{ id: "projectile", x: run.x_m, y: run.y_m }],
@@ -57,21 +56,21 @@ describe("frontend protocol", () => {
   });
 
   it("accepts the supported version and returns its payload", () => {
-    expect(validateFrontendEnvelope(envelope()).representations.runs[0]).toBe(
-      run,
-    );
+    expect(
+      validateLinkedPayloadEnvelope(envelope()).representations.runs[0],
+    ).toBe(run);
   });
 
   it("rejects unknown versions and malformed samples", () => {
     const unknown = envelope();
     unknown.version = 2;
-    expect(() => validateFrontendEnvelope(unknown)).toThrow(/version/);
+    expect(() => validateLinkedPayloadEnvelope(unknown)).toThrow(/version/);
     const malformed = envelope();
     malformed.payload.representations.runs[0] = {
       ...run,
       vx_m_s: [4],
     };
-    expect(() => validateFrontendEnvelope(malformed)).toThrow(/samples/);
+    expect(() => validateLinkedPayloadEnvelope(malformed)).toThrow(/samples/);
   });
 });
 
