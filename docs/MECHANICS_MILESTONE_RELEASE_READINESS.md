@@ -18,10 +18,11 @@ WCAG-conformant product.
 - Lesson completion requires activity/checkpoint evidence rather than visitation. Attempts and
   objective evidence are distinct from progress. Lessons resume at the last incomplete section,
   and learner answers survive unrelated reruns.
-- SQLite is authoritative for local learners. Schema 1–3 profiles migrate to normalized schema 4;
-  progress, attempts, trials, notebook entries, evidence, achievements, and preferences survive
-  reload. Writes are transactional, malformed child records are quarantined, and export/import
-  round trips are tested.
+- SQLite is authoritative for one local learner at a time; it is not normalized relational storage
+  or classroom-scale. Schema 1–3 profiles migrate to the current store schema; progress, attempts,
+  trials, notebook entries, evidence, achievements, and preferences survive reload. Writes are
+  transactional, malformed child records are quarantined, and export/import round trips are
+  tested.
 - Notebook trials record simulation ID, canonical parameters, seed where applicable, and model
   version. Setup handoff and Cannonball replay preserve deterministic targets and committed state.
 - Automated Chromium checks pass for keyboard behavior, reduced motion, high contrast/forced

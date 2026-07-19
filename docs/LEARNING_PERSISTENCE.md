@@ -26,8 +26,12 @@ by the current Streamlit compatibility adapter.
 
 `LocalProfile` and `ProfileStore` remain supported compatibility projections for the current UI,
 legacy JSON imports, and existing callers. They are not the platform domain or database shape.
-Profile schema versions 1–3 migrate to normalized store schema 4 without deleting the legacy
-profile table. New writes target normalized tables.
+`SQLiteLearningStore` is local, single-learner, JSON-payload storage with schema versioning, not a
+normalized relational schema. Profile schema versions 1–3 migrate to the current store schema
+without deleting the legacy profile table. New writes target the versioned domain tables described
+above; assessment attempts additionally carry `lesson_id`, `submitted_at`, and `status` as indexed
+columns promoted from the payload, since those are the fields a query is actually likely to filter
+on. Everything else in a record stays inside the payload blob.
 
 ## Integrity, recovery, and interchange
 

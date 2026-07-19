@@ -1,4 +1,4 @@
-"""Normalized persistence, migration, isolation, and concurrency tests."""
+"""Local single-learner persistence, migration, isolation, and concurrency tests."""
 
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ def sample_data(identifier: str = "learner-1") -> LearnerData:
     )
 
 
-def test_high_growth_domains_are_normalized_and_round_trip(tmp_path) -> None:
+def test_high_growth_domains_round_trip_through_separate_tables(tmp_path) -> None:
     store = SQLiteLearningStore(tmp_path / "learning.db")
     expected = sample_data()
     store.save(expected)
@@ -77,7 +77,8 @@ def test_one_malformed_row_is_quarantined_without_losing_learner(tmp_path) -> No
     store.save(sample_data())
     with store.connect() as db:
         db.execute(
-            "INSERT INTO assessment_attempts VALUES(?,?,?,?,?)".replace("?,?,?,?,?", "?,?,?,1"),
+            "INSERT INTO assessment_attempts(learner_id,record_id,payload,schema_version) "
+            "VALUES(?,?,?,1)",
             ("learner-1", "bad", "{not-json"),
         )
         db.commit()
@@ -158,3 +159,92 @@ def test_import_drops_invalid_child_without_rejecting_valid_export(tmp_path) -> 
     exported["learner"]["assessment_attempts"].append({"missing": "id"})
     imported = store.import_learner(json.dumps(exported), new_id="safe-import")
     assert tuple(item["id"] for item in imported.assessment_attempts) == ("attempt-1",)
+
+
+def test_pre_schema_5_assessment_attempt_rows_migrate_promoted_columns(tmp_path) -> None:
+    path = tmp_path / "pre_schema_5.db"
+    attempt = record(
+        "attempt-old",
+        lesson_id="lesson-1",
+        assessment_id="check-1",
+        status="correct",
+        submitted_at="2026-07-01T12:00:00+00:00",
+    )
+    with sqlite3.connect(path) as db:
+        db.execute(
+            "CREATE TABLE learners (id TEXT PRIMARY KEY, display_name TEXT NOT NULL, "
+            "schema_version INTEGER NOT NULL)"
+        )
+        db.execute(
+            "CREATE TABLE assessment_attempts (learner_id TEXT NOT NULL, record_id TEXT NOT NULL, "
+            "payload TEXT NOT NULL, schema_version INTEGER NOT NULL, PRIMARY KEY(learner_id,record_id))"
+        )
+        db.execute("INSERT INTO learners VALUES(?,?,1)", ("learner-1", "Ada"))
+        db.execute(
+            "INSERT INTO assessment_attempts VALUES(?,?,?,1)",
+            ("learner-1", "attempt-old", json.dumps(attempt)),
+        )
+        db.execute("PRAGMA user_version=4")
+
+    store = SQLiteLearningStore(path)
+
+    # The old-schema row round-trips through the public API exactly as it did before migration.
+    attempts = store.get_assessment_attempts("learner-1")
+    assert len(attempts) == 1
+    assert attempts[0] == attempt
+
+    # The migration backfilled the promoted columns from the existing payload.
+    with store.connect() as db:
+        assert db.execute("PRAGMA user_version").fetchone()[0] == STORE_SCHEMA_VERSION
+        row = db.execute(
+            "SELECT lesson_id, submitted_at, status FROM assessment_attempts WHERE record_id=?",
+            ("attempt-old",),
+        ).fetchone()
+    assert row == ("lesson-1", "2026-07-01T12:00:00+00:00", "correct")
+
+
+def test_assessment_attempt_promoted_columns_are_queryable_with_plain_where(tmp_path) -> None:
+    store = SQLiteLearningStore(tmp_path / "learning.db")
+    store.save(
+        LearnerData(
+            LearnerIdentity("learner-1", "Ada"),
+            assessment_attempts=(
+                record(
+                    "attempt-a",
+                    lesson_id="lesson-1",
+                    status="correct",
+                    submitted_at="2026-07-01T00:00:00+00:00",
+                ),
+                record(
+                    "attempt-b",
+                    lesson_id="lesson-1",
+                    status="incorrect",
+                    submitted_at="2026-07-02T00:00:00+00:00",
+                ),
+                record(
+                    "attempt-c",
+                    lesson_id="lesson-2",
+                    status="correct",
+                    submitted_at="2026-07-03T00:00:00+00:00",
+                ),
+            ),
+        )
+    )
+
+    with store.connect() as db:
+        by_lesson = db.execute(
+            "SELECT record_id FROM assessment_attempts WHERE lesson_id=? ORDER BY record_id",
+            ("lesson-1",),
+        ).fetchall()
+        by_status = db.execute(
+            "SELECT record_id FROM assessment_attempts WHERE status=? ORDER BY record_id",
+            ("correct",),
+        ).fetchall()
+        by_submitted_after = db.execute(
+            "SELECT record_id FROM assessment_attempts WHERE submitted_at > ? ORDER BY record_id",
+            ("2026-07-01T00:00:00+00:00",),
+        ).fetchall()
+
+    assert [row[0] for row in by_lesson] == ["attempt-a", "attempt-b"]
+    assert [row[0] for row in by_status] == ["attempt-a", "attempt-c"]
+    assert [row[0] for row in by_submitted_after] == ["attempt-b", "attempt-c"]
