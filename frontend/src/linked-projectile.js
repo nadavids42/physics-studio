@@ -9,6 +9,61 @@ export const QUANTITY_COLORS = Object.freeze({
   vertical: "#C43C39",
 });
 
+export const FRONTEND_PROTOCOL = "physics-studio.frontend";
+export const FRONTEND_PROTOCOL_VERSION = 1;
+
+export function validateFrontendEnvelope(envelope) {
+  if (!envelope || typeof envelope !== "object" || Array.isArray(envelope))
+    throw new TypeError("Frontend protocol envelope must be an object.");
+  if (
+    envelope.protocol !== FRONTEND_PROTOCOL ||
+    envelope.version !== FRONTEND_PROTOCOL_VERSION
+  )
+    throw new TypeError("Unsupported frontend protocol version.");
+  if (
+    !envelope.simulation?.id ||
+    !envelope.simulation?.modelVersion ||
+    envelope.representation?.kind !== "linked-projectile" ||
+    envelope.representation?.version !== 1
+  )
+    throw new TypeError("Invalid linked-projectile protocol metadata.");
+  const config = envelope.payload;
+  const runs = config?.representations?.runs;
+  if (!Number.isFinite(config?.durationMs) || config.durationMs <= 0)
+    throw new TypeError("Linked-projectile duration must be positive.");
+  if (!Array.isArray(runs) || !runs.length || !Array.isArray(config.tracks))
+    throw new TypeError("Linked-projectile runs and tracks are required.");
+  if (runs.length !== config.tracks.length)
+    throw new TypeError("Linked-projectile runs and tracks must correspond.");
+  const keys = [
+    "time_s",
+    "x_m",
+    "y_m",
+    "vx_m_s",
+    "vy_m_s",
+    "ax_m_s2",
+    "ay_m_s2",
+  ];
+  runs.forEach((run) => {
+    const arrays = keys.map((key) => run[key]);
+    if (
+      !run.label ||
+      arrays.some(
+        (values) =>
+          !Array.isArray(values) ||
+          !values.length ||
+          values.some((value) => !Number.isFinite(value)),
+      ) ||
+      new Set(arrays.map((values) => values.length)).size !== 1 ||
+      run.time_s.some(
+        (time, index) => index > 0 && time <= run.time_s[index - 1],
+      )
+    )
+      throw new TypeError("Linked-projectile run samples are invalid.");
+  });
+  return config;
+}
+
 export function nearestIndex(times, time) {
   if (!times.length) return 0;
   let best = 0;
@@ -227,8 +282,11 @@ export class LinkedProjectileRuntime {
   }
 }
 
-export function mountLinkedProjectile(config, environment = globalThis) {
-  return new LinkedProjectileRuntime(config, environment);
+export function mountLinkedProjectile(envelope, environment = globalThis) {
+  return new LinkedProjectileRuntime(
+    validateFrontendEnvelope(envelope),
+    environment,
+  );
 }
 
 Object.assign(globalThis, { LinkedProjectileRuntime, mountLinkedProjectile });

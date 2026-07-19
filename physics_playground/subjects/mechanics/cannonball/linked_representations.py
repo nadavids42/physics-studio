@@ -10,6 +10,7 @@ import numpy as np
 from physics_playground.application_callbacks import get_player_preferences
 from physics_playground.canvas.player import PLAYER_CSS
 from physics_playground.frontend_assets import load_javascript_asset
+from physics_playground.frontend_protocol import linked_projectile_envelope
 from physics_playground.serialization import to_jsonable
 from physics_playground.subjects.mechanics.cannonball.physics import ProjectileResult
 from physics_playground.visual.css import shared_css
@@ -112,8 +113,16 @@ def build_linked_projectile_document(
         "largeText": preferences.large_text,
         "theme": preferences.theme,
     }
+    model_versions = {result.model_version for _, result in results}
+    if len(model_versions) != 1:
+        raise ValueError("Linked comparison runs must use one model version.")
+    envelope = linked_projectile_envelope(
+        simulation_id="cannonball",
+        model_version=model_versions.pop(),
+        payload=config,
+    )
     payload = json.dumps(
-        config,
+        envelope,
         allow_nan=False,
         separators=(",", ":"),
     )
@@ -132,7 +141,7 @@ def _document(payload: str) -> str:
 <section class="equations" aria-label="Governing equations; select a term to highlight its representation">
 <button class="equation-term" data-quantity="position">x(t)=x₀+vₓt</button><button class="equation-term" data-quantity="position">y(t)=y₀+vᵧ₀t−½gt²</button><button class="equation-term" data-quantity="velocity">vᵧ(t)=vᵧ₀−gt</button><button class="equation-term" data-quantity="acceleration">a=(0,−g)</button></section>
 <div class="linked-grid"><svg class="linked-graph" data-quantity="position" viewBox="0 0 420 190" tabindex="0"></svg><svg class="linked-graph" data-quantity="velocity" viewBox="0 0 420 190" tabindex="0"></svg><svg class="linked-graph" data-quantity="acceleration" viewBox="0 0 420 190" tabindex="0"></svg></div>
-</main><script>{LINKED_JS}\nconst linkedConfig={payload};window.linkedProjectile=mountLinkedProjectile(linkedConfig);</script></body></html>"""
+</main><script>{LINKED_JS}\nconst frontendEnvelope={payload};window.linkedProjectile=mountLinkedProjectile(frontendEnvelope);</script></body></html>"""
 
 
 def linked_document_cache_info() -> object:
