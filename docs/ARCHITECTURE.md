@@ -161,8 +161,8 @@ The current architecture migration plan is documented in
 `docs/ARCHITECTURE_MIGRATION.md`. It favors one runnable, testable stage at a time and does not
 authorize changing physics during file moves.
 
-The completed review-to-current-state assessment, remaining debt, readiness verdicts, and revised
-grades are recorded in `docs/PRINCIPAL_ARCHITECT_AUDIT.md`.
+Verifiable current facts about test coverage and known limitations are recorded in
+`docs/STATUS.md`.
 
 ## Tests and quality gates
 
