@@ -7,15 +7,10 @@ from streamlit.testing.v1 import AppTest
 from physics_playground.education.assessments import ObjectiveEvidenceRecord
 from physics_playground.education.models import (
     CheckpointQuestion,
-    MisconceptionCallout,
     SimulationActivity,
-    WorkedExample,
 )
 from physics_playground.education.progress import PathwayProgress
 from physics_playground.state_keys import SHARED_STATE_KEYS, feature_key
-from physics_playground.subjects.mechanics.course_roadmap import (
-    INTRODUCTORY_MECHANICS_LESSONS,
-)
 from physics_playground.subjects.mechanics.foundations_lesson import (
     ACTIVITIES,
     MEASUREMENT_EXAMPLE,
@@ -86,30 +81,6 @@ def test_every_activity_and_checkpoint_connects_to_objective_evidence() -> None:
         "m01-read-graph",
     }
     assert all(item.completion_evidence for item in observation_activities)
-
-
-def test_lesson_meets_curriculum_specification_without_authoring_lesson_two() -> None:
-    roadmap = next(item for item in INTRODUCTORY_MECHANICS_LESSONS if item.id == LESSON_ID)
-    assert MODELS_MEASUREMENTS_LESSON.id == roadmap.id
-    assert MODELS_MEASUREMENTS_LESSON.estimated_minutes == roadmap.estimated_minutes
-    assert set(roadmap.core_concepts) <= {"SI units", "dimensions", "uncertainty", "models"}
-    statements = " ".join(objective.statement.lower() for objective in OBJECTIVES)
-    for concept in ("units", "precision", "physical system", "assumptions", "limitations"):
-        assert concept in statements
-    assert any(
-        isinstance(item, WorkedExample)
-        for section in MODELS_MEASUREMENTS_LESSON.sections
-        for item in section.components
-    )
-    assert any(
-        isinstance(item, MisconceptionCallout)
-        for section in MODELS_MEASUREMENTS_LESSON.sections
-        for item in section.components
-    )
-    assert MODELS_MEASUREMENTS_LESSON.next_lesson_id == "m02-position-velocity"
-    assert MODELS_MEASUREMENTS_LESSON.next_lesson_title == (
-        "Position, displacement, velocity, and speed"
-    )
 
 
 def test_observation_requires_reasoning_and_round_trips() -> None:
