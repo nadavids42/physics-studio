@@ -5,11 +5,13 @@ from __future__ import annotations
 import math
 from collections.abc import Iterable
 
+from physics_playground.education.assessments import AssessmentDefinition
 from physics_playground.education.models import (
     ALL_MATHEMATICAL_DEPTHS,
     ActivityPhase,
     CheckpointQuestion,
     CurriculumManifest,
+    DiagramSpec,
     GuidedDerivation,
     Lesson,
     PrerequisiteKind,
@@ -87,18 +89,15 @@ def _validate_derivation(derivation: GuidedDerivation) -> None:
 
 
 def _validate_checkpoint(question: CheckpointQuestion, objective_ids: set[str]) -> None:
+    if question.schema_version != 1:
+        raise PhysicsValidationError("Unsupported checkpoint content schema.")
     if not question.objective_ids or not set(question.objective_ids) <= objective_ids:
         raise PhysicsValidationError("Checkpoint objectives must reference lesson objectives.")
-    if question.kind is QuestionKind.MULTIPLE_CHOICE:
-        choice_ids = _unique_ids(question.choices, "Answer choice")
-        if len(choice_ids) < 2 or question.correct_answer not in choice_ids:
-            raise PhysicsValidationError("Multiple-choice checkpoints need a valid correct choice.")
-    elif not question.correct_answer:
-        raise PhysicsValidationError("Numeric and short-response checkpoints need an answer.")
-    if question.kind is QuestionKind.NUMERIC and (
-        question.tolerance is None or question.tolerance < 0
+    if (
+        question.kind is QuestionKind.MULTIPLE_CHOICE
+        and len(_unique_ids(question.choices, "Answer choice")) < 2
     ):
-        raise PhysicsValidationError("Numeric checkpoints require a nonnegative tolerance.")
+        raise PhysicsValidationError("Multiple-choice checkpoints need at least two choices.")
 
 
 def _validate_activity(
@@ -110,6 +109,9 @@ def _validate_activity(
         raise PhysicsValidationError(
             "Activities must reference a simulation declared by the lesson."
         )
+    objective_ids = {objective.id for objective in lesson.objectives}
+    if not activity.objective_ids or not set(activity.objective_ids) <= objective_ids:
+        raise PhysicsValidationError("Activities must reference lesson objectives.")
     if not activity.instructions or not all(item.strip() for item in activity.instructions):
         raise PhysicsValidationError("Simulation activities require actionable instructions.")
     expected = EXPECTED_MODES.get(activity.phase)
@@ -132,7 +134,7 @@ def _validate_lesson(lesson: Lesson, concept_ids: set[str], simulation_ids: set[
         raise PhysicsValidationError("Lesson concept references must exist in its subject.")
     if len(lesson.simulation_ids) != len(set(lesson.simulation_ids)):
         raise PhysicsValidationError("Lesson simulation references must be unique.")
-    if not lesson.simulation_ids or not set(lesson.simulation_ids) <= simulation_ids:
+    if not set(lesson.simulation_ids) <= simulation_ids:
         raise PhysicsValidationError("Lesson simulation references must exist in the registry.")
     for objective in lesson.objectives:
         _require_text(objective.statement, "Learning objective statement")
@@ -147,8 +149,6 @@ def _validate_lesson(lesson: Lesson, concept_ids: set[str], simulation_ids: set[
             raise PhysicsValidationError("Concept prerequisites must reference known concepts.")
     _unique_ids(lesson.sections, "Lesson section")
     activities_by_id = {item.id: item for item in lesson.activity_sequence}
-    if not activities_by_id:
-        raise PhysicsValidationError("Lessons require at least one simulation activity.")
     if len(activities_by_id) != len(lesson.activity_sequence):
         raise PhysicsValidationError("Activity IDs must be unique.")
     orders = [PHASE_ORDER.index(item.phase) for item in lesson.activity_sequence]
@@ -158,6 +158,7 @@ def _validate_lesson(lesson: Lesson, concept_ids: set[str], simulation_ids: set[
         _validate_activity(activity, lesson, simulation_ids)
     component_activities = []
     component_ids = set()
+    covered_objective_ids: set[str] = set()
     for section in lesson.sections:
         _require_depths(section, "Lesson section")
         _require_text(section.narrative, "Lesson section narrative")
@@ -172,23 +173,83 @@ def _validate_lesson(lesson: Lesson, concept_ids: set[str], simulation_ids: set[
                 _validate_derivation(component)
             elif isinstance(component, CheckpointQuestion):
                 _validate_checkpoint(component, objective_ids)
+                covered_objective_ids.update(component.objective_ids)
+            elif isinstance(component, DiagramSpec):
+                if (
+                    component.schema_version != 1
+                    or not component.asset_id
+                    or not component.alt_text
+                ):
+                    raise PhysicsValidationError(
+                        "Diagrams require a supported schema, asset, and alt text."
+                    )
+                if not component.objective_ids or not set(component.objective_ids) <= objective_ids:
+                    raise PhysicsValidationError("Diagrams must reference lesson objectives.")
+                covered_objective_ids.update(component.objective_ids)
             elif isinstance(component, SimulationActivity):
                 _validate_activity(component, lesson, simulation_ids)
                 component_activities.append(component.id)
+                covered_objective_ids.update(component.objective_ids)
     if tuple(component_activities) != tuple(activities_by_id):
         raise PhysicsValidationError(
             "Section activities must appear once and match activity_sequence order."
         )
+    if covered_objective_ids != objective_ids:
+        raise PhysicsValidationError("Lesson components must cover every learning objective.")
 
 
-def validate_curriculum_manifest(manifest: CurriculumManifest, *, simulation_ids: set[str]) -> None:
+def _validate_assessments(
+    definitions: tuple[AssessmentDefinition, ...],
+    lessons_by_id: dict[str, Lesson],
+) -> None:
+    definition_ids = _unique_ids(definitions, "Assessment definition")
+    checkpoints = {
+        component.id: (lesson, component)
+        for lesson in lessons_by_id.values()
+        for section in lesson.sections
+        for component in section.components
+        if isinstance(component, CheckpointQuestion)
+    }
+    if definition_ids != set(checkpoints):
+        raise PhysicsValidationError("Assessment definitions must exactly match checkpoints.")
+    for definition in definitions:
+        if definition.schema_version != 1 or definition.lesson_id not in lessons_by_id:
+            raise PhysicsValidationError("Assessment definition has an invalid schema or lesson.")
+        lesson, question = checkpoints[definition.id]
+        if lesson.id != definition.lesson_id or question.kind is not definition.kind:
+            raise PhysicsValidationError("Assessment definition does not match checkpoint content.")
+        if set(definition.objective_ids) != set(question.objective_ids):
+            raise PhysicsValidationError("Assessment objectives must match checkpoint objectives.")
+        if not definition.correct_answer or not definition.success_feedback:
+            raise PhysicsValidationError("Assessment definitions require an answer and feedback.")
+        if definition.kind is QuestionKind.MULTIPLE_CHOICE and definition.correct_answer not in {
+            choice.id for choice in question.choices
+        }:
+            raise PhysicsValidationError("Multiple-choice answer must reference a choice.")
+        if definition.kind is QuestionKind.NUMERIC and (
+            definition.tolerance is None or definition.tolerance < 0 or not definition.unit.strip()
+        ):
+            raise PhysicsValidationError("Numeric answers require tolerance and units.")
+        if not set(definition.remediation_lesson_ids) <= set(lessons_by_id):
+            raise PhysicsValidationError("Assessment remediation must reference known lessons.")
+
+
+def validate_curriculum_manifest(
+    manifest: CurriculumManifest,
+    *,
+    simulation_ids: set[str],
+    assessments: tuple[AssessmentDefinition, ...],
+) -> None:
     """Validate all references and pedagogical sequencing in a curriculum."""
 
     _require_text(manifest.id, "Curriculum ID")
     _require_text(manifest.version, "Curriculum version")
     _require_text(manifest.title, "Curriculum title")
+    if manifest.schema_version != 1:
+        raise PhysicsValidationError("Unsupported curriculum content schema.")
     _unique_ids(manifest.subjects, "Subject")
     lesson_ids: set[str] = set()
+    lessons_by_id: dict[str, Lesson] = {}
     for subject in manifest.subjects:
         _require_text(subject.title, "Subject title")
         _require_text(subject.summary, "Subject summary")
@@ -207,12 +268,18 @@ def validate_curriculum_manifest(manifest: CurriculumManifest, *, simulation_ids
                 if lesson.id in lesson_ids:
                     raise PhysicsValidationError("Lesson IDs must be globally unique.")
                 lesson_ids.add(lesson.id)
+                lessons_by_id[lesson.id] = lesson
                 _validate_lesson(lesson, concept_ids, simulation_ids)
             unit_objectives = {
                 objective.id for lesson in unit.lessons for objective in lesson.objectives
             }
-            if not set(unit.objective_ids) <= unit_objectives:
-                raise PhysicsValidationError("Unit objectives must reference lesson objectives.")
+            if (
+                len(unit.objective_ids) != len(set(unit.objective_ids))
+                or set(unit.objective_ids) != unit_objectives
+            ):
+                raise PhysicsValidationError(
+                    "Unit expectations must reference every lesson objective exactly once."
+                )
     for subject in manifest.subjects:
         for unit in subject.units:
             for lesson in unit.lessons:
@@ -224,3 +291,21 @@ def validate_curriculum_manifest(manifest: CurriculumManifest, *, simulation_ids
                         raise PhysicsValidationError(
                             "Lesson prerequisites must reference a curriculum lesson."
                         )
+    visiting: set[str] = set()
+    visited: set[str] = set()
+
+    def visit(lesson_id: str) -> None:
+        if lesson_id in visiting:
+            raise PhysicsValidationError("Lesson prerequisite graph contains a cycle.")
+        if lesson_id in visited:
+            return
+        visiting.add(lesson_id)
+        for prerequisite in lessons_by_id[lesson_id].prerequisites:
+            if prerequisite.kind is PrerequisiteKind.LESSON:
+                visit(prerequisite.reference_id)
+        visiting.remove(lesson_id)
+        visited.add(lesson_id)
+
+    for lesson_id in lesson_ids:
+        visit(lesson_id)
+    _validate_assessments(assessments, lessons_by_id)

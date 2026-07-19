@@ -20,7 +20,10 @@ from physics_playground.education.models import (
 from physics_playground.education.validation import validate_curriculum_manifest
 from physics_playground.models.simulations import LearningMode
 from physics_playground.registry import SIMULATION_REGISTRY
-from physics_playground.subjects.mechanics.cannonball.lesson import CANNONBALL_LESSON
+from physics_playground.subjects.mechanics.cannonball.lesson import (
+    CANNONBALL_ASSESSMENTS,
+    CANNONBALL_LESSON,
+)
 from physics_playground.validation import PhysicsValidationError
 
 SIMULATION_IDS = {simulation.id for simulation in SIMULATION_REGISTRY}
@@ -33,11 +36,17 @@ def _manifest_with_lesson(lesson):
 
 
 def _validate_lesson(lesson) -> None:
-    validate_curriculum_manifest(_manifest_with_lesson(lesson), simulation_ids=SIMULATION_IDS)
+    validate_curriculum_manifest(
+        _manifest_with_lesson(lesson),
+        simulation_ids=SIMULATION_IDS,
+        assessments=CANNONBALL_ASSESSMENTS,
+    )
 
 
 def test_builtin_curriculum_is_valid_and_cataloged() -> None:
-    validate_curriculum_manifest(CURRICULUM, simulation_ids=SIMULATION_IDS)
+    validate_curriculum_manifest(
+        CURRICULUM, simulation_ids=SIMULATION_IDS, assessments=CANNONBALL_ASSESSMENTS
+    )
     assert LESSONS_BY_ID == {CANNONBALL_LESSON.id: CANNONBALL_LESSON}
 
 
@@ -186,7 +195,7 @@ def test_invalid_worked_example_derivation_and_checkpoint_are_rejected() -> None
 
     checkpoint = example_section.components[1]
     assert checkpoint.kind is QuestionKind.MULTIPLE_CHOICE
-    broken_checkpoint = replace(checkpoint, correct_answer="missing")
+    broken_checkpoint = replace(checkpoint, objective_ids=("missing",))
     lesson = replace(
         CANNONBALL_LESSON,
         sections=(
@@ -198,7 +207,7 @@ def test_invalid_worked_example_derivation_and_checkpoint_are_rejected() -> None
             CANNONBALL_LESSON.sections[3],
         ),
     )
-    with pytest.raises(PhysicsValidationError, match="correct choice"):
+    with pytest.raises(PhysicsValidationError, match="objectives"):
         _validate_lesson(lesson)
 
 
@@ -212,8 +221,10 @@ def test_duplicate_ids_and_invalid_unit_objectives_are_rejected() -> None:
     subject = CURRICULUM.subjects[0]
     bad_unit = replace(subject.units[0], objective_ids=("missing",))
     manifest = replace(CURRICULUM, subjects=(replace(subject, units=(bad_unit,)),))
-    with pytest.raises(PhysicsValidationError, match="Unit objectives"):
-        validate_curriculum_manifest(manifest, simulation_ids=SIMULATION_IDS)
+    with pytest.raises(PhysicsValidationError, match="Unit expectations"):
+        validate_curriculum_manifest(
+            manifest, simulation_ids=SIMULATION_IDS, assessments=CANNONBALL_ASSESSMENTS
+        )
 
 
 def test_progress_event_is_typed_without_presentation_state() -> None:

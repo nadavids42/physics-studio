@@ -3,7 +3,10 @@
 from physics_playground.education.models import CurriculumManifest
 from physics_playground.education.validation import validate_curriculum_manifest
 from physics_playground.registry import SIMULATION_REGISTRY
-from physics_playground.subjects.mechanics.cannonball.lesson import MECHANICS_SUBJECT
+from physics_playground.subjects.mechanics.cannonball.lesson import (
+    CANNONBALL_ASSESSMENTS,
+    MECHANICS_SUBJECT,
+)
 
 CURRICULUM = CurriculumManifest(
     id="physics-studio-core",
@@ -18,7 +21,10 @@ LESSONS_BY_ID = {
     for unit in subject.units
     for lesson in unit.lessons
 }
+ASSESSMENTS_BY_ID = {item.id: item for item in CANNONBALL_ASSESSMENTS}
 
 validate_curriculum_manifest(
-    CURRICULUM, simulation_ids={simulation.id for simulation in SIMULATION_REGISTRY}
+    CURRICULUM,
+    simulation_ids={simulation.id for simulation in SIMULATION_REGISTRY},
+    assessments=CANNONBALL_ASSESSMENTS,
 )

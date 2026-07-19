@@ -9,6 +9,7 @@ from uuid import uuid4
 import streamlit as st
 
 from physics_playground.application_callbacks import NotebookChanged, publish
+from physics_playground.education.assessments import AssessmentAttempt, evaluate_response
 from physics_playground.education.audience import (
     AudienceLevel,
     AudiencePreferences,
@@ -16,6 +17,7 @@ from physics_playground.education.audience import (
     VisualDensity,
     applies_at_depth,
 )
+from physics_playground.education.catalog import ASSESSMENTS_BY_ID
 from physics_playground.education.models import (
     ActivityPhase,
     CheckpointQuestion,
@@ -147,10 +149,11 @@ def _render_checkpoint(
     progress: PathwayProgress,
     preferences: AudiencePreferences,
 ) -> PathwayProgress:
+    definition = ASSESSMENTS_BY_ID[question.id]
     st.markdown(f"#### Checkpoint: {question.prompt}")
     if question.id in progress.completed_checkpoint_ids:
         st.success("Checkpoint complete.")
-        st.write(question.explanation)
+        st.write(definition.success_feedback)
         return progress
     answer_key = feature_key("education", f"{lesson.id}.{question.id}.answer")
     answer = st.radio(
@@ -160,23 +163,38 @@ def _render_checkpoint(
         key=answer_key,
     )
     if st.button("Check answer", key=feature_key("education", f"{question.id}.submit")):
-        if answer == question.correct_answer:
+        correct = evaluate_response(definition, answer)
+        attempt = AssessmentAttempt(
+            id=uuid4().hex,
+            learner_id="local",
+            lesson_id=lesson.id,
+            assessment_id=question.id,
+            response=answer,
+            correct=correct,
+            submitted_at=datetime.now(UTC),
+        )
+        attempts_key = feature_key("education", "assessment_attempts")
+        attempts = st.session_state.setdefault(attempts_key, [])
+        attempts.append(attempt)
+        if correct:
             activities, checkpoints = _requirements(lesson, preferences.mathematical_depth)
             updated = progress.complete_checkpoint(
                 question.id,
                 required_activity_ids=activities,
                 required_checkpoint_ids=checkpoints,
+                objective_ids=question.objective_ids,
+                attempt_id=attempt.id,
             )
             _save_progress(
                 updated,
                 kind=EducationEventKind.CHECKPOINT_ATTEMPTED,
                 checkpoint_id=question.id,
             )
-            st.success(question.explanation)
+            st.success(definition.success_feedback)
             return updated
-        st.error(
-            "Not yet. Revisit the graph and the complementary-angle comparison, then try again."
-        )
+        st.error("Not yet. Review the evidence and try again.")
+        if definition.hints:
+            st.info(f"Hint: {definition.hints[min(len(attempts) - 1, len(definition.hints) - 1)]}")
     return progress
 
 

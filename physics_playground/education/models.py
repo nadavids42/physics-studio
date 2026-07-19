@@ -166,17 +166,83 @@ class AnswerChoice:
 
 
 @dataclass(frozen=True, slots=True)
+class DiagramSpec:
+    """Renderer-independent authored diagram reference and nonvisual equivalent."""
+
+    id: str
+    asset_id: str
+    caption: str
+    alt_text: str
+    objective_ids: tuple[str, ...]
+    schema_version: int = 1
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema_version": self.schema_version,
+            "id": self.id,
+            "asset_id": self.asset_id,
+            "caption": self.caption,
+            "alt_text": self.alt_text,
+            "objective_ids": list(self.objective_ids),
+        }
+
+    @classmethod
+    def from_dict(cls, data: object) -> DiagramSpec:
+        if not isinstance(data, dict) or data.get("schema_version") != 1:
+            raise ValueError("Unsupported diagram content schema.")
+        return cls(
+            id=str(data["id"]),
+            asset_id=str(data["asset_id"]),
+            caption=str(data["caption"]),
+            alt_text=str(data["alt_text"]),
+            objective_ids=tuple(str(item) for item in data.get("objective_ids", ())),
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class CheckpointQuestion:
     id: str
     prompt: str
     kind: QuestionKind
     objective_ids: tuple[str, ...]
     choices: tuple[AnswerChoice, ...] = ()
-    correct_answer: str = ""
-    explanation: str = ""
-    tolerance: float | None = None
-    unit: str = ""
     applicable_depths: frozenset[MathematicalDepth] = ALL_MATHEMATICAL_DEPTHS
+    schema_version: int = 1
+
+    def to_dict(self) -> dict[str, object]:
+        """Serialize only learner-visible content; scoring data lives elsewhere."""
+
+        return {
+            "schema_version": self.schema_version,
+            "id": self.id,
+            "prompt": self.prompt,
+            "kind": self.kind.value,
+            "objective_ids": list(self.objective_ids),
+            "choices": [{"id": choice.id, "text": choice.text} for choice in self.choices],
+            "applicable_depths": sorted(depth.value for depth in self.applicable_depths),
+        }
+
+    @classmethod
+    def from_dict(cls, data: object) -> CheckpointQuestion:
+        if not isinstance(data, dict) or data.get("schema_version") != 1:
+            raise ValueError("Unsupported checkpoint content schema.")
+        choices = data.get("choices", ())
+        if not isinstance(choices, list):
+            raise ValueError("Checkpoint choices must be a list.")
+        return cls(
+            id=str(data["id"]),
+            prompt=str(data["prompt"]),
+            kind=QuestionKind(str(data["kind"])),
+            objective_ids=tuple(str(item) for item in data.get("objective_ids", ())),
+            choices=tuple(
+                AnswerChoice(str(item["id"]), str(item["text"]))
+                for item in choices
+                if isinstance(item, dict)
+            ),
+            applicable_depths=frozenset(
+                MathematicalDepth(str(item)) for item in data.get("applicable_depths", ())
+            ),
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -191,10 +257,12 @@ class SimulationActivity:
     observation_prompt: str = ""
     completion_evidence: str = ""
     applicable_depths: frozenset[MathematicalDepth] = ALL_MATHEMATICAL_DEPTHS
+    objective_ids: tuple[str, ...] = ()
 
 
 SectionComponent: TypeAlias = (
-    WorkedExample
+    DiagramSpec
+    | WorkedExample
     | GuidedDerivation
     | MisconceptionCallout
     | CheckpointQuestion
@@ -227,6 +295,7 @@ class Lesson:
     estimated_minutes: int = 45
     next_lesson_id: str | None = None
     next_lesson_title: str = ""
+    schema_version: int = 1
 
 
 @dataclass(frozen=True, slots=True)
@@ -253,6 +322,7 @@ class CurriculumManifest:
     version: str
     title: str
     subjects: tuple[Subject, ...]
+    schema_version: int = 1
 
 
 @dataclass(frozen=True, slots=True)

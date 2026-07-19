@@ -1,5 +1,6 @@
 """Complete example lesson built around the Cannonball Launcher simulation."""
 
+from physics_playground.education.assessments import AssessmentDefinition
 from physics_playground.education.audience import MathematicalDepth
 from physics_playground.education.models import (
     ActivityPhase,
@@ -86,6 +87,7 @@ ACTIVITIES = (
         {"initial_speed_m_s": 20.0, "launch_angle_deg": 45.0, "drag_enabled": False},
         "Which component tradeoff controls the range?",
         "A recorded angle prediction and explanation.",
+        objective_ids=("projectile-range",),
     ),
     SimulationActivity(
         "explore-components",
@@ -101,6 +103,7 @@ ACTIVITIES = (
         {"initial_speed_m_s": 20.0, "drag_enabled": False},
         "What changes, and what stays symmetric around 45°?",
         "Three completed runs with component-based observations.",
+        objective_ids=("projectile-components",),
     ),
     SimulationActivity(
         "compare-complements",
@@ -116,6 +119,7 @@ ACTIVITIES = (
         {"initial_speed_m_s": 20.0, "drag_enabled": False},
         "Why can two visibly different paths land at the same range?",
         "A comparison citing both horizontal speed and flight time.",
+        objective_ids=("projectile-components", "projectile-range"),
     ),
     SimulationActivity(
         "analyze-range",
@@ -131,6 +135,7 @@ ACTIVITIES = (
         {"initial_speed_m_s": 20.0, "drag_enabled": False},
         "How does the graph encode sin(2 theta)?",
         "A graph-based estimate of the maximizing angle.",
+        objective_ids=("projectile-range",),
     ),
     SimulationActivity(
         "model-drag",
@@ -146,6 +151,7 @@ ACTIVITIES = (
         {"initial_speed_m_s": 20.0, "launch_angle_deg": 45.0},
         "Which ideal conclusions survive when drag is included?",
         "A model comparison naming assumptions and evidence.",
+        objective_ids=("projectile-model-limits",),
     ),
     SimulationActivity(
         "reflect-model",
@@ -161,6 +167,7 @@ ACTIVITIES = (
         {},
         "What did the living figure reveal that the equation alone did not?",
         "A claim-evidence-limitation reflection.",
+        objective_ids=("projectile-model-limits",),
     ),
 )
 
@@ -291,8 +298,6 @@ CANNONBALL_LESSON = Lesson(
                         AnswerChoice("angle-60", "60°"),
                         AnswerChoice("angle-75", "75°"),
                     ),
-                    "angle-60",
-                    "Complementary angles have equal sin(2theta), so 30° and 60° share a range.",
                 ),
                 ACTIVITIES[3],
             ),
@@ -326,6 +331,21 @@ CANNONBALL_LESSON = Lesson(
     55,
     None,
     "Forces on an inclined plane",
+)
+
+CANNONBALL_ASSESSMENTS = (
+    AssessmentDefinition(
+        id="range-checkpoint",
+        lesson_id=CANNONBALL_LESSON.id,
+        kind=QuestionKind.MULTIPLE_CHOICE,
+        objective_ids=("projectile-range",),
+        correct_answer="angle-60",
+        success_feedback=(
+            "Complementary angles have equal sin(2theta), so 30° and 60° share a range."
+        ),
+        hints=("Compare the value of 2theta for each candidate angle.",),
+        remediation_lesson_ids=(),
+    ),
 )
 
 MECHANICS_SUBJECT = Subject(

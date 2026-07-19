@@ -16,7 +16,10 @@ from physics_playground.education.selection import select_lesson_sections
 from physics_playground.education.validation import validate_curriculum_manifest
 from physics_playground.profiles import LocalProfile, ProfileStore
 from physics_playground.registry import SIMULATION_REGISTRY
-from physics_playground.subjects.mechanics.cannonball.lesson import CANNONBALL_LESSON
+from physics_playground.subjects.mechanics.cannonball.lesson import (
+    CANNONBALL_ASSESSMENTS,
+    CANNONBALL_LESSON,
+)
 from physics_playground.subjects.mechanics.cannonball.physics import (
     ProjectileParameters,
     simulate_projectile,
@@ -92,6 +95,7 @@ def test_empty_depth_declaration_is_rejected():
         validate_curriculum_manifest(
             manifest,
             simulation_ids={simulation.id for simulation in SIMULATION_REGISTRY},
+            assessments=CANNONBALL_ASSESSMENTS,
         )
 
 
@@ -118,6 +122,7 @@ def test_pre_audience_content_without_depth_metadata_defaults_to_all_depths():
     validate_curriculum_manifest(
         manifest,
         simulation_ids={simulation.id for simulation in SIMULATION_REGISTRY},
+        assessments=CANNONBALL_ASSESSMENTS,
     )
     selected = select_lesson_sections(lesson, MathematicalDepth.CONCEPTUAL)
     assert selected[0].section.id == source.id

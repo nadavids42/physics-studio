@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from typing import Any
+
+from physics_playground.education.models import Lesson, PrerequisiteKind
 
 
 @dataclass(frozen=True, slots=True)
@@ -14,6 +17,9 @@ class PathwayProgress:
     prediction: str | None = None
     reflection: str | None = None
     completed: bool = False
+    mastered_objective_ids: tuple[str, ...] = ()
+    assessment_attempt_ids: tuple[str, ...] = ()
+    schema_version: int = 2
 
     def complete_activity(
         self,
@@ -33,10 +39,23 @@ class PathwayProgress:
         *,
         required_activity_ids: tuple[str, ...],
         required_checkpoint_ids: tuple[str, ...],
+        objective_ids: tuple[str, ...] = (),
+        attempt_id: str | None = None,
     ) -> PathwayProgress:
         completed = tuple(dict.fromkeys((*self.completed_checkpoint_ids, checkpoint_id)))
-        return self._with_completion(
+        updated = self._with_completion(
             self.completed_activity_ids, completed, required_activity_ids, required_checkpoint_ids
+        )
+        return replace(
+            updated,
+            mastered_objective_ids=tuple(
+                dict.fromkeys((*self.mastered_objective_ids, *objective_ids))
+            ),
+            assessment_attempt_ids=tuple(
+                dict.fromkeys(
+                    (*self.assessment_attempt_ids, *((attempt_id,) if attempt_id else ()))
+                )
+            ),
         )
 
     def save_prediction(
@@ -104,18 +123,24 @@ class PathwayProgress:
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "schema_version": self.schema_version,
             "lesson_id": self.lesson_id,
             "completed_activity_ids": list(self.completed_activity_ids),
             "completed_checkpoint_ids": list(self.completed_checkpoint_ids),
             "prediction": self.prediction,
             "reflection": self.reflection,
             "completed": self.completed,
+            "mastered_objective_ids": list(self.mastered_objective_ids),
+            "assessment_attempt_ids": list(self.assessment_attempt_ids),
         }
 
     @classmethod
     def from_dict(cls, data: object, *, lesson_id: str) -> PathwayProgress:
         if not isinstance(data, dict):
             return cls(lesson_id)
+        schema_version = int(data.get("schema_version", 1))
+        if schema_version not in {1, 2}:
+            raise ValueError(f"Unsupported pathway-progress schema {schema_version}.")
         return cls(
             lesson_id=lesson_id,
             completed_activity_ids=tuple(
@@ -127,4 +152,26 @@ class PathwayProgress:
             prediction=str(data["prediction"]) if data.get("prediction") else None,
             reflection=str(data["reflection"]) if data.get("reflection") else None,
             completed=bool(data.get("completed", False)),
+            mastered_objective_ids=tuple(
+                str(item) for item in data.get("mastered_objective_ids", ())
+            ),
+            assessment_attempt_ids=tuple(
+                str(item) for item in data.get("assessment_attempt_ids", ())
+            ),
         )
+
+
+def prerequisites_satisfied(
+    lesson: Lesson, progress_by_lesson: Mapping[str, PathwayProgress]
+) -> bool:
+    """Return whether every required lesson prerequisite has recorded mastery."""
+
+    return all(
+        not prerequisite.required
+        or prerequisite.kind is not PrerequisiteKind.LESSON
+        or (
+            prerequisite.reference_id in progress_by_lesson
+            and progress_by_lesson[prerequisite.reference_id].completed
+        )
+        for prerequisite in lesson.prerequisites
+    )
