@@ -24,8 +24,8 @@ MAX_LINKED_SAMPLES = 120
 LINKED_CSS = """
 .linked-shell{max-width:960px;margin:auto}.linked-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .linked-graph{width:100%;height:auto;border:1px solid var(--ps-border);border-radius:10px;background:var(--ps-surface)}
-.quantity-line{fill:none;stroke-width:2.5}.quantity-line.horizontal{stroke:#6F4E7C}.quantity-line.vertical{stroke:#C43C39}
-.quantity-line.run-1{stroke-dasharray:7 5}.zero{stroke:var(--ps-border)}.graph-cursor{stroke:#111;stroke-width:2}
+.quantity-line{fill:none;stroke-width:2.5}.quantity-line.horizontal{stroke:#6F4E7C}.quantity-line.vertical{stroke:#C43C39;stroke-dasharray:3 3}
+.quantity-line.horizontal.run-1{stroke-dasharray:10 4}.quantity-line.vertical.run-1{stroke-dasharray:10 3 2 3}.zero{stroke:var(--ps-border)}.graph-cursor{stroke:#111;stroke-width:2}
 .graph-title{fill:var(--ps-text);font-weight:700;font-size:13px}.equations{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
 .equation-term{min-height:44px;border:2px solid var(--ps-border);border-radius:8px;background:var(--ps-surface);color:var(--ps-text);padding:7px 12px;font-family:serif;font-size:16px}
 .equation-term:focus-visible,.linked-graph:focus-visible{outline:3px solid var(--ps-focus);outline-offset:2px}
@@ -34,6 +34,7 @@ LINKED_CSS = """
 body[data-highlight-quantity=position] [data-quantity]:not([data-quantity=position]),body[data-highlight-quantity=velocity] [data-quantity]:not([data-quantity=velocity]),body[data-highlight-quantity=acceleration] [data-quantity]:not([data-quantity=acceleration]){opacity:.22}
 @media(max-width:680px){.linked-grid{grid-template-columns:1fr}.equation-term{width:100%}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+@media(forced-colors:active){.quantity-line{stroke:CanvasText!important}.graph-cursor{stroke:Highlight!important;stroke-width:3}.linked-graph{border-color:CanvasText}.equation-term:focus-visible,.linked-graph:focus-visible{outline-color:Highlight}}
 """
 
 
@@ -136,8 +137,8 @@ def _document(payload: str) -> str:
 <main class="linked-shell" aria-label="Linked projectile representations">
 <div class="animation-shell"><div class="canvas-wrap" id="canvas-wrap"><canvas id="animation-canvas" role="img" aria-label="Projectile position and trajectory synchronized with motion graphs"></canvas><div class="hint" id="hint">Scrub, step, or select a graph point</div><div class="message" id="message" aria-live="polite"></div></div>
 <div class="controls" role="group" aria-label="Linked representation controls"><button id="play-pause" aria-label="Play animation">▶</button><button id="replay" aria-label="Replay animation">↺</button><button id="step-back" aria-label="Step backward one sample">‹</button><button id="step-forward" aria-label="Step forward one sample">›</button><label class="sr-only" for="scrubber">Time and linked graph position</label><input id="scrubber" type="range" min="0" max="1000" value="0"><label class="speed-label" for="speed">Speed <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label></div><div id="status" class="sr-only" aria-live="polite">Linked representations ready</div></div>
-<p class="legend"><span class="horizontal-label">Horizontal quantities</span><span class="vertical-label">Vertical quantities</span><span>Solid: run A</span><span>Dashed: run B</span></p>
-<div id="linked-readout" role="status" aria-live="polite"></div>
+<p class="legend"><span class="horizontal-label">Horizontal: short/solid pattern</span><span class="vertical-label">Vertical: dotted/compound pattern</span><span>Run A: shorter pattern</span><span>Run B: longer pattern</span></p>
+<div id="linked-readout" aria-live="off"></div><div id="linked-announcement" class="sr-only" role="status" aria-live="polite"></div>
 <section class="equations" aria-label="Governing equations; select a term to highlight its representation">
 <button class="equation-term" data-quantity="position">x(t)=x₀+vₓt</button><button class="equation-term" data-quantity="position">y(t)=y₀+vᵧ₀t−½gt²</button><button class="equation-term" data-quantity="velocity">vᵧ(t)=vᵧ₀−gt</button><button class="equation-term" data-quantity="acceleration">a=(0,−g)</button></section>
 <div class="linked-grid"><svg class="linked-graph" data-quantity="position" viewBox="0 0 420 190" tabindex="0"></svg><svg class="linked-graph" data-quantity="velocity" viewBox="0 0 420 190" tabindex="0"></svg><svg class="linked-graph" data-quantity="acceleration" viewBox="0 0 420 190" tabindex="0"></svg></div>

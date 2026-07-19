@@ -70,7 +70,10 @@ def test_accessible_controls_equations_and_reduced_motion_are_in_same_document()
         reset_application_callbacks()
     assert '"reducedMotion":true' in document
     assert 'aria-label="Linked representation controls"' in document
-    assert 'id="linked-readout" role="status" aria-live="polite"' in document
+    assert 'id="linked-readout" aria-live="off"' in document
+    assert 'id="linked-announcement" class="sr-only" role="status" aria-live="polite"' in document
+    assert "Horizontal: short/solid pattern" in document
+    assert "@media(forced-colors:active)" in document
     assert document.count('class="linked-graph"') == 3
     assert document.count('tabindex="0"') == 3
     assert document.count('class="equation-term"') == 4
@@ -86,16 +89,17 @@ def test_linked_runtime_keyboard_accessibility_and_frame_time_in_chromium(tmp_pa
     browser = os.environ.get("CHROMIUM_BIN")
     if not browser:
         pytest.skip("Chromium is required for linked-runtime browser verification.")
-    document = build_linked_projectile_document((("Run A", _result()),))
+    document = build_linked_projectile_document((("Run A", _result(30)), ("Run B", _result(60))))
     audit = """
 <script>setTimeout(()=>{const runtime=window.linkedProjectile;const graph=document.querySelector('.linked-graph');
 const start=performance.now();for(let i=0;i<100;i++)runtime.player.seek(i/99);const elapsed=performance.now()-start;
 graph.dispatchEvent(new KeyboardEvent('keydown',{key:'Home',bubbles:true}));
 graph.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));
-document.querySelector('[data-quantity=velocity]').click();
+document.querySelector('[data-quantity=velocity]').click();const patterns=[...document.querySelectorAll('.quantity-line')].map(node=>getComputedStyle(node).strokeDasharray);
 const result={averageSeekMs:elapsed/100,fraction:runtime.player.fraction,readout:document.getElementById('linked-readout').textContent,
 graphLabel:graph.getAttribute('aria-label'),highlight:document.body.dataset.highlightQuantity,reduced:runtime.player.reducedMotion,
-singleCanvas:document.querySelectorAll('canvas').length,singleClock:Boolean(runtime.player)};
+singleCanvas:document.querySelectorAll('canvas').length,singleClock:Boolean(runtime.player),noOverflow:document.documentElement.scrollWidth<=document.documentElement.clientWidth,
+forcedColors:matchMedia('(forced-colors: active)').matches,patterns:[...new Set(patterns)]};runtime.destroy();result.destroyed=runtime.destroyed;
 const out=document.createElement('pre');out.id='linked-audit';out.textContent=JSON.stringify(result);document.body.append(out)},150);</script>
 """
     path = tmp_path / "linked-projectile.html"
@@ -107,6 +111,8 @@ const out=document.createElement('pre');out.id='linked-audit';out.textContent=JS
             "--disable-gpu",
             "--no-sandbox",
             "--virtual-time-budget=1200",
+            "--window-size=320,1000",
+            "--force-high-contrast",
             "--dump-dom",
             path.resolve().as_uri(),
         ],
@@ -123,3 +129,6 @@ const out=document.createElement('pre');out.id='linked-audit';out.textContent=JS
     assert "position x" in result["readout"] and "acceleration ax" in result["readout"]
     assert result["graphLabel"] and result["highlight"] == "velocity"
     assert result["singleCanvas"] == 1 and result["singleClock"] is True
+    assert result["noOverflow"] is True and result["forcedColors"] is True
+    assert len(result["patterns"]) >= 3
+    assert result["destroyed"] is True

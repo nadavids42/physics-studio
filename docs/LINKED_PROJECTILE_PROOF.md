@@ -22,10 +22,10 @@ serializes finite JSON. It caps the presentation payload at 120 evenly selected 
 preserving endpoints. JavaScript interpolates or selects these supplied values but does not rerun
 the physical model.
 
-Comparison runs share domains computed from both payload runs. Horizontal quantities are purple,
-vertical quantities red, and comparison identity uses solid/dashed lines plus labels, so color is
-not the only distinction. Equation-term buttons highlight the corresponding position, velocity,
-or acceleration graphs.
+Comparison runs share domains computed from both payload runs. Horizontal and vertical components
+use different line patterns as well as purple/red color; comparison runs use shorter/longer pattern
+families and labels. These patterns survive forced-colors mode, where strokes use system colors.
+Equation-term buttons highlight the corresponding position, velocity, or acceleration graphs.
 
 Reduced-motion mode disables autoplay while preserving the scrubber, single-sample step buttons,
 graph arrow keys, Home, and End. Every inspected state is announced as time, x, y, vx, vy, ax,

@@ -2150,6 +2150,11 @@
       this.selectedQuantity = null;
       this.graphs = [...document.querySelectorAll("svg.linked-graph")];
       this.readout = document.getElementById("linked-readout");
+      this.announcement = document.getElementById("linked-announcement");
+      this.equationButtons = [
+        ...document.querySelectorAll("button.equation-term")
+      ];
+      this.destroyed = false;
       this.drawGraphs();
       this.player = mountPlayer(config, scene, environment);
       const originalRender = this.player.render.bind(this.player);
@@ -2216,7 +2221,7 @@
       }
     }
     bind() {
-      this.onGraphPointer = (event) => {
+      this.seekFromGraph = (event, announce) => {
         const graph = event.currentTarget;
         const box = graph.getBoundingClientRect();
         const fraction = fractionFromGraphPointer(
@@ -2226,7 +2231,10 @@
         );
         this.player.pause();
         this.player.seek(fraction);
+        if (announce) this.announce(fraction);
       };
+      this.onGraphPointer = (event) => this.seekFromGraph(event, false);
+      this.onGraphSelect = (event) => this.seekFromGraph(event, true);
       this.onGraphKey = (event) => {
         if (["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) {
           event.preventDefault();
@@ -2238,11 +2246,12 @@
               this.player.frameCount()
             )
           );
+          this.announce(this.player.fraction);
         }
       };
       this.graphs.forEach((graph) => {
         graph.addEventListener("pointermove", this.onGraphPointer);
-        graph.addEventListener("click", this.onGraphPointer);
+        graph.addEventListener("click", this.onGraphSelect);
         graph.addEventListener("keydown", this.onGraphKey);
       });
       this.onEquation = (event) => {
@@ -2250,7 +2259,15 @@
         document.body.dataset.highlightQuantity = this.selectedQuantity;
         this.update(this.player.fraction);
       };
-      document.querySelectorAll("button.equation-term").forEach((button) => button.addEventListener("click", this.onEquation));
+      this.equationButtons.forEach(
+        (button) => button.addEventListener("click", this.onEquation)
+      );
+      this.onScrubberCommit = () => this.announce(this.player.fraction);
+      this.player.scrubber.addEventListener("change", this.onScrubberCommit);
+      this.onPageHide = () => this.destroy();
+      this.environment.addEventListener("pagehide", this.onPageHide, {
+        once: true
+      });
     }
     update(fraction) {
       const time = sample(this.runs[0].time_s, fraction);
@@ -2267,6 +2284,24 @@
         "aria-valuetext",
         `Time ${time.toFixed(2)} seconds. ${readout}`
       );
+    }
+    announce(fraction) {
+      this.announcement.textContent = `Selected state. ${accessibleReadout(this.runs, fraction)}`;
+    }
+    destroy() {
+      if (this.destroyed) return;
+      this.destroyed = true;
+      this.graphs.forEach((graph) => {
+        graph.removeEventListener("pointermove", this.onGraphPointer);
+        graph.removeEventListener("click", this.onGraphSelect);
+        graph.removeEventListener("keydown", this.onGraphKey);
+      });
+      this.equationButtons.forEach(
+        (button) => button.removeEventListener("click", this.onEquation)
+      );
+      this.player.scrubber.removeEventListener("change", this.onScrubberCommit);
+      this.environment.removeEventListener("pagehide", this.onPageHide);
+      this.player.destroy();
     }
   };
   function mountLinkedProjectile(envelope, environment = globalThis) {
