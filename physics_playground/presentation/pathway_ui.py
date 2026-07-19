@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
-from contextlib import nullcontext
 from datetime import UTC, datetime
+from pathlib import Path
 from uuid import uuid4
 
 import streamlit as st
 
 from physics_playground.application_callbacks import NotebookChanged, publish
-from physics_playground.education.assessments import AssessmentAttempt, evaluate_response
+from physics_playground.education.assessments import (
+    AssessmentAttempt,
+    ObjectiveEvidenceRecord,
+    evaluate_response,
+)
 from physics_playground.education.audience import (
     AudienceLevel,
     AudiencePreferences,
@@ -21,6 +25,7 @@ from physics_playground.education.catalog import ASSESSMENTS_BY_ID
 from physics_playground.education.models import (
     ActivityPhase,
     CheckpointQuestion,
+    DiagramSpec,
     EducationEventKind,
     EducationProgressEvent,
     GuidedDerivation,
@@ -33,6 +38,8 @@ from physics_playground.education.progress import PathwayProgress
 from physics_playground.presentation.accessibility_ui import get_accessibility_settings
 from physics_playground.presentation.profile_ui import get_notebook
 from physics_playground.state_keys import SHARED_STATE_KEYS, feature_key, simulation_key
+
+FIGURE_ROOT = Path(__file__).parents[1] / "static" / "figures"
 
 
 def _requirements(
@@ -97,6 +104,42 @@ def _save_progress(
     )
 
 
+def _learner_id() -> str:
+    return str(st.session_state.get(SHARED_STATE_KEYS.profiles_active_id, "session"))
+
+
+def _record_objective_evidence(
+    lesson: Lesson, objective_ids: tuple[str, ...], source_id: str, source_kind: str
+) -> None:
+    key = feature_key("education", "objective_evidence")
+    records = st.session_state.setdefault(key, [])
+    now = datetime.now(UTC)
+    for objective_id in objective_ids:
+        records.append(
+            ObjectiveEvidenceRecord(
+                id=uuid4().hex,
+                learner_id=_learner_id(),
+                lesson_id=lesson.id,
+                objective_id=objective_id,
+                source_id=source_id,
+                source_kind=source_kind,
+                recorded_at=now,
+            )
+        )
+
+
+def _render_diagram(diagram: DiagramSpec) -> None:
+    """Render a versioned figure with a text equivalent and semantic caption."""
+
+    path = FIGURE_ROOT / f"{diagram.asset_id}.svg"
+    st.markdown(f"#### Figure: {diagram.caption}")
+    if path.is_file():
+        st.image(str(path), caption=diagram.caption)
+    else:
+        st.info("The visual figure is unavailable; use the description below.")
+    st.caption(f"Figure description: {diagram.alt_text}")
+
+
 def _render_worked_example(example: WorkedExample, preferences: AudiencePreferences) -> None:
     st.markdown(f"#### Worked example: {example.title}")
     st.write(example.prompt)
@@ -148,6 +191,7 @@ def _render_checkpoint(
     question: CheckpointQuestion,
     progress: PathwayProgress,
     preferences: AudiencePreferences,
+    required_section_ids: tuple[str, ...],
 ) -> PathwayProgress:
     definition = ASSESSMENTS_BY_ID[question.id]
     st.markdown(f"#### Checkpoint: {question.prompt}")
@@ -166,7 +210,7 @@ def _render_checkpoint(
         correct = evaluate_response(definition, answer)
         attempt = AssessmentAttempt(
             id=uuid4().hex,
-            learner_id="local",
+            learner_id=_learner_id(),
             lesson_id=lesson.id,
             assessment_id=question.id,
             response=answer,
@@ -182,6 +226,7 @@ def _render_checkpoint(
                 question.id,
                 required_activity_ids=activities,
                 required_checkpoint_ids=checkpoints,
+                required_section_ids=required_section_ids,
                 objective_ids=question.objective_ids,
                 attempt_id=attempt.id,
             )
@@ -190,6 +235,7 @@ def _render_checkpoint(
                 kind=EducationEventKind.CHECKPOINT_ATTEMPTED,
                 checkpoint_id=question.id,
             )
+            _record_objective_evidence(lesson, question.objective_ids, question.id, "assessment")
             st.success(definition.success_feedback)
             return updated
         st.error("Not yet. Review the evidence and try again.")
@@ -203,6 +249,7 @@ def _render_activity(
     activity: SimulationActivity,
     progress: PathwayProgress,
     preferences: AudiencePreferences,
+    required_section_ids: tuple[str, ...],
 ) -> PathwayProgress:
     complete = activity.id in progress.completed_activity_ids
     st.markdown(f"#### {activity.phase.value.title()}: {activity.title}")
@@ -241,12 +288,14 @@ def _render_activity(
                 activity.id,
                 required_activity_ids=activities,
                 required_checkpoint_ids=checkpoints,
+                required_section_ids=required_section_ids,
             )
             _save_progress(
                 updated,
                 kind=EducationEventKind.ACTIVITY_COMPLETED,
                 activity_id=activity.id,
             )
+            _record_objective_evidence(lesson, activity.objective_ids, activity.id, "prediction")
             return updated
         return progress
     if activity.phase is ActivityPhase.REFLECTION:
@@ -267,6 +316,7 @@ def _render_activity(
                 activity.id,
                 required_activity_ids=activities,
                 required_checkpoint_ids=checkpoints,
+                required_section_ids=required_section_ids,
             )
             reflection = get_notebook().save_lesson_reflection(
                 lesson_id=lesson.id,
@@ -279,6 +329,7 @@ def _render_activity(
                 activity_id=activity.id,
             )
             publish(NotebookChanged(reflection.id))
+            _record_objective_evidence(lesson, activity.objective_ids, activity.id, "reflection")
             return updated
         return progress
     if activity.mode is not None and st.button(
@@ -299,78 +350,228 @@ def _render_activity(
             activity.id,
             required_activity_ids=activities,
             required_checkpoint_ids=checkpoints,
+            required_section_ids=required_section_ids,
         )
         _save_progress(
             updated,
             kind=EducationEventKind.ACTIVITY_COMPLETED,
             activity_id=activity.id,
         )
+        _record_objective_evidence(lesson, activity.objective_ids, activity.id, "activity")
         return updated
     return progress
 
 
+def _set_lesson_section(key: str, section_id: str) -> None:
+    st.session_state[key] = section_id
+
+
+def _complete_and_navigate(
+    lesson: Lesson,
+    progress: PathwayProgress,
+    section_id: str,
+    next_section_id: str | None,
+    required_activity_ids: tuple[str, ...],
+    required_checkpoint_ids: tuple[str, ...],
+    required_section_ids: tuple[str, ...],
+    navigation_key: str,
+) -> None:
+    updated = progress.complete_section(
+        section_id,
+        required_activity_ids=required_activity_ids,
+        required_checkpoint_ids=required_checkpoint_ids,
+        required_section_ids=required_section_ids,
+        next_section_id=next_section_id,
+    )
+    _save_progress(updated, kind=EducationEventKind.SECTION_COMPLETED)
+    st.session_state[navigation_key] = next_section_id or section_id
+
+
 def render_learning_pathway(lesson: Lesson) -> None:
-    """Render a complete pathway while leaving simulation modes directly accessible."""
+    """Render orientation or one resumable lesson section at a time."""
 
     progress = get_pathway_progress(lesson)
     preferences = get_accessibility_settings().instructional
+    visible_sections = tuple(
+        section
+        for section in lesson.sections
+        if applies_at_depth(section, preferences.mathematical_depth)
+    )
+    section_ids = tuple(section.id for section in visible_sections)
     activities, checkpoints = _requirements(lesson, preferences.mathematical_depth)
-    total = len(activities) + len(checkpoints)
-    completed = len(progress.completed_activity_ids) + len(progress.completed_checkpoint_ids)
-    requested_lesson = st.session_state.get(SHARED_STATE_KEYS.navigation_active_lesson)
-    with st.expander(f"Learning pathway: {lesson.title}", expanded=requested_lesson == lesson.id):
-        st.caption(f"About {lesson.estimated_minutes} minutes · {lesson.profile.depth.value}")
-        introduction = {
-            AudienceLevel.EXPLORER: "Begin with the path you can observe. Change one quantity at a time, record what changes, and use the equation to explain that evidence.",
-            AudienceLevel.CORE: lesson.summary,
-            AudienceLevel.ADVANCED: "Connect the measured trajectory and graphs to the analytic model, then test its assumptions and numerical limits.",
-        }[preferences.audience]
-        st.write(introduction)
-        st.caption(
-            f"{preferences.audience.value.title()} audience · {preferences.voice.value} voice · "
-            f"{preferences.mathematical_depth.value} mathematics · {preferences.visual_density.value} density"
+    completed_steps = len(progress.completed_activity_ids) + len(progress.completed_checkpoint_ids)
+    total_steps = len(activities) + len(checkpoints)
+    navigation_key = feature_key("education", f"{lesson.id}.section")
+    if navigation_key not in st.session_state:
+        incomplete = next(
+            (item for item in section_ids if item not in progress.completed_section_ids),
+            section_ids[-1],
         )
-        st.progress(completed / total if total else 0, text=f"{completed}/{total} steps complete")
-        st.markdown("### Learning objectives")
-        for objective in lesson.objectives:
-            st.markdown(f"- {objective.statement}")
-            if preferences.visual_density is VisualDensity.DETAILED:
-                st.caption(f"Evidence: {objective.evidence}")
+        st.session_state[navigation_key] = (
+            progress.last_section_id
+            if progress.last_section_id in section_ids
+            else incomplete
+            if progress.completed_section_ids
+            else "orientation"
+        )
+
+    st.markdown(
+        """
+        <style>
+        .physics-lesson-status {padding:.65rem .8rem;border:1px solid #9aa5b1;border-radius:.5rem;}
+        @media (max-width: 640px) {
+          .physics-lesson-status {padding:.5rem;font-size:.95rem;}
+          div[data-testid="stImage"] img {width:100%;height:auto;}
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.header(f"Guided lesson: {lesson.title}")
+    st.caption(
+        f"About {lesson.estimated_minutes} minutes · lesson navigation is separate from "
+        "Explore, Compare, Analyze, and Model simulation modes"
+    )
+    st.progress(
+        len(progress.completed_section_ids) / len(section_ids) if section_ids else 0,
+        text=(
+            f"Lesson status: {len(progress.completed_section_ids)}/{len(section_ids)} sections · "
+            f"{completed_steps}/{total_steps} required activities and checkpoints"
+        ),
+    )
+    labels = {"orientation": "Lesson orientation"}
+    labels.update(
+        {
+            section.id: (
+                f"Completed — {section.title}"
+                if section.id in progress.completed_section_ids
+                else section.title
+            )
+            for section in visible_sections
+        }
+    )
+    selected = st.selectbox(
+        "Lesson navigation",
+        ("orientation", *section_ids),
+        format_func=labels.get,
+        key=navigation_key,
+        help="Choose a lesson section. Simulation modes are selected in the workspace below.",
+    )
+
+    if selected == "orientation":
+        introduction = {
+            AudienceLevel.EXPLORER: (
+                "Begin with the path you can observe, predict before revealing results, and use "
+                "the equation to explain the evidence."
+            ),
+            AudienceLevel.CORE: lesson.summary,
+            AudienceLevel.ADVANCED: (
+                "Connect trajectory evidence to the analytic model, then test its assumptions "
+                "and numerical limits."
+            ),
+        }[preferences.audience]
+        st.subheader("Orientation")
+        st.write(introduction)
         st.markdown("### Prerequisites")
         for prerequisite in lesson.prerequisites:
             st.markdown(f"- {prerequisite.rationale}")
-        for section in lesson.sections:
-            if not applies_at_depth(section, preferences.mathematical_depth):
-                continue
-            st.divider()
-            context = (
-                st.expander(section.title)
-                if preferences.visual_density is VisualDensity.FOCUSED
-                else nullcontext()
-            )
-            with context:
-                if preferences.visual_density is not VisualDensity.FOCUSED:
-                    st.markdown(f"### {section.title}")
-                st.write(section.narrative)
-                for component in section.components:
-                    if not applies_at_depth(component, preferences.mathematical_depth):
-                        continue
-                    if isinstance(component, SimulationActivity):
-                        progress = _render_activity(lesson, component, progress, preferences)
-                    elif isinstance(component, GuidedDerivation):
-                        _render_derivation(component)
-                    elif isinstance(component, WorkedExample):
-                        _render_worked_example(component, preferences)
-                    elif isinstance(component, MisconceptionCallout):
-                        st.warning(
-                            f"Common misconception: {component.misconception}\n\n"
-                            f"Correction: {component.correction}"
-                        )
-                    elif isinstance(component, CheckpointQuestion):
-                        progress = _render_checkpoint(lesson, component, progress, preferences)
-        if progress.completed:
-            st.success("Pathway complete. Your progress is saved with your active profile.")
-        st.markdown(f"### Next lesson: {lesson.next_lesson_title}")
-        st.caption(
-            "Continue when you are ready; Explore, Compare, Analyze, and Model remain available below at any time."
+        st.markdown("### Learning objectives")
+        for objective in lesson.objectives:
+            st.markdown(f"- {objective.statement}")
+            st.caption(f"Evidence of mastery: {objective.evidence}")
+        first_section = next(
+            (item for item in section_ids if item not in progress.completed_section_ids),
+            section_ids[0],
         )
+        st.button(
+            "Begin lesson" if not progress.completed_section_ids else "Resume lesson",
+            type="primary",
+            on_click=_set_lesson_section,
+            args=(navigation_key, first_section),
+        )
+        return
+
+    section_index = section_ids.index(selected)
+    section = visible_sections[section_index]
+    st.subheader(f"Section {section_index + 1} of {len(section_ids)}: {section.title}")
+    status = "complete" if section.id in progress.completed_section_ids else "in progress"
+    st.markdown(
+        f'<p class="physics-lesson-status" role="status">Section status: {status}.</p>',
+        unsafe_allow_html=True,
+    )
+    st.write(section.narrative)
+    for component in section.components:
+        if not applies_at_depth(component, preferences.mathematical_depth):
+            continue
+        if isinstance(component, DiagramSpec):
+            _render_diagram(component)
+        elif isinstance(component, SimulationActivity):
+            progress = _render_activity(lesson, component, progress, preferences, section_ids)
+        elif isinstance(component, GuidedDerivation):
+            _render_derivation(component)
+        elif isinstance(component, WorkedExample):
+            _render_worked_example(component, preferences)
+        elif isinstance(component, MisconceptionCallout):
+            st.warning(
+                f"Common misconception: {component.misconception}\n\n"
+                f"Correction: {component.correction}"
+            )
+            if component.diagnostic_prompt:
+                st.caption(f"Diagnostic question: {component.diagnostic_prompt}")
+        elif isinstance(component, CheckpointQuestion):
+            progress = _render_checkpoint(lesson, component, progress, preferences, section_ids)
+
+    section_activity_ids = {
+        component.id
+        for component in section.components
+        if isinstance(component, SimulationActivity)
+        and applies_at_depth(component, preferences.mathematical_depth)
+    }
+    section_checkpoint_ids = {
+        component.id
+        for component in section.components
+        if isinstance(component, CheckpointQuestion)
+        and applies_at_depth(component, preferences.mathematical_depth)
+    }
+    section_ready = section_activity_ids <= set(
+        progress.completed_activity_ids
+    ) and section_checkpoint_ids <= set(progress.completed_checkpoint_ids)
+    if not section_ready:
+        st.info("Complete this section's activity or checkpoint before continuing.")
+    if section_index:
+        st.button(
+            "Previous section",
+            on_click=_set_lesson_section,
+            args=(navigation_key, section_ids[section_index - 1]),
+        )
+    next_section_id = (
+        section_ids[section_index + 1] if section_index + 1 < len(section_ids) else None
+    )
+    st.button(
+        "Continue to next section" if next_section_id else "Complete lesson",
+        type="primary",
+        disabled=not section_ready,
+        on_click=_complete_and_navigate,
+        args=(
+            lesson,
+            progress,
+            section.id,
+            next_section_id,
+            activities,
+            checkpoints,
+            section_ids,
+            navigation_key,
+        ),
+    )
+    if progress.completed:
+        st.success("Lesson complete. Progress and evidence are saved.")
+        st.subheader("Recommended next step")
+        st.write(lesson.next_lesson_title)
+    else:
+        st.caption("Your current section, responses, and completion status are saved for resume.")
+    st.divider()
+    st.subheader("Simulation workspace")
+    st.caption(
+        "Activity buttons select a simulation mode below; lesson sections and simulation modes "
+        "remain independent navigation controls."
+    )

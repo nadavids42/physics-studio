@@ -19,7 +19,9 @@ class PathwayProgress:
     completed: bool = False
     mastered_objective_ids: tuple[str, ...] = ()
     assessment_attempt_ids: tuple[str, ...] = ()
-    schema_version: int = 2
+    completed_section_ids: tuple[str, ...] = ()
+    last_section_id: str | None = None
+    schema_version: int = 3
 
     def complete_activity(
         self,
@@ -27,10 +29,15 @@ class PathwayProgress:
         *,
         required_activity_ids: tuple[str, ...],
         required_checkpoint_ids: tuple[str, ...],
+        required_section_ids: tuple[str, ...] = (),
     ) -> PathwayProgress:
         completed = tuple(dict.fromkeys((*self.completed_activity_ids, activity_id)))
         return self._with_completion(
-            completed, self.completed_checkpoint_ids, required_activity_ids, required_checkpoint_ids
+            completed,
+            self.completed_checkpoint_ids,
+            required_activity_ids,
+            required_checkpoint_ids,
+            required_section_ids,
         )
 
     def complete_checkpoint(
@@ -39,12 +46,17 @@ class PathwayProgress:
         *,
         required_activity_ids: tuple[str, ...],
         required_checkpoint_ids: tuple[str, ...],
+        required_section_ids: tuple[str, ...] = (),
         objective_ids: tuple[str, ...] = (),
         attempt_id: str | None = None,
     ) -> PathwayProgress:
         completed = tuple(dict.fromkeys((*self.completed_checkpoint_ids, checkpoint_id)))
         updated = self._with_completion(
-            self.completed_activity_ids, completed, required_activity_ids, required_checkpoint_ids
+            self.completed_activity_ids,
+            completed,
+            required_activity_ids,
+            required_checkpoint_ids,
+            required_section_ids,
         )
         return replace(
             updated,
@@ -65,6 +77,7 @@ class PathwayProgress:
         *,
         required_activity_ids: tuple[str, ...],
         required_checkpoint_ids: tuple[str, ...],
+        required_section_ids: tuple[str, ...] = (),
     ) -> PathwayProgress:
         text = response.strip()
         if not text:
@@ -74,6 +87,7 @@ class PathwayProgress:
             prediction_activity_id,
             required_activity_ids=required_activity_ids,
             required_checkpoint_ids=required_checkpoint_ids,
+            required_section_ids=required_section_ids,
         )
 
     def reset_prediction(self, prediction_activity_id: str) -> PathwayProgress:
@@ -93,6 +107,7 @@ class PathwayProgress:
         *,
         required_activity_ids: tuple[str, ...],
         required_checkpoint_ids: tuple[str, ...],
+        required_section_ids: tuple[str, ...] = (),
     ) -> PathwayProgress:
         text = response.strip()
         if not text:
@@ -102,6 +117,29 @@ class PathwayProgress:
             reflection_activity_id,
             required_activity_ids=required_activity_ids,
             required_checkpoint_ids=required_checkpoint_ids,
+            required_section_ids=required_section_ids,
+        )
+
+    def complete_section(
+        self,
+        section_id: str,
+        *,
+        required_activity_ids: tuple[str, ...],
+        required_checkpoint_ids: tuple[str, ...],
+        required_section_ids: tuple[str, ...],
+        next_section_id: str | None = None,
+    ) -> PathwayProgress:
+        sections = tuple(dict.fromkeys((*self.completed_section_ids, section_id)))
+        finished = (
+            set(required_activity_ids) <= set(self.completed_activity_ids)
+            and set(required_checkpoint_ids) <= set(self.completed_checkpoint_ids)
+            and set(required_section_ids) <= set(sections)
+        )
+        return replace(
+            self,
+            completed_section_ids=sections,
+            last_section_id=next_section_id or section_id,
+            completed=finished,
         )
 
     def _with_completion(
@@ -110,10 +148,13 @@ class PathwayProgress:
         checkpoint_ids: tuple[str, ...],
         required_activity_ids: tuple[str, ...],
         required_checkpoint_ids: tuple[str, ...],
+        required_section_ids: tuple[str, ...] = (),
     ) -> PathwayProgress:
-        finished = set(required_activity_ids) <= set(activity_ids) and set(
-            required_checkpoint_ids
-        ) <= set(checkpoint_ids)
+        finished = (
+            set(required_activity_ids) <= set(activity_ids)
+            and set(required_checkpoint_ids) <= set(checkpoint_ids)
+            and set(required_section_ids) <= set(self.completed_section_ids)
+        )
         return replace(
             self,
             completed_activity_ids=activity_ids,
@@ -132,6 +173,8 @@ class PathwayProgress:
             "completed": self.completed,
             "mastered_objective_ids": list(self.mastered_objective_ids),
             "assessment_attempt_ids": list(self.assessment_attempt_ids),
+            "completed_section_ids": list(self.completed_section_ids),
+            "last_section_id": self.last_section_id,
         }
 
     @classmethod
@@ -139,7 +182,7 @@ class PathwayProgress:
         if not isinstance(data, dict):
             return cls(lesson_id)
         schema_version = int(data.get("schema_version", 1))
-        if schema_version not in {1, 2}:
+        if schema_version not in {1, 2, 3}:
             raise ValueError(f"Unsupported pathway-progress schema {schema_version}.")
         return cls(
             lesson_id=lesson_id,
@@ -158,6 +201,10 @@ class PathwayProgress:
             assessment_attempt_ids=tuple(
                 str(item) for item in data.get("assessment_attempt_ids", ())
             ),
+            completed_section_ids=tuple(
+                str(item) for item in data.get("completed_section_ids", ())
+            ),
+            last_section_id=str(data["last_section_id"]) if data.get("last_section_id") else None,
         )
 
 

@@ -45,7 +45,7 @@ def test_recommendation_opens_lesson_without_gating_simulations(monkeypatch, tmp
 
     assert not app.exception
     assert any(header.value == "Cannonball Launcher — Projectile Motion" for header in app.header)
-    assert any(button.label == "Submit prediction" for button in app.button)
+    assert any(button.label == "Begin lesson" for button in app.button)
     assert app.query_params["simulation"] == ["cannonball"]
     assert app.query_params["lesson"] == [LESSON_ID]
     assert any(button.label == "← Back to discovery" for button in app.button)
@@ -59,10 +59,8 @@ def test_stable_query_identifiers_open_simulation_and_lesson(monkeypatch, tmp_pa
 
     assert not app.exception
     assert any(header.value == "Cannonball Launcher — Projectile Motion" for header in app.header)
-    assert any(
-        expander.label == "Learning pathway: Projectile motion from components"
-        for expander in app.expander
-    )
+    assert any(header.value.startswith("Guided lesson:") for header in app.header)
+    assert any(selectbox.label == "Lesson navigation" for selectbox in app.selectbox)
 
 
 @pytest.mark.parametrize(
@@ -122,6 +120,18 @@ def test_cannonball_setup_is_committed_and_notes_do_not_rerun_player(monkeypatch
     assert app.session_state[simulation_key("cannonball", "observation")] == (
         "The range stayed fixed."
     )
+
+
+def test_standalone_cannonball_keeps_direct_mode_access(monkeypatch, tmp_path) -> None:
+    app = _app(monkeypatch, tmp_path)
+    app.query_params["simulation"] = "cannonball"
+    app.session_state[simulation_key("cannonball", "quiz_revealed")] = True
+    app.session_state[simulation_key("cannonball", "quiz_guess")] = "45°"
+    app.run(timeout=30)
+
+    assert any(button.label == "Start guided lesson" for button in app.button)
+    assert any(radio.label == "Learning mode" for radio in app.radio)
+    assert not any(selectbox.label == "Lesson navigation" for selectbox in app.selectbox)
 
 
 @pytest.mark.parametrize(

@@ -25,7 +25,7 @@ from physics_playground.presentation.simulation_runtime import (
     StreamlitSimulationRuntime,
 )
 from physics_playground.setup_handoff import consume_setup_request
-from physics_playground.state_keys import migrate_simulation_keys
+from physics_playground.state_keys import SHARED_STATE_KEYS, migrate_simulation_keys
 from physics_playground.subjects.mechanics.cannonball.charts import (
     plot_figure,
     range_by_angle_chart,
@@ -141,6 +141,12 @@ def _apply_reuse() -> None:
     st.session_state[RUNTIME.key("target_override")] = float(p.get("target_m", _target()))
     st.session_state[RUNTIME.key("learning_mode")] = LearningMode.EXPLORE.value
     st.toast(f"Loaded setup from {request.source_label}.")
+
+
+def _start_guided_lesson() -> None:
+    st.session_state[SHARED_STATE_KEYS.navigation_active_lesson] = CANNONBALL_LESSON.id
+    st.query_params["simulation"] = CANNONBALL_PLUGIN.id
+    st.query_params["lesson"] = CANNONBALL_LESSON.id
 
 
 def _execute(parameters: ProjectileParameters) -> ProjectileResult:
@@ -373,18 +379,30 @@ def render() -> None:
     st.markdown(
         "Launch a cannonball, compare trajectories, analyze the measurements, or inspect the model."
     )
-    render_learning_pathway(CANNONBALL_LESSON)
-    revealed = mission_ui.prediction_quiz(
-        key=RUNTIME.key("quiz"),
-        question="For maximum no-drag range on level ground, which angle wins?",
-        options=["15°", "45°", "75°", "90°"],
-        correct_index=1,
-        reveal_text="**45 degrees** balances horizontal speed and time aloft.",
-        mission_id="cannon_predict",
+    lesson_active = (
+        st.session_state.get(SHARED_STATE_KEYS.navigation_active_lesson) == CANNONBALL_LESSON.id
     )
-    if not revealed:
-        st.caption("🔬 Make your prediction before any results are shown.")
-        return
+    if lesson_active:
+        render_learning_pathway(CANNONBALL_LESSON)
+    else:
+        st.info(
+            "You are using the standalone simulation. The guided lesson is available separately "
+            "and does not restrict direct access to simulation modes."
+        )
+        st.button("Start guided lesson", on_click=_start_guided_lesson)
+        revealed = mission_ui.prediction_quiz(
+            key=RUNTIME.key("quiz"),
+            question="For maximum no-drag range on level ground, which angle wins?",
+            options=["15°", "45°", "75°", "90°"],
+            correct_index=1,
+            reveal_text="**45 degrees** balances horizontal speed and time aloft.",
+            mission_id="cannon_predict",
+        )
+        if not revealed:
+            st.caption("🔬 Make your prediction before any results are shown.")
+            return
+    if lesson_active:
+        st.divider()
     mode = RUNTIME.select_mode()
     st.divider()
     {

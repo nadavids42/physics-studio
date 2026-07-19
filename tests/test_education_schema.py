@@ -70,7 +70,7 @@ def test_assessment_definition_and_attempt_round_trip_separately() -> None:
     assert evaluate_response(definition, second.response)
 
 
-def test_saved_v1_progress_migrates_and_v2_round_trips() -> None:
+def test_saved_v1_progress_migrates_and_v3_round_trips() -> None:
     legacy = {
         "lesson_id": CANNONBALL_LESSON.id,
         "completed_activity_ids": ["predict-angle"],
@@ -80,7 +80,7 @@ def test_saved_v1_progress_migrates_and_v2_round_trips() -> None:
         "completed": False,
     }
     migrated = PathwayProgress.from_dict(legacy, lesson_id=CANNONBALL_LESSON.id)
-    assert migrated.schema_version == 2
+    assert migrated.schema_version == 3
     assert migrated.completed_activity_ids == ("predict-angle",)
     assert migrated.mastered_objective_ids == ()
     assert (

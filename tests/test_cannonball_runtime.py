@@ -4,7 +4,7 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from physics_playground.notebook import ExperimentNotebook
-from physics_playground.state_keys import SHARED_STATE_KEYS, simulation_key
+from physics_playground.state_keys import SHARED_STATE_KEYS, feature_key, simulation_key
 from physics_playground.subjects.mechanics.cannonball.interactions import target_for_seed
 from physics_playground.subjects.mechanics.cannonball.physics import ProjectileParameters
 from physics_playground.units import EARTH_GRAVITY_M_S2
@@ -28,6 +28,9 @@ def test_target_generation_is_deterministic_and_seed_sensitive() -> None:
 def test_lesson_activity_selects_runtime_mode(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
     app = _cannon_app(monkeypatch, tmp_path)
     app.query_params["lesson"] = "projectile-motion-from-components"
+    app.session_state[feature_key("education", "projectile-motion-from-components.section")] = (
+        "worked-example"
+    )
     app.run(timeout=30)
     next(button for button in app.button if button.label == "Open Analyze mode").click().run(
         timeout=30

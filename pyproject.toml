@@ -46,7 +46,7 @@ Repository = "https://github.com/nadavids42/physics-studio"
 include = ["physics_playground*"]
 
 [tool.setuptools.package-data]
-physics_playground = ["static/js/*.js"]
+physics_playground = ["static/js/*.js", "static/figures/*.svg"]
 
 [tool.pytest.ini_options]
 addopts = ["--strict-config", "--strict-markers"]

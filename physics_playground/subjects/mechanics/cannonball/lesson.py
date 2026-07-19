@@ -11,6 +11,7 @@ from physics_playground.education.models import (
     ContentProfile,
     ContentVoice,
     DerivationStep,
+    DiagramSpec,
     GuidedDerivation,
     KnownValue,
     LearningObjective,
@@ -273,7 +274,20 @@ CANNONBALL_LESSON = Lesson(
             "system-and-prediction",
             "The physical system and a prediction",
             "A projectile leaves a launcher with initial speed v_0 at angle theta. We choose +x horizontal and +y upward, then predict before revealing the trajectory.",
-            (ACTIVITIES[0],),
+            (
+                DiagramSpec(
+                    "projectile-components-figure",
+                    "projectile-components",
+                    "Launch velocity components and coordinate choices",
+                    (
+                        "A projectile launches up and to the right. The initial velocity arrow "
+                        "is resolved into a rightward component v_x and upward component v_y. "
+                        "The x-axis points right, the y-axis points up, and gravity points down."
+                    ),
+                    ("projectile-components",),
+                ),
+                ACTIVITIES[0],
+            ),
         ),
         LessonSection(
             "laws-and-derivation",

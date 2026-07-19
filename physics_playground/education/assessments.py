@@ -99,6 +99,32 @@ class AssessmentAttempt:
         )
 
 
+@dataclass(frozen=True, slots=True)
+class ObjectiveEvidenceRecord:
+    """Evidence for one objective, stored separately from pathway progress."""
+
+    id: str
+    learner_id: str
+    lesson_id: str
+    objective_id: str
+    source_id: str
+    source_kind: str
+    recorded_at: datetime
+    schema_version: int = 1
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema_version": self.schema_version,
+            "id": self.id,
+            "learner_id": self.learner_id,
+            "lesson_id": self.lesson_id,
+            "objective_id": self.objective_id,
+            "source_id": self.source_id,
+            "source_kind": self.source_kind,
+            "recorded_at": self.recorded_at.astimezone(UTC).isoformat(),
+        }
+
+
 def evaluate_response(definition: AssessmentDefinition, response: str) -> bool:
     """Evaluate the currently supported multiple-choice and numeric answers."""
 
