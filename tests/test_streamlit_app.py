@@ -136,12 +136,10 @@ def test_standalone_cannonball_keeps_direct_mode_access(monkeypatch, tmp_path) -
 
 
 @pytest.mark.parametrize(
-    ("mode", "chart_title"),
-    [("Compare", "Trajectory comparison"), ("Analyze", "Range versus launch angle")],
+    "mode",
+    ["Compare", "Analyze"],
 )
-def test_cannonball_interactive_chart_examples_render_in_page(
-    monkeypatch, tmp_path, mode, chart_title
-) -> None:
+def test_cannonball_interactive_chart_examples_render_in_page(monkeypatch, tmp_path, mode) -> None:
     app = _app(monkeypatch, tmp_path)
     app.query_params["simulation"] = "cannonball"
     app.session_state[simulation_key("cannonball", "quiz_revealed")] = True
@@ -150,7 +148,13 @@ def test_cannonball_interactive_chart_examples_render_in_page(
     app.run(timeout=30)
 
     assert not app.exception
-    assert any(chart_title in iframe.proto.srcdoc for iframe in app.get("iframe"))
+    linked = [
+        iframe
+        for iframe in app.get("iframe")
+        if "Linked projectile representations" in iframe.proto.srcdoc
+    ]
+    assert len(linked) == 1
+    assert linked[0].proto.srcdoc.count('class="linked-graph"') == 3
 
 
 def test_accessibility_preferences_apply_without_hiding_controls(monkeypatch, tmp_path) -> None:

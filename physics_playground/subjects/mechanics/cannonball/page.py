@@ -4,15 +4,12 @@ from __future__ import annotations
 
 from typing import cast
 
-import matplotlib.pyplot as plt
 import streamlit as st
 
 from physics_playground.canvas import embed as canvas_embed
 from physics_playground.contracts import MissionEvaluation
 from physics_playground.missions import ui as mission_ui
 from physics_playground.model_metadata import PROJECTILE_MODEL_METADATA
-from physics_playground.presentation.accessibility_ui import render_chart
-from physics_playground.presentation.interactive_charts import render_interactive_chart
 from physics_playground.presentation.learning_modes import (
     LearningMode,
     changed_variable_banner,
@@ -25,11 +22,6 @@ from physics_playground.presentation.simulation_runtime import (
 )
 from physics_playground.setup_handoff import consume_setup_request
 from physics_playground.state_keys import SHARED_STATE_KEYS, migrate_simulation_keys
-from physics_playground.subjects.mechanics.cannonball.charts import (
-    plot_figure,
-    range_by_angle_chart,
-    trajectory_comparison_chart,
-)
 from physics_playground.subjects.mechanics.cannonball.interactions import (
     comparison_results,
     notebook_metrics,
@@ -37,6 +29,10 @@ from physics_playground.subjects.mechanics.cannonball.interactions import (
     target_message,
 )
 from physics_playground.subjects.mechanics.cannonball.lesson import CANNONBALL_LESSON
+from physics_playground.subjects.mechanics.cannonball.linked_representations import (
+    LINKED_HEIGHT,
+    build_linked_projectile_document,
+)
 from physics_playground.subjects.mechanics.cannonball.missions import evaluate_cannonball_missions
 from physics_playground.subjects.mechanics.cannonball.physics import (
     ProjectileParameters,
@@ -46,7 +42,6 @@ from physics_playground.subjects.mechanics.cannonball.plugin import CANNONBALL_P
 from physics_playground.subjects.mechanics.cannonball.scene import (
     PLAYER_HEIGHT,
     build_cannon_canvas,
-    build_cannon_comparison_canvas,
 )
 from physics_playground.units import (
     EARTH_GRAVITY_M_S2,
@@ -273,16 +268,8 @@ def render_compare() -> None:
     changed_variable_banner(change)
     target = _target()
     signature = {"kind": kind, "seed": st.session_state[RUNTIME.key("target_seed")]}
-    doc = build_cannon_comparison_canvas(
-        a,
-        b,
-        target_m=target,
-        labels=labels,
-        seed=20261000 + st.session_state[RUNTIME.key("compare_nonce")],
-        autoplay=st.session_state[RUNTIME.key("compare_signature")] == signature,
-    )
-    canvas_embed.show(doc, height=PLAYER_HEIGHT)
-    render_interactive_chart(trajectory_comparison_chart(a, b, labels), height=520)
+    doc = build_linked_projectile_document(((labels[0], a), (labels[1], b)), target_m=target)
+    canvas_embed.show(doc, height=LINKED_HEIGHT)
     _compare_commit_controls(a, b, target, signature)
     comparison_metrics(
         {key: (key, value) for key, value in notebook_metrics(a).items()},
@@ -318,12 +305,13 @@ def render_analyze() -> None:
         st.warning(result.warnings[0])
     RUNTIME.render_result_summary(result, metric_ids=("range", "maximum_height", "flight_time"))
     RUNTIME.render_accessible_outcome(result)
-    for plot in result.plots:
-        fig = plot_figure(plot)
-        render_chart(fig, f"{plot.title}; axes are {plot.x_label} and {plot.y_label}.")
-        plt.close(fig)
-    render_interactive_chart(
-        range_by_angle_chart(result.parameters.launch_speed_m_s, result.parameters.gravity_m_s2)
+    st.caption(
+        "Linked representation proof: animation, trajectory, component graphs, acceleration, "
+        "and equations share one browser-side time state. No Streamlit rerun is needed to scrub."
+    )
+    canvas_embed.show(
+        build_linked_projectile_document((("Current run", result),), target_m=_target()),
+        height=LINKED_HEIGHT,
     )
 
 

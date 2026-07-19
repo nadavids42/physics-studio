@@ -12,6 +12,7 @@ const targets = [
   ["experience.js", "physics-experience.js"],
   ["player-runtime.js", "player-runtime.js"],
   ["interactive-chart.js", "interactive-chart.js"],
+  ["linked-projectile.js", "linked-projectile.js"],
   ["scenes/shared/vector-diagram.js", "scene-vector-diagram.js"],
   ["scenes/shared/ray-diagram.js", "scene-ray-diagram.js"],
   ["scenes/shared/wavefronts.js", "scene-wavefronts.js"],

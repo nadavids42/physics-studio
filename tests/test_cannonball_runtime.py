@@ -38,7 +38,12 @@ def test_lesson_activity_selects_runtime_mode(monkeypatch: pytest.MonkeyPatch, t
 
     assert not app.exception
     assert app.session_state[simulation_key("cannonball", "learning_mode")] == "Analyze"
-    assert any("Range versus launch angle" in iframe.proto.srcdoc for iframe in app.get("iframe"))
+    linked = [
+        iframe
+        for iframe in app.get("iframe")
+        if "Linked projectile representations" in iframe.proto.srcdoc
+    ]
+    assert len(linked) == 1
 
 
 def test_notebook_replay_restores_target_controls_and_committed_setup(
