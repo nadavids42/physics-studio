@@ -8,11 +8,9 @@ hours including cumulative work). Algebra, trigonometry, graph interpretation, a
 calculus-level reasoning are developed in context. The standard path is algebra based; lessons
 marked **standard + extended** include derivation or numerical-analysis extensions.
 
-This is a curriculum specification, not authored lesson prose or an active UI catalog. The
-machine-readable source is
-`physics_playground/subjects/mechanics/course_roadmap.py`. Its validator checks unique IDs,
-forward-only prerequisite edges, objective references from assessments, durations, mathematical
-depths, and registered simulation IDs.
+This is a curriculum specification, not authored lesson prose or an active UI catalog, and it
+has no code backing. A terse lesson-sequence-only version of this plan is kept at
+`docs/curriculum-plan.md`.
 
 Every lesson includes a worked example, at least one conceptual assessment and one quantitative or
 cumulative assessment, misconception diagnostics, and explicit mastery evidence. A simulation is

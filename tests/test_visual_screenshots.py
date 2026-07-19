@@ -226,15 +226,16 @@ def test_representative_browser_renderings(tmp_path) -> None:
         BASELINES.write_text(json.dumps(actual, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         pytest.fail("Visual baselines updated; inspect and rerun without update mode.")
     assert set(actual) == set(expected)
+    failures = []
     for name, current in actual.items():
         baseline = expected[name]
-        assert _distance(current["dhash"], baseline["dhash"]) <= 12, name
-        assert (
-            max(
-                abs(current_value - baseline_value)
-                for current_value, baseline_value in zip(
-                    current["mean_rgb"], baseline["mean_rgb"], strict=True
-                )
+        dhash_distance = _distance(current["dhash"], baseline["dhash"])
+        rgb_distance = max(
+            abs(current_value - baseline_value)
+            for current_value, baseline_value in zip(
+                current["mean_rgb"], baseline["mean_rgb"], strict=True
             )
-            <= 8
-        ), name
+        )
+        if dhash_distance > 12 or rgb_distance > 8:
+            failures.append(f"{name}: dhash_distance={dhash_distance} rgb_distance={rgb_distance}")
+    assert not failures, "\n".join(failures)
