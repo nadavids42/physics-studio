@@ -13,12 +13,17 @@ from physics_playground.education.models import (
     CheckpointQuestion,
     GuidedDerivation,
     MisconceptionCallout,
+    PrerequisiteKind,
     SimulationActivity,
     WorkedExample,
 )
-from physics_playground.education.progress import PathwayProgress
+from physics_playground.education.progress import PathwayProgress, prerequisites_satisfied
 from physics_playground.subjects.mechanics.cannonball.lesson import CANNONBALL_LESSON
-from physics_playground.subjects.mechanics.kinematics_lessons import KINEMATICS_LESSONS
+from physics_playground.subjects.mechanics.kinematics_lessons import (
+    CONSTANT_LESSON,
+    KINEMATICS_LESSONS,
+    VECTORS_LESSON,
+)
 
 
 def test_kinematics_prerequisites_form_one_progression_from_lesson_one() -> None:
@@ -26,6 +31,7 @@ def test_kinematics_prerequisites_form_one_progression_from_lesson_one() -> None
         "m01-measurement-models",
         KINEMATICS_LESSONS[0].id,
         KINEMATICS_LESSONS[1].id,
+        KINEMATICS_LESSONS[2].id,
     )
     assert tuple(lesson.prerequisites[0].reference_id for lesson in KINEMATICS_LESSONS) == expected
     assert any(
@@ -85,7 +91,7 @@ def test_required_misconceptions_are_explicitly_diagnosed() -> None:
 
 
 def test_constant_acceleration_is_derived_and_assessed_quantitatively() -> None:
-    constant_lesson = KINEMATICS_LESSONS[-1]
+    constant_lesson = CONSTANT_LESSON
     components = [item for section in constant_lesson.sections for item in section.components]
     derivation = next(item for item in components if isinstance(item, GuidedDerivation))
     assert len(derivation.steps) == 4
@@ -95,10 +101,25 @@ def test_constant_acceleration_is_derived_and_assessed_quantitatively() -> None:
     assert definition.canonical_unit == "m"
 
 
-def test_projectile_components_are_taught_not_circularly_required() -> None:
-    prerequisite_ids = {item.reference_id for item in CANNONBALL_LESSON.prerequisites}
-    assert "vectors" not in prerequisite_ids
-    assert "right-triangle-trigonometry" in prerequisite_ids
+def test_vectors_lesson_precedes_and_is_a_hard_prerequisite_for_projectile_motion() -> None:
+    # The lesson must exist and sit immediately before projectile motion in sequence.
+    assert VECTORS_LESSON in KINEMATICS_LESSONS
+    assert KINEMATICS_LESSONS[-1] is VECTORS_LESSON
+    assert CONSTANT_LESSON.next_lesson_id == VECTORS_LESSON.id
+    assert VECTORS_LESSON.next_lesson_id == CANNONBALL_LESSON.id
+
+    # It must gate projectile motion as a required LESSON prerequisite, not an
+    # unenforced SKILL reference.
+    trig_prerequisite = next(
+        item for item in CANNONBALL_LESSON.prerequisites if item.reference_id == VECTORS_LESSON.id
+    )
+    assert trig_prerequisite.kind is PrerequisiteKind.LESSON
+    assert trig_prerequisite.required
+    assert not any(
+        item.kind is PrerequisiteKind.SKILL and "trigonometry" in item.reference_id
+        for item in CANNONBALL_LESSON.prerequisites
+    )
+
     checkpoint_ids = {
         item.id
         for section in CANNONBALL_LESSON.sections
@@ -106,6 +127,17 @@ def test_projectile_components_are_taught_not_circularly_required() -> None:
         if isinstance(item, CheckpointQuestion)
     }
     assert {"component-checkpoint", "range-checkpoint", "model-limit-checkpoint"} <= checkpoint_ids
+
+
+def test_a_learner_who_has_not_completed_vectors_is_blocked_from_projectile_motion() -> None:
+    constant_only = {CONSTANT_LESSON.id: PathwayProgress(CONSTANT_LESSON.id, completed=True)}
+    assert not prerequisites_satisfied(CANNONBALL_LESSON, constant_only)
+
+    with_vectors = {
+        **constant_only,
+        VECTORS_LESSON.id: PathwayProgress(VECTORS_LESSON.id, completed=True),
+    }
+    assert prerequisites_satisfied(CANNONBALL_LESSON, with_vectors)
 
 
 def test_new_quantitative_evidence_requires_correct_sign_value_and_unit() -> None:
@@ -125,6 +157,13 @@ def test_new_quantitative_evidence_requires_correct_sign_value_and_unit() -> Non
     ).attempt.correct
     stopping = ASSESSMENTS_BY_ID["m05-stopping-distance-check"]
     assert grade(stopping, AssessmentResponse(numeric_value=2500, unit="cm")).attempt.correct
+
+    vy_check = ASSESSMENTS_BY_ID["m06-vy-check"]
+    assert grade(vy_check, AssessmentResponse(numeric_value=8.0, unit="m/s")).attempt.correct
+    assert not grade(vy_check, AssessmentResponse(numeric_value=16.0, unit="m/s")).attempt.correct
+    vx_check = ASSESSMENTS_BY_ID["m06-vx-check"]
+    assert grade(vx_check, AssessmentResponse(numeric_value=8.0, unit="m/s")).attempt.correct
+    assert not grade(vx_check, AssessmentResponse(numeric_value=13.86, unit="m/s")).attempt.correct
 
 
 def test_visiting_or_opening_a_simulation_cannot_complete_a_lesson() -> None:

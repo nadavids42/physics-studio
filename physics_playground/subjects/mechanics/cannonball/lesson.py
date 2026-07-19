@@ -37,6 +37,7 @@ from physics_playground.subjects.mechanics.foundations_lesson import (
 from physics_playground.subjects.mechanics.kinematics_lessons import (
     KINEMATICS_CONCEPTS,
     KINEMATICS_LESSONS,
+    VECTORS_LESSON,
 )
 
 PROJECTILE_CONCEPTS = (
@@ -270,9 +271,9 @@ CANNONBALL_LESSON = Lesson(
         ),
         Prerequisite(
             "trigonometry-prerequisite",
-            PrerequisiteKind.SKILL,
-            "right-triangle-trigonometry",
-            "Resolving the launch velocity uses sine and cosine in a right triangle; the lesson introduces the physics meaning of the components.",
+            PrerequisiteKind.LESSON,
+            VECTORS_LESSON.id,
+            "Resolving the launch velocity uses sine and cosine in a right triangle; Vectors and components teaches that decomposition before it is required here.",
         ),
         Prerequisite(
             "algebra-prerequisite",

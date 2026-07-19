@@ -573,11 +573,184 @@ CONSTANT_LESSON = Lesson(
     ),
     CONSTANT_ACTIVITIES,
     estimated_minutes=60,
+    next_lesson_id="m06-vectors-and-components",
+    next_lesson_title="Vectors and components",
+)
+
+VECTORS_OBJECTIVES = (
+    LearningObjective(
+        "m06-trig-ratios",
+        "Compute sine, cosine, and tangent as side ratios in a right triangle relative to a stated angle.",
+        "A correct identification of the opposite, adjacent, and hypotenuse sides for a stated angle.",
+    ),
+    LearningObjective(
+        "m06-decompose",
+        "Resolve a launch velocity at a stated angle into horizontal and vertical components using cosine and sine.",
+        "Correctly calculated v_x and v_y with units for a stated speed and angle.",
+    ),
+)
+
+VECTORS_ACTIVITIES = (
+    SimulationActivity(
+        "m06-predict-components",
+        ActivityPhase.PREDICTION,
+        "cannonball",
+        "Predict how components change with angle",
+        (
+            "Keep launch speed fixed and drag off.",
+            "Predict whether the horizontal component grows or shrinks as angle increases from 30° to 60°.",
+            "Predict the same for the vertical component and name which ratio, sine or cosine, governs each.",
+        ),
+        LearningMode.EXPLORE,
+        {"initial_speed_m_s": 16.0, "drag_enabled": False},
+        "Does doubling the angle double a component?",
+        "A recorded prediction naming sine or cosine for each component.",
+        objective_ids=("m06-trig-ratios",),
+    ),
+    SimulationActivity(
+        "m06-explore-decomposition",
+        ActivityPhase.EXPLORATION,
+        "cannonball",
+        "Measure both components",
+        (
+            "Run a 30° launch, then a 60° launch, at the same fixed speed.",
+            "Record the horizontal and vertical velocity components the runtime reports for each.",
+            "Recompute the same components with cosine and sine and compare.",
+        ),
+        LearningMode.EXPLORE,
+        {"initial_speed_m_s": 16.0, "drag_enabled": False},
+        "Which side of the right triangle is each component: opposite or adjacent to theta?",
+        "Measured and calculated v_x and v_y for both angles, with units.",
+        objective_ids=("m06-trig-ratios", "m06-decompose"),
+        evidence_prompt="Record your measured and calculated v_x and v_y for both angles",
+    ),
+    SimulationActivity(
+        "m06-reflect-components",
+        ActivityPhase.REFLECTION,
+        "cannonball",
+        "Reflect on the ratio, not the angle",
+        (
+            "Return to the prediction from the first activity.",
+            "Explain why doubling the angle from 30° to 60° does not double either component.",
+            "Name one launch angle where the two components are equal.",
+        ),
+        None,
+        {},
+        "What does the sine or cosine ratio do that simply scaling by the angle would not?",
+        "An explanation naming the correct ratio and one equal-component angle.",
+        objective_ids=("m06-trig-ratios", "m06-decompose"),
+    ),
+)
+
+VECTORS_EXAMPLE_30 = WorkedExample(
+    "m06-components-30",
+    "Components at a 30° launch",
+    "Find both velocity components for a launch at 8.0 m/s and 30° above horizontal.",
+    (
+        KnownValue(Quantity("v_0", "launch speed", "m/s"), 8.0),
+        KnownValue(Quantity("theta", "launch angle", "deg"), 30.0),
+    ),
+    Quantity("v_x, v_y", "velocity components", "m/s"),
+    (
+        ReasoningStep(
+            "m06-30-ratios",
+            "v_x = v_0 cos(theta), v_y = v_0 sin(theta)",
+            "The launch velocity is the hypotenuse of a right triangle; v_x is the side adjacent to theta and v_y is the side opposite theta, not v_0 scaled by theta itself.",
+        ),
+    ),
+    (
+        Substitution("v_x = (8.0 m/s) cos(30°) = (8.0 m/s)(0.866)", "v_x ≈ 6.93 m/s"),
+        Substitution("v_y = (8.0 m/s) sin(30°) = (8.0 m/s)(0.500)", "v_y = 4.00 m/s"),
+    ),
+    "m/s multiplied by a unitless ratio stays m/s.",
+    "v_x ≈ 6.93 m/s, v_y = 4.00 m/s",
+    "Most of the 8.0 m/s speed goes into the horizontal component at this shallow angle.",
+)
+
+VECTORS_EXAMPLE_60 = WorkedExample(
+    "m06-components-60",
+    "Components at a 60° launch",
+    "Find both velocity components for a launch at 8.0 m/s and 60° above horizontal.",
+    (
+        KnownValue(Quantity("v_0", "launch speed", "m/s"), 8.0),
+        KnownValue(Quantity("theta", "launch angle", "deg"), 60.0),
+    ),
+    Quantity("v_x, v_y", "velocity components", "m/s"),
+    (
+        ReasoningStep(
+            "m06-60-ratios",
+            "v_x = v_0 cos(theta), v_y = v_0 sin(theta)",
+            "The same two ratios apply at any angle; only the numeric value of cos(theta) and sin(theta) changes.",
+        ),
+    ),
+    (
+        Substitution("v_x = (8.0 m/s) cos(60°) = (8.0 m/s)(0.500)", "v_x = 4.00 m/s"),
+        Substitution("v_y = (8.0 m/s) sin(60°) = (8.0 m/s)(0.866)", "v_y ≈ 6.93 m/s"),
+    ),
+    "m/s multiplied by a unitless ratio stays m/s.",
+    "v_x = 4.00 m/s, v_y ≈ 6.93 m/s",
+    "At the steeper 60° angle the vertical component now exceeds the horizontal component, the mirror image of the 30° case.",
+)
+
+VECTORS_LESSON = Lesson(
+    "m06-vectors-and-components",
+    "Vectors and components",
+    "Resolve a vector at an angle into perpendicular components using right-triangle trigonometry.",
+    VECTORS_OBJECTIVES,
+    (lesson_prerequisite(CONSTANT_LESSON.id, CONSTANT_LESSON.title),),
+    ("vectors",),
+    ("cannonball",),
+    (
+        LessonSection(
+            "m06-ratios",
+            "Sine, cosine, and tangent are ratios",
+            "For a right triangle formed by a vector and its axes, sine and cosine relate the angle to the ratio of a side to the hypotenuse: sin(theta)=opposite/hypotenuse, cos(theta)=adjacent/hypotenuse. These ratios depend on the angle, not on scaling the hypotenuse by the angle's numeric value.",
+            (VECTORS_ACTIVITIES[0],),
+        ),
+        LessonSection(
+            "m06-decomposition",
+            "Resolving a launch velocity into components",
+            "A launch velocity v_0 at angle theta above horizontal is the hypotenuse of a right triangle. Its horizontal component v_x=v_0 cos(theta) is the adjacent side; its vertical component v_y=v_0 sin(theta) is the opposite side.",
+            (
+                VECTORS_EXAMPLE_30,
+                VECTORS_EXAMPLE_60,
+                MisconceptionCallout(
+                    "m06-linear-angle-misconception",
+                    "The component along the launch direction is just the speed multiplied by the angle (v_x = v_0 × theta), or whichever component is larger is arbitrary.",
+                    "Components come from the sine and cosine ratios of the angle, not from multiplying speed by the angle's numeric value. v_x=v_0 cos(theta) is always the side adjacent to theta and v_y=v_0 sin(theta) is always the side opposite theta.",
+                    "If theta doubles from 30° to 60°, does v_x double too?",
+                ),
+                VECTORS_ACTIVITIES[1],
+                CheckpointQuestion(
+                    "m06-vy-check",
+                    "A launcher fires at 16.0 m/s at 30° above horizontal. What is the vertical component of the velocity?",
+                    QuestionKind.NUMERIC,
+                    ("m06-decompose",),
+                    unit_options=("m/s", "km/h"),
+                ),
+                CheckpointQuestion(
+                    "m06-vx-check",
+                    "A launcher fires at 16.0 m/s at 60° above horizontal. What is the horizontal component of the velocity?",
+                    QuestionKind.NUMERIC,
+                    ("m06-decompose",),
+                    unit_options=("m/s", "km/h"),
+                ),
+            ),
+        ),
+        LessonSection(
+            "m06-transfer",
+            "Transfer: the ratio, not the angle, sets the component",
+            "Whatever the launch angle, the same two ratios apply. Only the numeric value of sine and cosine changes with theta.",
+            (VECTORS_ACTIVITIES[2],),
+        ),
+    ),
+    VECTORS_ACTIVITIES,
+    estimated_minutes=45,
     next_lesson_id="projectile-motion-from-components",
     next_lesson_title="Projectile motion from components",
 )
 
-KINEMATICS_LESSONS = (POSITION_LESSON, GRAPH_LESSON, CONSTANT_LESSON)
+KINEMATICS_LESSONS = (POSITION_LESSON, GRAPH_LESSON, CONSTANT_LESSON, VECTORS_LESSON)
 
 KINEMATICS_ASSESSMENTS = (
     AssessmentDefinition(
@@ -642,5 +815,29 @@ KINEMATICS_ASSESSMENTS = (
         canonical_unit="m",
         absolute_tolerance=0.2,
         hints=("Solve delta x=(v²−v_0²)/(2a) before inserting values.",),
+    ),
+    AssessmentDefinition(
+        "m06-vy-check",
+        VECTORS_LESSON.id,
+        QuestionKind.NUMERIC,
+        ("m06-decompose",),
+        "Correct: v_y=v_0 sin(theta)=16.0 sin(30°)=8.0 m/s.",
+        "Resolve the velocity arrow along the vertical axis using sine.",
+        expected_numeric_value=8.0,
+        canonical_unit="m/s",
+        absolute_tolerance=0.1,
+        hints=("Use the side opposite the angle: v_y=v_0 sin(theta).",),
+    ),
+    AssessmentDefinition(
+        "m06-vx-check",
+        VECTORS_LESSON.id,
+        QuestionKind.NUMERIC,
+        ("m06-decompose",),
+        "Correct: v_x=v_0 cos(theta)=16.0 cos(60°)=8.0 m/s.",
+        "Resolve the velocity arrow along the horizontal axis using cosine.",
+        expected_numeric_value=8.0,
+        canonical_unit="m/s",
+        absolute_tolerance=0.1,
+        hints=("Use the side adjacent to the angle: v_x=v_0 cos(theta).",),
     ),
 )
