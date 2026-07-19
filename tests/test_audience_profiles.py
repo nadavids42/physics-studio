@@ -11,7 +11,11 @@ from physics_playground.education.audience import (
     VisualDensity,
 )
 from physics_playground.education.catalog import CURRICULUM
-from physics_playground.education.models import GuidedDerivation, SimulationActivity
+from physics_playground.education.models import (
+    GuidedDerivation,
+    PrerequisiteKind,
+    SimulationActivity,
+)
 from physics_playground.education.selection import select_lesson_sections
 from physics_playground.education.validation import validate_curriculum_manifest
 from physics_playground.profiles import LocalProfile, ProfileStore
@@ -111,6 +115,11 @@ def test_pre_audience_content_without_depth_metadata_defaults_to_all_depths():
     lesson = replace(
         CANNONBALL_LESSON,
         sections=(CompatibilitySection(), *CANNONBALL_LESSON.sections[1:]),
+        prerequisites=tuple(
+            item
+            for item in CANNONBALL_LESSON.prerequisites
+            if item.kind is not PrerequisiteKind.LESSON
+        ),
     )
     unit = next(item for item in CURRICULUM.subjects[0].units if CANNONBALL_LESSON in item.lessons)
     subject = CURRICULUM.subjects[0]

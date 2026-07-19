@@ -24,6 +24,7 @@ from physics_playground.presentation.navigation import (
     recommended_lesson,
 )
 from physics_playground.presentation.notebook_ui import render_notebook_sidebar
+from physics_playground.presentation.pathway_ui import render_learning_pathway
 from physics_playground.presentation.profile_ui import (
     persist_active_session,
     persist_application_event,
@@ -149,6 +150,13 @@ else:
     module, entrypoint = load_validated_page(active)
     try:
         with timing_block(f"page.{active}"):
+            active_lesson_id = st.session_state.get(SHARED_STATE_KEYS.navigation_active_lesson)
+            active_lesson = (
+                LESSONS_BY_ID.get(active_lesson_id) if isinstance(active_lesson_id, str) else None
+            )
+            if active_lesson is not None:
+                render_learning_pathway(active_lesson)
+                st.divider()
             getattr(module, entrypoint)()
     except (PhysicsValidationError, FloatingPointError, OverflowError, MemoryError) as error:
         st.error(

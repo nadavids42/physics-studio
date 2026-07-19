@@ -19,7 +19,6 @@ from physics_playground.presentation.learning_modes import (
     comparison_metrics,
     mode_heading,
 )
-from physics_playground.presentation.pathway_ui import render_learning_pathway
 from physics_playground.presentation.simulation_runtime import (
     MissionContext,
     StreamlitSimulationRuntime,
@@ -49,7 +48,6 @@ from physics_playground.subjects.mechanics.cannonball.scene import (
     build_cannon_canvas,
     build_cannon_comparison_canvas,
 )
-from physics_playground.subjects.mechanics.foundations_lesson import MODELS_MEASUREMENTS_LESSON
 from physics_playground.units import (
     EARTH_GRAVITY_M_S2,
     JUPITER_GRAVITY_M_S2,
@@ -380,15 +378,8 @@ def render() -> None:
     st.markdown(
         "Launch a cannonball, compare trajectories, analyze the measurements, or inspect the model."
     )
-    active_lesson_id = st.session_state.get(SHARED_STATE_KEYS.navigation_active_lesson)
-    active_lesson = {
-        CANNONBALL_LESSON.id: CANNONBALL_LESSON,
-        MODELS_MEASUREMENTS_LESSON.id: MODELS_MEASUREMENTS_LESSON,
-    }.get(active_lesson_id)
-    lesson_active = active_lesson is not None
-    if active_lesson is not None:
-        render_learning_pathway(active_lesson)
-    else:
+    lesson_active = st.session_state.get(SHARED_STATE_KEYS.navigation_active_lesson) is not None
+    if not lesson_active:
         st.info(
             "You are using the standalone simulation. The guided lesson is available separately "
             "and does not restrict direct access to simulation modes."
@@ -405,8 +396,6 @@ def render() -> None:
         if not revealed:
             st.caption("🔬 Make your prediction before any results are shown.")
             return
-    if lesson_active:
-        st.divider()
     mode = RUNTIME.select_mode()
     st.divider()
     {

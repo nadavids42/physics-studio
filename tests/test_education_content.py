@@ -25,6 +25,7 @@ from physics_playground.subjects.mechanics.cannonball.lesson import (
     CANNONBALL_LESSON,
 )
 from physics_playground.subjects.mechanics.foundations_lesson import MODELS_MEASUREMENTS_LESSON
+from physics_playground.subjects.mechanics.kinematics_lessons import KINEMATICS_LESSONS
 from physics_playground.validation import PhysicsValidationError
 
 SIMULATION_IDS = {simulation.id for simulation in SIMULATION_REGISTRY}
@@ -49,6 +50,7 @@ def test_builtin_curriculum_is_valid_and_cataloged() -> None:
     validate_curriculum_manifest(CURRICULUM, simulation_ids=SIMULATION_IDS, assessments=ASSESSMENTS)
     assert LESSONS_BY_ID == {
         MODELS_MEASUREMENTS_LESSON.id: MODELS_MEASUREMENTS_LESSON,
+        **{lesson.id: lesson for lesson in KINEMATICS_LESSONS},
         CANNONBALL_LESSON.id: CANNONBALL_LESSON,
     }
 

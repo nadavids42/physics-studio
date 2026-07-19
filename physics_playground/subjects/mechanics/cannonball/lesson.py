@@ -34,6 +34,10 @@ from physics_playground.subjects.mechanics.foundations_lesson import (
     FOUNDATION_CONCEPTS,
     MODELS_MEASUREMENTS_LESSON,
 )
+from physics_playground.subjects.mechanics.kinematics_lessons import (
+    KINEMATICS_CONCEPTS,
+    KINEMATICS_LESSONS,
+)
 
 PROJECTILE_CONCEPTS = (
     Concept(
@@ -265,6 +269,12 @@ CANNONBALL_LESSON = Lesson(
             "Learners need basic vector-component reasoning.",
         ),
         Prerequisite(
+            "constant-acceleration-prerequisite",
+            PrerequisiteKind.LESSON,
+            "m05-constant-acceleration",
+            "Constant-acceleration graph reasoning supports the two component equations.",
+        ),
+        Prerequisite(
             "algebra-prerequisite",
             PrerequisiteKind.SKILL,
             "solve-quadratic-roots",
@@ -331,6 +341,12 @@ CANNONBALL_LESSON = Lesson(
                     "In the ideal model, horizontal velocity persists without a horizontal net force; gravity changes only v_y.",
                     "What does the horizontal velocity graph do after launch?",
                 ),
+                MisconceptionCallout(
+                    "universal-45-degree-misconception",
+                    "A 45° launch always gives maximum range.",
+                    "The 45° result requires equal launch and landing heights, negligible drag, uniform gravity, and fixed launch speed. Change those conditions and the maximizing angle can change.",
+                    "Which assumption fails for a launch from a cliff or through substantial air drag?",
+                ),
                 ACTIVITIES[4],
                 ACTIVITIES[5],
             ),
@@ -375,7 +391,7 @@ MECHANICS_SUBJECT = Subject(
     "mechanics",
     "Mechanics",
     "Use forces, motion, energy, and momentum to explain how physical systems change.",
-    (*FOUNDATION_CONCEPTS, *PROJECTILE_CONCEPTS),
+    (*FOUNDATION_CONCEPTS, *KINEMATICS_CONCEPTS, *PROJECTILE_CONCEPTS),
     (
         Unit(
             "mechanics-foundations",
@@ -383,6 +399,13 @@ MECHANICS_SUBJECT = Subject(
             "Establish the evidence and representation habits used throughout mechanics.",
             tuple(objective.id for objective in MODELS_MEASUREMENTS_LESSON.objectives),
             (MODELS_MEASUREMENTS_LESSON,),
+        ),
+        Unit(
+            "introductory-kinematics",
+            "Introductory kinematics",
+            "Connect coordinates, motion graphs, acceleration, and two-dimensional motion.",
+            tuple(objective.id for lesson in KINEMATICS_LESSONS for objective in lesson.objectives),
+            KINEMATICS_LESSONS,
         ),
         Unit(
             "motion-in-two-dimensions",
