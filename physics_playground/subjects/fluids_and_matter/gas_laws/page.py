@@ -50,7 +50,9 @@ def state_key(name: str) -> str:
     return canonical
 
 
-def record(r, obs, label=None, badges=()):
+def record(
+    r: GasLawResult, obs: str, label: str | None = None, badges: tuple[str, ...] = ()
+) -> None:
     add_trial(
         simulation_id=ID,
         parameters=r.parameters.to_dict(),

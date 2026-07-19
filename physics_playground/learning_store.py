@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -97,7 +97,7 @@ class SQLiteLearningStore:
         return db
 
     @contextmanager
-    def transaction(self):
+    def transaction(self) -> Iterator[sqlite3.Connection]:
         db = self.connect()
         try:
             db.execute("BEGIN IMMEDIATE")
@@ -251,6 +251,12 @@ class SQLiteLearningStore:
             db, learner_id, "objective_evidence", payload.get("objective_evidence", ())
         )
         preferences = payload.get("accessibility_settings", {})
+        badges = payload.get("badges_earned", ())
+        badges_earned = (
+            tuple(str(item) for item in badges if isinstance(item, str))
+            if isinstance(badges, (list, tuple))
+            else ()
+        )
         return LearnerData(
             LearnerIdentity(learner_id, display_name),
             dict(preferences) if isinstance(preferences, Mapping) else {},
@@ -258,7 +264,7 @@ class SQLiteLearningStore:
             attempts,
             trials,
             entries,
-            tuple(str(item) for item in payload.get("badges_earned", ()) if isinstance(item, str)),
+            badges_earned,
             {
                 key: value
                 for key, value in payload.items()

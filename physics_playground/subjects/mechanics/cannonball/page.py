@@ -88,10 +88,7 @@ def mission_evidence(
     target = context.get("target_m")
     if not isinstance(target, int | float):
         return ()
-    return cast(
-        tuple[MissionEvaluation, ...],
-        evaluate_cannonball_missions(result, float(target)),
-    )
+    return evaluate_cannonball_missions(result, float(target))
 
 
 def _init() -> None:
@@ -129,6 +126,10 @@ def _target() -> float:
     return target_for_seed(int(st.session_state[state_key("target_seed")]))
 
 
+def _as_float(value: JsonValue) -> float:
+    return float(cast(str | int | float, value))
+
+
 def _new_target() -> None:
     st.session_state[state_key("target_override")] = None
     st.session_state[state_key("target_seed")] += 1
@@ -139,13 +140,15 @@ def _apply_reuse() -> None:
     if request is None:
         return
     p = request.parameters
-    st.session_state[state_key("speed")] = min(40.0, max(5.0, float(p["launch_speed_m_s"])))
-    st.session_state[state_key("angle")] = min(89, max(5, int(round(float(p["launch_angle_deg"])))))
-    gravity = float(p["gravity_m_s2"])
+    st.session_state[state_key("speed")] = min(40.0, max(5.0, _as_float(p["launch_speed_m_s"])))
+    st.session_state[state_key("angle")] = min(
+        89, max(5, int(round(_as_float(p["launch_angle_deg"]))))
+    )
+    gravity = _as_float(p["gravity_m_s2"])
     st.session_state[state_key("world")] = min(
         WORLDS, key=lambda label: abs(WORLDS[label] - gravity)
     )
-    st.session_state[state_key("target_override")] = float(p.get("target_m", _target()))
+    st.session_state[state_key("target_override")] = _as_float(p.get("target_m", _target()))
     st.session_state[state_key("learning_mode")] = LearningMode.EXPLORE.value
     st.toast(f"Loaded setup from {request.source_label}.")
 
@@ -162,6 +165,7 @@ def _execute(parameters: ProjectileParameters) -> ProjectileResult:
     result = run_model_safely(lambda: cast(ProjectileResult, cached_projectile(parameters)))
     if result is None:
         st.stop()
+        raise AssertionError("unreachable: st.stop() halts script execution")
     return result
 
 

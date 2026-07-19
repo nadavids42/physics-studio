@@ -22,7 +22,7 @@ any line here.
 - `pytest -ra` without `CHROMIUM_BIN` set: 546 passed, 3 skipped (the browser-only tests, with an
   explicit loud skip reason and a terminal warning; see `tests/conftest.py`).
 - `pytest -ra` with `CHROMIUM_BIN` set to a real Chromium binary: 549 passed, 0 skipped.
-- `mypy`: checks 16 of 225 `.py` files under `physics_playground/` (an explicit ratchet list in
+- `mypy`: checks 22 of 225 `.py` files under `physics_playground/` (an explicit ratchet list in
   `pyproject.toml`, not the whole package).
 - Frontend: `npm test` runs 21 Vitest tests across 5 files; `npm run lint` and `npm run
   build:check` also pass.
