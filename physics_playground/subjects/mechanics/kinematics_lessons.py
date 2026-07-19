@@ -6,6 +6,8 @@ from physics_playground.education.models import (
     AnswerChoice,
     CheckpointQuestion,
     Concept,
+    DerivationStep,
+    GuidedDerivation,
     KnownValue,
     LearningObjective,
     Lesson,
@@ -72,7 +74,8 @@ POSITION_ACTIVITIES = (
         "Predict a round-trip result",
         (
             "Imagine a cart moving 4 m right and then 4 m left.",
-            "Predict its displacement, distance, average velocity, and average speed before running a comparison.",
+            "Predict its displacement, distance, average velocity, and average speed before inspecting the collision track.",
+            "The collision simulation supplies a coordinate track, not this round-trip motion; do not treat a collision run as a test of the imagined path.",
         ),
         LearningMode.EXPLORE,
         {},
@@ -343,6 +346,13 @@ GRAPH_LESSON = Lesson(
                         ),
                     ),
                 ),
+                CheckpointQuestion(
+                    "m03-acceleration-check",
+                    "Velocity changes from −2.0 m/s to −8.0 m/s in 3.0 s. What is the average acceleration?",
+                    QuestionKind.NUMERIC,
+                    ("m03-graph-links", "m03-acceleration"),
+                    unit_options=("m/s^2",),
+                ),
             ),
         ),
         LessonSection(
@@ -456,6 +466,48 @@ CONSTANT_EXAMPLE = WorkedExample(
     "The positive displacement matches forward motion while negative acceleration reduces the speed.",
 )
 
+CONSTANT_DERIVATION = GuidedDerivation(
+    "m05-derive-relations",
+    "Derive the constant-acceleration relations",
+    "Use slope and signed area on a velocity–time graph, then eliminate time without introducing a new empirical rule.",
+    (
+        "Motion is one-dimensional during the chosen interval.",
+        "Acceleration is constant during that interval.",
+        "The coordinate origin and positive direction are fixed.",
+    ),
+    (
+        DerivationStep(
+            "m05-velocity-slope",
+            1,
+            "Use the constant slope of the velocity–time graph.",
+            "a=(v-v_0)/t, so v=v_0+at",
+            "Acceleration is the slope of velocity versus time.",
+        ),
+        DerivationStep(
+            "m05-displacement-area",
+            2,
+            "Use the signed area under the velocity–time graph.",
+            "delta x=v_0t+(1/2)(v-v_0)t=v_0t+(1/2)at^2",
+            "The rectangle plus triangular area gives displacement, not distance, when velocity is signed.",
+        ),
+        DerivationStep(
+            "m05-eliminate-time",
+            3,
+            "Eliminate time using average velocity for a linear velocity graph.",
+            "delta x=[(v_0+v)/2]t and t=(v-v_0)/a",
+            "Substitution gives 2a delta x=(v+v_0)(v-v_0)=v^2-v_0^2.",
+        ),
+        DerivationStep(
+            "m05-final-relation",
+            4,
+            "Rearrange the time-independent relation.",
+            "v^2=v_0^2+2a delta x",
+            "Every term has units m^2/s^2; the relation is valid only while acceleration is constant.",
+        ),
+    ),
+    "The three relations describe the same constant-acceleration model; choose one from the known and unknown quantities rather than memorizing an unrelated formula.",
+)
+
 CONSTANT_LESSON = Lesson(
     "m05-constant-acceleration",
     "Constant-acceleration reasoning",
@@ -468,8 +520,8 @@ CONSTANT_LESSON = Lesson(
         LessonSection(
             "m05-model",
             "From graphs to equations",
-            "For constant acceleration, the velocity graph has constant slope: v=v_0+at. Its signed area gives displacement, producing delta x=v_0t+(1/2)at². These relations describe a model interval, not every motion.",
-            (CONSTANT_ACTIVITIES[0],),
+            "For constant acceleration, the velocity graph has constant slope and its signed area gives displacement. The derivation below connects those representations; these relations describe a model interval, not every motion.",
+            (CONSTANT_DERIVATION, CONSTANT_ACTIVITIES[0]),
         ),
         LessonSection(
             "m05-example",
@@ -481,7 +533,7 @@ CONSTANT_LESSON = Lesson(
                     "m05-stop-check",
                     "A car moving right slows at a constant rate. Which sign combination is consistent with +x to the right?",
                     QuestionKind.MULTIPLE_CHOICE,
-                    ("m05-derive",),
+                    ("m05-apply",),
                     (
                         AnswerChoice(
                             "positive-negative", "Positive velocity and negative acceleration."
@@ -493,6 +545,13 @@ CONSTANT_LESSON = Lesson(
                             "positive-positive", "Positive velocity and positive acceleration."
                         ),
                     ),
+                ),
+                CheckpointQuestion(
+                    "m05-stopping-distance-check",
+                    "A cart moves at 10.0 m/s and has constant acceleration −2.0 m/s² until it stops. What is its stopping displacement?",
+                    QuestionKind.NUMERIC,
+                    ("m05-derive", "m05-apply"),
+                    unit_options=("m", "cm"),
                 ),
             ),
         ),
@@ -548,10 +607,22 @@ KINEMATICS_ASSESSMENTS = (
         ),
     ),
     AssessmentDefinition(
+        "m03-acceleration-check",
+        GRAPH_LESSON.id,
+        QuestionKind.NUMERIC,
+        ("m03-graph-links", "m03-acceleration"),
+        "Correct: the signed velocity change is −6.0 m/s, so average acceleration is −2.0 m/s².",
+        "Subtract initial velocity from final velocity before dividing by elapsed time.",
+        expected_numeric_value=-2.0,
+        canonical_unit="m/s^2",
+        absolute_tolerance=0.05,
+        hints=("Compute [−8.0−(−2.0)]/3.0 and retain the sign.",),
+    ),
+    AssessmentDefinition(
         "m05-stop-check",
         CONSTANT_LESSON.id,
         QuestionKind.MULTIPLE_CHOICE,
-        ("m05-derive",),
+        ("m05-apply",),
         "Correct: acceleration opposes the positive velocity while the car slows.",
         "Apply the stated coordinate direction separately to velocity and velocity change.",
         correct_choice_ids=("positive-negative",),
@@ -559,5 +630,17 @@ KINEMATICS_ASSESSMENTS = (
             ("negative-negative", "negative-velocity-means-slowing"),
             ("positive-positive", "acceleration-follows-motion"),
         ),
+    ),
+    AssessmentDefinition(
+        "m05-stopping-distance-check",
+        CONSTANT_LESSON.id,
+        QuestionKind.NUMERIC,
+        ("m05-derive", "m05-apply"),
+        "Correct: 0=10.0²+2(−2.0) delta x gives a stopping displacement of 25 m.",
+        "Use the time-independent constant-acceleration relation and keep the acceleration sign.",
+        expected_numeric_value=25.0,
+        canonical_unit="m",
+        absolute_tolerance=0.2,
+        hints=("Solve delta x=(v²−v_0²)/(2a) before inserting values.",),
     ),
 )

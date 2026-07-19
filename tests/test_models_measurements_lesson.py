@@ -106,8 +106,10 @@ def test_lesson_meets_curriculum_specification_without_authoring_lesson_two() ->
         for section in MODELS_MEASUREMENTS_LESSON.sections
         for item in section.components
     )
-    assert MODELS_MEASUREMENTS_LESSON.next_lesson_id == "m02-vectors-coordinates"
-    assert all(lesson.id != "m02-vectors-coordinates" for lesson in (MODELS_MEASUREMENTS_LESSON,))
+    assert MODELS_MEASUREMENTS_LESSON.next_lesson_id == "m02-position-velocity"
+    assert MODELS_MEASUREMENTS_LESSON.next_lesson_title == (
+        "Position, displacement, velocity, and speed"
+    )
 
 
 def test_observation_requires_reasoning_and_round_trips() -> None:

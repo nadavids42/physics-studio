@@ -263,16 +263,16 @@ CANNONBALL_LESSON = Lesson(
     OBJECTIVES,
     (
         Prerequisite(
-            "vectors-prerequisite",
-            PrerequisiteKind.CONCEPT,
-            "vectors",
-            "Learners need basic vector-component reasoning.",
-        ),
-        Prerequisite(
             "constant-acceleration-prerequisite",
             PrerequisiteKind.LESSON,
             "m05-constant-acceleration",
             "Constant-acceleration graph reasoning supports the two component equations.",
+        ),
+        Prerequisite(
+            "trigonometry-prerequisite",
+            PrerequisiteKind.SKILL,
+            "right-triangle-trigonometry",
+            "Resolving the launch velocity uses sine and cosine in a right triangle; the lesson introduces the physics meaning of the components.",
         ),
         Prerequisite(
             "algebra-prerequisite",
@@ -301,6 +301,13 @@ CANNONBALL_LESSON = Lesson(
                     ("projectile-components",),
                 ),
                 ACTIVITIES[0],
+                CheckpointQuestion(
+                    "component-checkpoint",
+                    "A projectile is launched at 20.0 m/s and 60°. What is its initial horizontal velocity component?",
+                    QuestionKind.NUMERIC,
+                    ("projectile-components",),
+                    unit_options=("m/s", "km/h"),
+                ),
             ),
         ),
         LessonSection(
@@ -348,6 +355,21 @@ CANNONBALL_LESSON = Lesson(
                     "Which assumption fails for a launch from a cliff or through substantial air drag?",
                 ),
                 ACTIVITIES[4],
+                CheckpointQuestion(
+                    "model-limit-checkpoint",
+                    "Which change invalidates direct use of R=v_0² sin(2theta)/g?",
+                    QuestionKind.MULTIPLE_CHOICE,
+                    ("projectile-model-limits",),
+                    (
+                        AnswerChoice("add-drag", "Include substantial air resistance."),
+                        AnswerChoice(
+                            "rename-axis", "Rename the horizontal axis while keeping its direction."
+                        ),
+                        AnswerChoice(
+                            "more-samples", "Display more samples from the same ideal model."
+                        ),
+                    ),
+                ),
                 ACTIVITIES[5],
             ),
         ),
@@ -383,6 +405,32 @@ CANNONBALL_ASSESSMENTS = (
         misconception_by_choice=(
             ("angle-45", "maximum-range-confused-with-complement"),
             ("angle-75", "angles-must-sum-to-90"),
+        ),
+    ),
+    AssessmentDefinition(
+        id="component-checkpoint",
+        lesson_id=CANNONBALL_LESSON.id,
+        kind=QuestionKind.NUMERIC,
+        objective_ids=("projectile-components",),
+        success_feedback="Correct: v_x=v_0 cos(theta)=20.0 cos(60°)=10.0 m/s.",
+        retry_feedback="Resolve the velocity arrow along the horizontal axis using cosine.",
+        expected_numeric_value=10.0,
+        canonical_unit="m/s",
+        absolute_tolerance=0.1,
+        hints=("Use the side adjacent to the launch angle: v_x=v_0 cos(theta).",),
+    ),
+    AssessmentDefinition(
+        id="model-limit-checkpoint",
+        lesson_id=CANNONBALL_LESSON.id,
+        kind=QuestionKind.MULTIPLE_CHOICE,
+        objective_ids=("projectile-model-limits",),
+        success_feedback="Correct: substantial drag changes the acceleration and breaks the ideal range derivation.",
+        retry_feedback="Ask which option changes a physical assumption used in the derivation.",
+        correct_choice_ids=("add-drag",),
+        hints=("Changing display detail is not the same as changing the physical model.",),
+        misconception_by_choice=(
+            ("rename-axis", "notation-changes-physics"),
+            ("more-samples", "display-resolution-changes-model"),
         ),
     ),
 )

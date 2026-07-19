@@ -125,7 +125,10 @@ def test_prerequisite_mastery_is_derived_from_separate_progress() -> None:
 
 
 def test_private_answer_definition_is_validated_against_visible_choices() -> None:
-    invalid = replace(CANNONBALL_ASSESSMENTS[0], correct_choice_ids=("missing",))
+    range_definition = next(
+        item for item in CANNONBALL_ASSESSMENTS if item.id == "range-checkpoint"
+    )
+    invalid = replace(range_definition, correct_choice_ids=("missing",))
     definitions = tuple(invalid if item.id == invalid.id else item for item in ASSESSMENTS)
     with pytest.raises(PhysicsValidationError, match="choice"):
         validate_curriculum_manifest(
@@ -135,5 +138,6 @@ def test_private_answer_definition_is_validated_against_visible_choices() -> Non
 
 def test_cannonball_content_and_private_assessment_migrate_together() -> None:
     validate_curriculum_manifest(CURRICULUM, simulation_ids=SIMULATION_IDS, assessments=ASSESSMENTS)
-    assert checkpoint().id == CANNONBALL_ASSESSMENTS[0].id
-    assert set(checkpoint().objective_ids) == set(CANNONBALL_ASSESSMENTS[0].objective_ids)
+    visible = checkpoint()
+    private = next(item for item in CANNONBALL_ASSESSMENTS if item.id == visible.id)
+    assert set(visible.objective_ids) == set(private.objective_ids)

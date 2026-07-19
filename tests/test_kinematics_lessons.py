@@ -1,8 +1,17 @@
 """Coverage, progression, science, and evidence tests for kinematics lessons."""
 
+from datetime import UTC, datetime
+
+from physics_playground.education.assessments import (
+    AssessmentDefinition,
+    AssessmentResponse,
+    SubmissionResult,
+    submit_response,
+)
 from physics_playground.education.catalog import ASSESSMENTS_BY_ID
 from physics_playground.education.models import (
     CheckpointQuestion,
+    GuidedDerivation,
     MisconceptionCallout,
     SimulationActivity,
     WorkedExample,
@@ -73,6 +82,49 @@ def test_required_misconceptions_are_explicitly_diagnosed() -> None:
         "45° launch always",
     ):
         assert phrase in text
+
+
+def test_constant_acceleration_is_derived_and_assessed_quantitatively() -> None:
+    constant_lesson = KINEMATICS_LESSONS[-1]
+    components = [item for section in constant_lesson.sections for item in section.components]
+    derivation = next(item for item in components if isinstance(item, GuidedDerivation))
+    assert len(derivation.steps) == 4
+    assert "v^2=v_0^2+2a delta x" in derivation.steps[-1].expression
+    definition = ASSESSMENTS_BY_ID["m05-stopping-distance-check"]
+    assert definition.expected_numeric_value == 25.0
+    assert definition.canonical_unit == "m"
+
+
+def test_projectile_components_are_taught_not_circularly_required() -> None:
+    prerequisite_ids = {item.reference_id for item in CANNONBALL_LESSON.prerequisites}
+    assert "vectors" not in prerequisite_ids
+    assert "right-triangle-trigonometry" in prerequisite_ids
+    checkpoint_ids = {
+        item.id
+        for section in CANNONBALL_LESSON.sections
+        for item in section.components
+        if isinstance(item, CheckpointQuestion)
+    }
+    assert {"component-checkpoint", "range-checkpoint", "model-limit-checkpoint"} <= checkpoint_ids
+
+
+def test_new_quantitative_evidence_requires_correct_sign_value_and_unit() -> None:
+    def grade(definition: AssessmentDefinition, response: AssessmentResponse) -> SubmissionResult:
+        return submit_response(
+            definition,
+            response,
+            learner_id="learner",
+            attempt_id="attempt",
+            submitted_at=datetime.now(UTC),
+        )
+
+    acceleration = ASSESSMENTS_BY_ID["m03-acceleration-check"]
+    assert grade(acceleration, AssessmentResponse(numeric_value=-2.0, unit="m/s^2")).attempt.correct
+    assert not grade(
+        acceleration, AssessmentResponse(numeric_value=2.0, unit="m/s^2")
+    ).attempt.correct
+    stopping = ASSESSMENTS_BY_ID["m05-stopping-distance-check"]
+    assert grade(stopping, AssessmentResponse(numeric_value=2500, unit="cm")).attempt.correct
 
 
 def test_visiting_or_opening_a_simulation_cannot_complete_a_lesson() -> None:

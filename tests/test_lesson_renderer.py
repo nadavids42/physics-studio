@@ -44,6 +44,8 @@ def test_cannonball_guided_lesson_full_sequence_and_resume(monkeypatch, tmp_path
     )
     prediction.set_value("45 degrees balances horizontal speed and time aloft.")
     button_with_key(app, f"{LESSON_ID}.save_prediction").click().run(timeout=30)
+    next(item for item in app.text_input if item.label == "Numeric response").set_value("10.0")
+    button_with_key(app, "component-checkpoint.submit").click().run(timeout=30)
     next(button for button in app.button if button.label == "Continue to next section").click().run(
         timeout=30
     )
@@ -72,6 +74,9 @@ def test_cannonball_guided_lesson_full_sequence_and_resume(monkeypatch, tmp_path
     )
 
     button_with_key(app, "model-drag.complete").click().run(timeout=30)
+    model_limit = next(radio for radio in app.radio if radio.label == "Choose an answer")
+    model_limit.set_value("add-drag").run(timeout=30)
+    button_with_key(app, "model-limit-checkpoint.submit").click().run(timeout=30)
     reflection = next(area for area in app.text_area if area.label == "Notebook reflection")
     reflection.set_value("The ideal equation explains symmetry; drag breaks that symmetry.")
     button_with_key(app, f"{LESSON_ID}.save_reflection").click().run(timeout=30)

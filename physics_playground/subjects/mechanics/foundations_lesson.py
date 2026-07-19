@@ -73,7 +73,7 @@ ACTIVITIES = (
         "Predict what a representation can tell you",
         (
             "Before running anything, predict whether a trajectory picture or a range-versus-angle graph better supports an exact range comparison.",
-            "Give a reason based on what each representation encodes—not on which looks more realistic.",
+            "Give a reason based on what each representation encodes—not on which looks more realistic. Do not run the simulation until the prediction is recorded.",
         ),
         LearningMode.EXPLORE,
         {"initial_speed_m_s": 20.0, "launch_angle_deg": 45.0, "drag_enabled": False},
@@ -271,14 +271,14 @@ MODELS_MEASUREMENTS_LESSON = Lesson(
         LessonSection(
             "simulation-experiment-reflection",
             "Simulation, experiment, and scientific reasoning",
-            "A simulation gives exact output for its code, parameters, numerical method, and model assumptions; that does not make its prediction exact for nature. An experiment interacts with a physical system and includes instrument limits, uncontrolled variation, and possible bias. Both require questions, controlled comparisons, evidence, and critique. Running a simulation or opening a lesson records no mastery by itself.",
+            "A simulation gives reproducible output for its code, parameters, numerical method, and model assumptions, within numerical precision; that does not make its prediction exact for nature. An experiment interacts with a physical system and includes instrument limits, uncontrolled variation, and possible bias. Both require questions, controlled comparisons, evidence, and critique. Running a simulation or opening a lesson records no mastery by itself.",
             (ACTIVITIES[3],),
         ),
     ),
     ACTIVITIES,
     estimated_minutes=50,
-    next_lesson_id="m02-vectors-coordinates",
-    next_lesson_title="Coordinates, scalars, and vectors",
+    next_lesson_id="m02-position-velocity",
+    next_lesson_title="Position, displacement, velocity, and speed",
 )
 
 MODELS_MEASUREMENTS_ASSESSMENTS = (

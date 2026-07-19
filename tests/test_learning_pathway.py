@@ -53,11 +53,12 @@ def test_completion_requires_every_activity_and_checkpoint() -> None:
             required_activity_ids=activities,
             required_checkpoint_ids=checkpoints,
         )
-    progress = progress.complete_checkpoint(
-        checkpoints[0],
-        required_activity_ids=activities,
-        required_checkpoint_ids=checkpoints,
-    )
+    for checkpoint_id in checkpoints:
+        progress = progress.complete_checkpoint(
+            checkpoint_id,
+            required_activity_ids=activities,
+            required_checkpoint_ids=checkpoints,
+        )
     assert not progress.completed
     progress = progress.save_reflection(
         "The graph showed why complementary paths can share a range.",
