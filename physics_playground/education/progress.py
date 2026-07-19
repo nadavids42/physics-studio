@@ -21,6 +21,7 @@ class PathwayProgress:
     assessment_attempt_ids: tuple[str, ...] = ()
     completed_section_ids: tuple[str, ...] = ()
     last_section_id: str | None = None
+    activity_responses: tuple[tuple[str, str], ...] = ()
     schema_version: int = 3
 
     def complete_activity(
@@ -38,6 +39,29 @@ class PathwayProgress:
             required_activity_ids,
             required_checkpoint_ids,
             required_section_ids,
+        )
+
+    def save_activity_response(
+        self,
+        activity_id: str,
+        response: str,
+        *,
+        required_activity_ids: tuple[str, ...],
+        required_checkpoint_ids: tuple[str, ...],
+        required_section_ids: tuple[str, ...] = (),
+    ) -> PathwayProgress:
+        """Record reasoning evidence before completing an evidence-bearing activity."""
+
+        text = response.strip()
+        if not text:
+            raise ValueError("Activity evidence cannot be blank.")
+        responses = dict(self.activity_responses)
+        responses[activity_id] = text
+        return replace(self, activity_responses=tuple(responses.items())).complete_activity(
+            activity_id,
+            required_activity_ids=required_activity_ids,
+            required_checkpoint_ids=required_checkpoint_ids,
+            required_section_ids=required_section_ids,
         )
 
     def complete_checkpoint(
@@ -172,6 +196,7 @@ class PathwayProgress:
             "assessment_attempt_ids": list(self.assessment_attempt_ids),
             "completed_section_ids": list(self.completed_section_ids),
             "last_section_id": self.last_section_id,
+            "activity_responses": [list(item) for item in self.activity_responses],
         }
 
     @classmethod
@@ -202,6 +227,11 @@ class PathwayProgress:
                 str(item) for item in data.get("completed_section_ids", ())
             ),
             last_section_id=str(data["last_section_id"]) if data.get("last_section_id") else None,
+            activity_responses=tuple(
+                (str(item[0]), str(item[1]))
+                for item in data.get("activity_responses", ())
+                if isinstance(item, list | tuple) and len(item) == 2
+            ),
         )
 
 

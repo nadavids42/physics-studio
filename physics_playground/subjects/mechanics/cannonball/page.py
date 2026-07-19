@@ -49,6 +49,7 @@ from physics_playground.subjects.mechanics.cannonball.scene import (
     build_cannon_canvas,
     build_cannon_comparison_canvas,
 )
+from physics_playground.subjects.mechanics.foundations_lesson import MODELS_MEASUREMENTS_LESSON
 from physics_playground.units import (
     EARTH_GRAVITY_M_S2,
     JUPITER_GRAVITY_M_S2,
@@ -379,11 +380,14 @@ def render() -> None:
     st.markdown(
         "Launch a cannonball, compare trajectories, analyze the measurements, or inspect the model."
     )
-    lesson_active = (
-        st.session_state.get(SHARED_STATE_KEYS.navigation_active_lesson) == CANNONBALL_LESSON.id
-    )
-    if lesson_active:
-        render_learning_pathway(CANNONBALL_LESSON)
+    active_lesson_id = st.session_state.get(SHARED_STATE_KEYS.navigation_active_lesson)
+    active_lesson = {
+        CANNONBALL_LESSON.id: CANNONBALL_LESSON,
+        MODELS_MEASUREMENTS_LESSON.id: MODELS_MEASUREMENTS_LESSON,
+    }.get(active_lesson_id)
+    lesson_active = active_lesson is not None
+    if active_lesson is not None:
+        render_learning_pathway(active_lesson)
     else:
         st.info(
             "You are using the standalone simulation. The guided lesson is available separately "

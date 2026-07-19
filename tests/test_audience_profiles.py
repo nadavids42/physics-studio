@@ -85,7 +85,7 @@ def test_audience_preferences_cannot_change_projectile_results():
 def test_empty_depth_declaration_is_rejected():
     first_section = replace(CANNONBALL_LESSON.sections[0], applicable_depths=frozenset())
     lesson = replace(CANNONBALL_LESSON, sections=(first_section, *CANNONBALL_LESSON.sections[1:]))
-    unit = CURRICULUM.subjects[0].units[0]
+    unit = next(item for item in CURRICULUM.subjects[0].units if CANNONBALL_LESSON in item.lessons)
     subject = CURRICULUM.subjects[0]
     manifest = replace(
         CURRICULUM,
@@ -112,7 +112,7 @@ def test_pre_audience_content_without_depth_metadata_defaults_to_all_depths():
         CANNONBALL_LESSON,
         sections=(CompatibilitySection(), *CANNONBALL_LESSON.sections[1:]),
     )
-    unit = CURRICULUM.subjects[0].units[0]
+    unit = next(item for item in CURRICULUM.subjects[0].units if CANNONBALL_LESSON in item.lessons)
     subject = CURRICULUM.subjects[0]
     manifest = replace(
         CURRICULUM,

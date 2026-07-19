@@ -7,6 +7,9 @@ from physics_playground.subjects.mechanics.cannonball.lesson import (
     CANNONBALL_ASSESSMENTS,
     MECHANICS_SUBJECT,
 )
+from physics_playground.subjects.mechanics.foundations_lesson import (
+    MODELS_MEASUREMENTS_ASSESSMENTS,
+)
 
 CURRICULUM = CurriculumManifest(
     id="physics-studio-core",
@@ -21,10 +24,11 @@ LESSONS_BY_ID = {
     for unit in subject.units
     for lesson in unit.lessons
 }
-ASSESSMENTS_BY_ID = {item.id: item for item in CANNONBALL_ASSESSMENTS}
+ASSESSMENTS = (*MODELS_MEASUREMENTS_ASSESSMENTS, *CANNONBALL_ASSESSMENTS)
+ASSESSMENTS_BY_ID = {item.id: item for item in ASSESSMENTS}
 
 validate_curriculum_manifest(
     CURRICULUM,
     simulation_ids={simulation.id for simulation in SIMULATION_REGISTRY},
-    assessments=CANNONBALL_ASSESSMENTS,
+    assessments=ASSESSMENTS,
 )

@@ -2,6 +2,7 @@ from physics_playground.education.progress import PathwayProgress
 from physics_playground.expansion_catalog import EXPANSION_MANIFESTS
 from physics_playground.presentation.navigation import NAVIGATION_SUBJECTS, recommended_lesson
 from physics_playground.subjects.mechanics.cannonball.lesson import CANNONBALL_LESSON
+from physics_playground.subjects.mechanics.foundations_lesson import MODELS_MEASUREMENTS_LESSON
 
 
 def test_navigation_catalog_uses_every_validated_simulation_once():
@@ -18,10 +19,15 @@ def test_curriculum_lessons_are_joined_to_their_subject_and_recommended_optional
     mechanics = next(subject for subject in NAVIGATION_SUBJECTS if subject.id == "mechanics")
     assert CANNONBALL_LESSON in mechanics.lessons
     assert "Motion in two dimensions" in mechanics.units
-    assert recommended_lesson({}) == CANNONBALL_LESSON
+    assert recommended_lesson({}) == MODELS_MEASUREMENTS_LESSON
     assert (
         recommended_lesson(
-            {CANNONBALL_LESSON.id: PathwayProgress(CANNONBALL_LESSON.id, completed=True)}
+            {
+                MODELS_MEASUREMENTS_LESSON.id: PathwayProgress(
+                    MODELS_MEASUREMENTS_LESSON.id, completed=True
+                ),
+                CANNONBALL_LESSON.id: PathwayProgress(CANNONBALL_LESSON.id, completed=True),
+            }
         )
         is None
     )

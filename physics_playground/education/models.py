@@ -296,6 +296,7 @@ class SimulationActivity:
     completion_evidence: str = ""
     applicable_depths: frozenset[MathematicalDepth] = ALL_MATHEMATICAL_DEPTHS
     objective_ids: tuple[str, ...] = ()
+    evidence_prompt: str = ""
 
 
 SectionComponent: TypeAlias = (

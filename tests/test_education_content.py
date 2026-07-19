@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from physics_playground.education.catalog import CURRICULUM, LESSONS_BY_ID
+from physics_playground.education.catalog import ASSESSMENTS, CURRICULUM, LESSONS_BY_ID
 from physics_playground.education.models import (
     ActivityPhase,
     ContentVoice,
@@ -24,6 +24,7 @@ from physics_playground.subjects.mechanics.cannonball.lesson import (
     CANNONBALL_ASSESSMENTS,
     CANNONBALL_LESSON,
 )
+from physics_playground.subjects.mechanics.foundations_lesson import MODELS_MEASUREMENTS_LESSON
 from physics_playground.validation import PhysicsValidationError
 
 SIMULATION_IDS = {simulation.id for simulation in SIMULATION_REGISTRY}
@@ -31,7 +32,8 @@ SIMULATION_IDS = {simulation.id for simulation in SIMULATION_REGISTRY}
 
 def _manifest_with_lesson(lesson):
     subject = CURRICULUM.subjects[0]
-    unit = replace(subject.units[0], lessons=(lesson,))
+    source_unit = next(item for item in subject.units if CANNONBALL_LESSON in item.lessons)
+    unit = replace(source_unit, lessons=(lesson,))
     return replace(CURRICULUM, subjects=(replace(subject, units=(unit,)),))
 
 
@@ -44,10 +46,11 @@ def _validate_lesson(lesson) -> None:
 
 
 def test_builtin_curriculum_is_valid_and_cataloged() -> None:
-    validate_curriculum_manifest(
-        CURRICULUM, simulation_ids=SIMULATION_IDS, assessments=CANNONBALL_ASSESSMENTS
-    )
-    assert LESSONS_BY_ID == {CANNONBALL_LESSON.id: CANNONBALL_LESSON}
+    validate_curriculum_manifest(CURRICULUM, simulation_ids=SIMULATION_IDS, assessments=ASSESSMENTS)
+    assert LESSONS_BY_ID == {
+        MODELS_MEASUREMENTS_LESSON.id: MODELS_MEASUREMENTS_LESSON,
+        CANNONBALL_LESSON.id: CANNONBALL_LESSON,
+    }
 
 
 def test_lesson_domain_has_no_streamlit_or_page_imports() -> None:

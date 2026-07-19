@@ -5,6 +5,7 @@ from streamlit.testing.v1 import AppTest
 
 from physics_playground.accessibility_settings import AccessibilitySettings
 from physics_playground.state_keys import SHARED_STATE_KEYS, simulation_key
+from physics_playground.subjects.mechanics.foundations_lesson import MODELS_MEASUREMENTS_LESSON
 
 LESSON_ID = "projectile-motion-from-components"
 
@@ -47,7 +48,7 @@ def test_recommendation_opens_lesson_without_gating_simulations(monkeypatch, tmp
     assert any(header.value == "Cannonball Launcher — Projectile Motion" for header in app.header)
     assert any(button.label == "Begin lesson" for button in app.button)
     assert app.query_params["simulation"] == ["cannonball"]
-    assert app.query_params["lesson"] == [LESSON_ID]
+    assert app.query_params["lesson"] == [MODELS_MEASUREMENTS_LESSON.id]
     assert any(button.label == "← Back to discovery" for button in app.button)
 
 

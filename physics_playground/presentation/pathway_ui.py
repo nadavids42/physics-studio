@@ -402,6 +402,31 @@ def _render_activity(
         st.toast(f"{activity.mode.value} mode selected below.")
     if complete:
         st.success("Activity complete.")
+    elif activity.evidence_prompt:
+        response_key = feature_key("education", f"{lesson.id}.{activity.id}.evidence")
+        saved = dict(progress.activity_responses).get(activity.id, "")
+        if response_key not in st.session_state:
+            st.session_state[response_key] = saved
+        response = st.text_area(activity.evidence_prompt, key=response_key)
+        if st.button(
+            "Save observation evidence",
+            disabled=not response.strip(),
+            key=feature_key("education", f"{activity.id}.complete"),
+        ):
+            updated = progress.save_activity_response(
+                activity.id,
+                response,
+                required_activity_ids=activities,
+                required_checkpoint_ids=checkpoints,
+                required_section_ids=required_section_ids,
+            )
+            _save_progress(
+                updated,
+                kind=EducationEventKind.ACTIVITY_COMPLETED,
+                activity_id=activity.id,
+            )
+            _record_objective_evidence(lesson, activity.objective_ids, activity.id, "observation")
+            return updated
     elif st.button(
         "Mark activity complete",
         key=feature_key("education", f"{activity.id}.complete"),

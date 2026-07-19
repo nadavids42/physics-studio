@@ -30,6 +30,10 @@ from physics_playground.education.models import (
     WorkedExample,
 )
 from physics_playground.models.simulations import LearningMode
+from physics_playground.subjects.mechanics.foundations_lesson import (
+    FOUNDATION_CONCEPTS,
+    MODELS_MEASUREMENTS_LESSON,
+)
 
 PROJECTILE_CONCEPTS = (
     Concept(
@@ -371,8 +375,15 @@ MECHANICS_SUBJECT = Subject(
     "mechanics",
     "Mechanics",
     "Use forces, motion, energy, and momentum to explain how physical systems change.",
-    PROJECTILE_CONCEPTS,
+    (*FOUNDATION_CONCEPTS, *PROJECTILE_CONCEPTS),
     (
+        Unit(
+            "mechanics-foundations",
+            "Measurement, models, vectors, and graphs",
+            "Establish the evidence and representation habits used throughout mechanics.",
+            tuple(objective.id for objective in MODELS_MEASUREMENTS_LESSON.objectives),
+            (MODELS_MEASUREMENTS_LESSON,),
+        ),
         Unit(
             "motion-in-two-dimensions",
             "Motion in two dimensions",

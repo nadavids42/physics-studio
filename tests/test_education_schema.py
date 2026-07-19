@@ -13,7 +13,7 @@ from physics_playground.education.assessments import (
     GradingStatus,
     submit_response,
 )
-from physics_playground.education.catalog import CURRICULUM
+from physics_playground.education.catalog import ASSESSMENTS, CURRICULUM
 from physics_playground.education.models import (
     CheckpointQuestion,
     Prerequisite,
@@ -126,15 +126,14 @@ def test_prerequisite_mastery_is_derived_from_separate_progress() -> None:
 
 def test_private_answer_definition_is_validated_against_visible_choices() -> None:
     invalid = replace(CANNONBALL_ASSESSMENTS[0], correct_choice_ids=("missing",))
+    definitions = tuple(invalid if item.id == invalid.id else item for item in ASSESSMENTS)
     with pytest.raises(PhysicsValidationError, match="choice"):
         validate_curriculum_manifest(
-            CURRICULUM, simulation_ids=SIMULATION_IDS, assessments=(invalid,)
+            CURRICULUM, simulation_ids=SIMULATION_IDS, assessments=definitions
         )
 
 
 def test_cannonball_content_and_private_assessment_migrate_together() -> None:
-    validate_curriculum_manifest(
-        CURRICULUM, simulation_ids=SIMULATION_IDS, assessments=CANNONBALL_ASSESSMENTS
-    )
+    validate_curriculum_manifest(CURRICULUM, simulation_ids=SIMULATION_IDS, assessments=ASSESSMENTS)
     assert checkpoint().id == CANNONBALL_ASSESSMENTS[0].id
     assert set(checkpoint().objective_ids) == set(CANNONBALL_ASSESSMENTS[0].objective_ids)
