@@ -91,6 +91,10 @@ CHROMIUM_BIN=/path/to/chromium pytest -q \
   tests/test_browser_accessibility.py tests/test_visual_screenshots.py
 ```
 
+A plain `pytest` (no `CHROMIUM_BIN`) reports these three tests skipped with an explicit
+"NO browser coverage" reason under `-ra`, plus a warning line at the end of the run — do not
+mistake that green run for browser coverage.
+
 These complement, but do not replace, the assistive-technology and cross-browser manual checklist
 in `docs/ACCESSIBILITY_VERIFICATION.md`.
 

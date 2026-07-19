@@ -175,10 +175,6 @@ def _distance(left: str, right: str) -> int:
     return (int(left, 16) ^ int(right, 16)).bit_count()
 
 
-def _browser() -> str | None:
-    return os.environ.get("CHROMIUM_BIN")
-
-
 def _render(case, destination: Path, browser: str) -> Fingerprint:
     scene, config, preferences, viewport = case
     configure_application_callbacks(ApplicationCallbacks(player_preferences=lambda: preferences))
@@ -213,10 +209,12 @@ def _render(case, destination: Path, browser: str) -> Fingerprint:
     return _fingerprint(destination)
 
 
+@pytest.mark.skipif(
+    not os.environ.get("CHROMIUM_BIN"),
+    reason="SKIPPED: browser tests require CHROMIUM_BIN; this run has NO browser coverage.",
+)
 def test_representative_browser_renderings(tmp_path) -> None:
-    browser = _browser()
-    if not browser:
-        pytest.skip("Chromium is required for perceptual visual regression checks.")
+    browser = os.environ["CHROMIUM_BIN"]
     expected = json.loads(BASELINES.read_text(encoding="utf-8"))
     actual = {
         name: asdict(_render(case, tmp_path / f"{name}.png", browser))
