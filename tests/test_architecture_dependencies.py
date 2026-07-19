@@ -51,13 +51,6 @@ def test_prohibited_dependencies() -> None:
                 "physics_playground.notebook",
                 "physics_playground.profiles",
             )
-        elif owner == "physics_playground.simulation_plugin" or owner.endswith(".plugin"):
-            forbidden = (
-                "streamlit",
-                "physics_playground.presentation",
-                "physics_playground.registry",
-                "physics_playground.education",
-            )
         elif owner == "physics_playground.registry":
             forbidden = ("physics_playground.education", "physics_playground.presentation")
         elif owner in {

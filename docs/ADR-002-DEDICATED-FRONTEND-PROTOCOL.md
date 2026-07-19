@@ -2,7 +2,8 @@
 
 - Status: Accepted
 - Date: 2026-07-18
-- Supersedes: only the frontend destination implied by ADR-001; its plugin and runtime decisions remain
+- Supersedes: only the frontend destination implied by ADR-001. ADR-001's own plugin/runtime
+  decision was later reversed; all simulations now use the plain vertical-slice page pattern.
 
 ## Context
 

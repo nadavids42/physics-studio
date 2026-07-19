@@ -74,12 +74,10 @@ locally re-created in this audit.
 
 - The import/distribution name remains `physics_playground`; changing it requires a versioned
   compatibility plan.
-- Twenty simulations still use the compatible manifest/page path rather than `SimulationPlugin`.
-  They should migrate only when course work gives each migration a real consumer.
 - `InteractiveMode`/`SimulationMode` and Kid/Expert import shims, legacy session-key migration,
   setup-handoff compatibility, `LocalProfile`/`ProfileStore`, legacy profile tables/imports, and
   frontend protocol v1 remain supported compatibility code with removal conditions documented in
-  ADR-001, ADR-002, architecture, and persistence documentation.
+  ADR-002, architecture, and persistence documentation.
 - MyPy is a strict 18-module ratchet, not repository-wide type coverage. Browser delivery still
   uses Streamlit component documents while the dedicated frontend protocol is introduced one
   simulation at a time.

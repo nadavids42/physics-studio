@@ -1,47 +1,75 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import cast
-
 import streamlit as st
 
 from physics_playground.canvas import embed
 from physics_playground.canvas.gas_container import build_gas_document
-from physics_playground.contracts import JsonValue, MissionEvaluation
+from physics_playground.contracts import ModelAssumption
 from physics_playground.missions import ui as mission_ui
 from physics_playground.presentation.learning_modes import (
     ChangedVariable,
     LearningMode,
+    assumptions_panel,
     changed_variable_banner,
     mode_heading,
+    mode_navigation,
+    run_model_safely,
 )
-from physics_playground.presentation.simulation_runtime import StreamlitSimulationRuntime
+from physics_playground.presentation.notebook_ui import add_trial
+from physics_playground.state_keys import simulation_key
 
 from .charts import render_analysis_charts
 from .missions import evaluate
 from .physics import (
+    GAS_LAWS_MODEL_VERSION,
     GasLawParameters,
     GasLawResult,
     GasLawScenario,
     celsius_to_kelvin,
+    simulate,
 )
-from .plugin import ASSUMPTIONS, GAS_LAWS_PLUGIN, LIMITATIONS, GasLawPluginResult
 
+ID = "gas_laws"
 SEED = 20263301
 
-
-def mission_evidence(
-    result: GasLawPluginResult, context: Mapping[str, JsonValue]
-) -> tuple[MissionEvaluation, ...]:
-    return cast(
-        tuple[MissionEvaluation, ...],
-        evaluate(result.gas, bool(context.get("comparison", False))),
-    )
-
-
-RUNTIME: StreamlitSimulationRuntime[GasLawParameters, GasLawPluginResult] = (
-    StreamlitSimulationRuntime(GAS_LAWS_PLUGIN, mission_hook=mission_evidence)
+ASSUMPTIONS = (
+    ModelAssumption("ideal", "Particles have negligible volume and no intermolecular forces"),
+    ModelAssumption("equilibrium", "Each state is uniform and equilibrated"),
 )
+LIMITATIONS = (
+    "Real gases deviate at high pressure and low temperature.",
+    "Processes jump between equilibrium states rather than model heat-transfer rates.",
+    "No phase changes or chemical reactions.",
+)
+
+
+def state_key(name: str) -> str:
+    canonical = simulation_key(ID, name)
+    if name in st.session_state and canonical not in st.session_state:
+        st.session_state[canonical] = st.session_state.pop(name)
+    return canonical
+
+
+def record(r, obs, label=None, badges=()):
+    add_trial(
+        simulation_id=ID,
+        parameters=r.parameters.to_dict(),
+        prediction=st.session_state.get(state_key("gas_quiz_guess")),
+        result_summary=r.outcome,
+        metrics={
+            "state_a_pressure_pa": r.state_a.pressure_pa,
+            "state_a_volume_m3": r.state_a.volume_m3,
+            "state_a_temperature_k": r.state_a.temperature_k,
+            "state_b_pressure_pa": r.state_b.pressure_pa,
+            "state_b_volume_m3": r.state_b.volume_m3,
+            "state_b_temperature_k": r.state_b.temperature_k,
+        },
+        earned_badges=badges,
+        random_seed=SEED,
+        model_version=GAS_LAWS_MODEL_VERSION,
+        learner_observation=obs,
+        label=label,
+    )
 
 
 def diagram(result: GasLawResult, seed: int) -> None:
@@ -67,18 +95,18 @@ def controls(prefix: str = "gas") -> GasLawParameters:
         st.selectbox(
             "Gas-law scenario",
             [item.value for item in GasLawScenario],
-            key=RUNTIME.key(f"{prefix}_scenario"),
+            key=state_key(f"{prefix}_scenario"),
         )
     )
     columns = st.columns(4)
-    amount = columns[0].slider("Amount (mol)", 0.1, 5.0, 1.0, 0.1, key=RUNTIME.key(f"{prefix}_n"))
+    amount = columns[0].slider("Amount (mol)", 0.1, 5.0, 1.0, 0.1, key=state_key(f"{prefix}_n"))
     pressure_kpa = columns[1].slider(
         "Constant pressure (kPa)",
         20.0,
         500.0,
         101.325,
         0.5,
-        key=RUNTIME.key(f"{prefix}_p"),
+        key=state_key(f"{prefix}_p"),
         disabled=scenario is not GasLawScenario.CHARLES,
     )
     volume_l = columns[2].slider(
@@ -87,7 +115,7 @@ def controls(prefix: str = "gas") -> GasLawParameters:
         100.0,
         24.0,
         1.0,
-        key=RUNTIME.key(f"{prefix}_v"),
+        key=state_key(f"{prefix}_v"),
     )
     temperature_c = columns[3].slider(
         "Initial temperature (°C)",
@@ -95,7 +123,7 @@ def controls(prefix: str = "gas") -> GasLawParameters:
         500.0,
         20.0,
         1.0,
-        key=RUNTIME.key(f"{prefix}_t"),
+        key=state_key(f"{prefix}_t"),
     )
     target_volume_l = st.slider(
         "Target volume for Boyle's law (L)",
@@ -103,7 +131,7 @@ def controls(prefix: str = "gas") -> GasLawParameters:
         100.0,
         12.0,
         1.0,
-        key=RUNTIME.key(f"{prefix}_target_v"),
+        key=state_key(f"{prefix}_target_v"),
         disabled=scenario is not GasLawScenario.BOYLE,
     )
     target_temperature_c = st.slider(
@@ -112,7 +140,7 @@ def controls(prefix: str = "gas") -> GasLawParameters:
         500.0,
         100.0,
         1.0,
-        key=RUNTIME.key(f"{prefix}_target_t"),
+        key=state_key(f"{prefix}_target_t"),
         disabled=scenario not in (GasLawScenario.CHARLES, GasLawScenario.GAY_LUSSAC),
     )
     st.caption(
@@ -143,37 +171,42 @@ def state_table(result: GasLawResult) -> None:
     )
 
 
+def invariant_metric(result: GasLawResult) -> None:
+    difference = result.invariant_b - result.invariant_a
+    st.metric(result.invariant_name + " difference", f"{difference:.3g}")
+
+
 def explore() -> None:
     mode_heading(LearningMode.EXPLORE, "Constrain a gas process")
     parameters = controls()
-    result = RUNTIME.execute(parameters)
+    result = run_model_safely(lambda: simulate(parameters))
     if result is None:
         return
-    state_table(result.gas)
-    RUNTIME.render_result_summary(result, metric_ids=("invariant_difference",), columns=1)
-    RUNTIME.render_accessible_outcome(result)
-    diagram(result.gas, SEED)
-    observation = st.text_input("Optional notebook observation", key=RUNTIME.key("gas_obs"))
+    state_table(result)
+    invariant_metric(result)
+    st.caption("Text outcome: " + result.outcome)
+    diagram(result, SEED)
+    observation = st.text_input("Optional notebook observation", key=state_key("gas_obs"))
     if st.button("🎈 Run gas experiment", type="primary", use_container_width=True):
-        committed = RUNTIME.execute(parameters, commit=True)
+        committed = run_model_safely(lambda: simulate(parameters))
         if committed is not None:
-            badges = RUNTIME.process_missions(committed)
-            RUNTIME.record_trial(
+            badges = mission_ui.process_run(ID, evaluate(committed))
+            record(
                 committed,
-                seed=SEED,
-                observation=observation,
-                prediction=RUNTIME.prediction("gas_quiz_guess"),
-                earned_badges=badges,
+                observation,
+                badges=badges,
             )
-            RUNTIME.rerun()
+            st.rerun()
     mission_ui.mission_checklist("Gas Laws")
 
 
 def compare() -> None:
     mode_heading(LearningMode.COMPARE, "Compression versus heating")
-    run_a = RUNTIME.execute(GasLawParameters(GasLawScenario.BOYLE, target_volume_m3=0.012))
-    run_b = RUNTIME.execute(
-        GasLawParameters(GasLawScenario.GAY_LUSSAC, target_temperature_k=373.15)
+    run_a = run_model_safely(
+        lambda: simulate(GasLawParameters(GasLawScenario.BOYLE, target_volume_m3=0.012))
+    )
+    run_b = run_model_safely(
+        lambda: simulate(GasLawParameters(GasLawScenario.GAY_LUSSAC, target_temperature_k=373.15))
     )
     if run_a is None or run_b is None:
         return
@@ -181,20 +214,18 @@ def compare() -> None:
         ChangedVariable("Process", "Isothermal compression", "Isochoric heating")
     )
     columns = st.columns(2)
-    columns[0].metric("Compressed pressure", f"{run_a.gas.state_b.pressure_pa / 1000:.1f} kPa")
-    columns[1].metric("Heated pressure", f"{run_b.gas.state_b.pressure_pa / 1000:.1f} kPa")
+    columns[0].metric("Compressed pressure", f"{run_a.state_b.pressure_pa / 1000:.1f} kPa")
+    columns[1].metric("Heated pressure", f"{run_b.state_b.pressure_pa / 1000:.1f} kPa")
     if st.button("▶ Run process comparison", use_container_width=True):
-        for label, result, seed in (("Run A", run_a, 20263311), ("Run B", run_b, 20263312)):
-            badges = RUNTIME.process_missions(result, context={"comparison": True})
-            RUNTIME.record_trial(
+        for label, result in (("Run A", run_a), ("Run B", run_b)):
+            badges = mission_ui.process_run(ID, evaluate(result, True))
+            record(
                 result,
-                seed=seed,
-                observation="Different constraints produce different state paths",
-                prediction=RUNTIME.prediction("gas_quiz_guess"),
-                label=label,
-                earned_badges=badges,
+                "Different constraints produce different state paths",
+                label,
+                badges,
             )
-    diagram(run_b.gas, 20263312)
+    diagram(run_b, 20263312)
 
 
 def analyze() -> None:
@@ -222,13 +253,13 @@ def model() -> None:
         "Temperature ratios must use kelvin, never Celsius. The interface converts liters→m³, "
         "kPa→Pa, and °C→K before calculation."
     )
-    RUNTIME.render_assumptions_and_limitations(ASSUMPTIONS, LIMITATIONS)
+    assumptions_panel(ASSUMPTIONS, LIMITATIONS)
 
 
 def render() -> None:
     st.header("🎈 Gas Laws")
     revealed = mission_ui.prediction_quiz(
-        key=RUNTIME.key("gas_quiz"),
+        key=state_key("gas_quiz"),
         question=(
             "At constant temperature, what happens to ideal-gas pressure when volume is cut in half?"
         ),
@@ -239,7 +270,7 @@ def render() -> None:
     )
     if not revealed:
         return
-    mode = RUNTIME.select_mode(key_name="gas_mode")
+    mode = mode_navigation(key=state_key("gas_mode"))
     {
         LearningMode.EXPLORE: explore,
         LearningMode.COMPARE: compare,

@@ -7,10 +7,9 @@ analytical meaning. Presentation code turns immutable results into learning mode
 browser scenes. Streamlit is the current presentation shell; it is replaceable and is not part of
 the physics domain.
 
-All 22 simulations use subject-oriented vertical slices. Gas Laws and Cannonball currently use
-the typed `SimulationPlugin` and shared Streamlit runtime; the other 20 retain validated direct
-page loading. Shared packages provide contracts, rendering infrastructure, persistence, missions,
-and presentation helpers; they do not own simulation-specific pages or physics.
+All 22 simulations use subject-oriented vertical slices with validated direct page loading.
+Shared packages provide contracts, rendering infrastructure, persistence, missions, and
+presentation helpers; they do not own simulation-specific pages or physics.
 
 ## Runtime map
 
@@ -121,9 +120,8 @@ Each slice's `metadata.py` is the metadata source for navigation, cards, mission
 `physics_playground/registry.py` discovers and validates a unique index of those declarations.
 Runtime loading goes through `load_validated_page()`, which requires a manifest, validates it, and
 then lazily imports its page entrypoint. Expansion manifests add implementation contracts and
-reference discovered metadata. For Gas Laws and Cannonball, presentation entrypoints are derived
-from their plugins instead of duplicated. The manifest's pure-physics entrypoint and result name
-remain transitional because expansion validation deliberately checks the `physics.py` boundary.
+reference discovered metadata. The manifest's pure-physics entrypoint and result name remain
+transitional because expansion validation deliberately checks the `physics.py` boundary.
 
 ## Product and package names
 
@@ -134,7 +132,7 @@ rename requires a separately approved compatibility plan, an import shim and rel
 evidence that persisted entrypoint strings have migrated.
 
 Model versions are owned by each slice's pure physics module. Metadata imports that constant;
-plugins and notebook records derive it from metadata. Presentation pages do not declare versions.
+notebook records derive it from metadata. Presentation pages do not declare versions.
 
 ## Discovery and navigation
 
@@ -179,8 +177,8 @@ python -m build
 ```
 
 `tests/test_architecture_dependencies.py` is the reproducible dependency and import-cycle gate. It
-enforces semantic boundaries for physics, plugins, the registry, and education contracts rather
-than arbitrary directory shapes.
+enforces semantic boundaries for physics, the registry, and education contracts rather than
+arbitrary directory shapes.
 
 MyPy currently checks a documented ratchet of typed foundation modules. See
 `docs/DEVELOPMENT.md` for how to expand that boundary.

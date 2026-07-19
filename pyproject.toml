@@ -78,8 +78,6 @@ files = [
     "physics_playground/integrators.py",
     "physics_playground/notebook.py",
     "physics_playground/setup_handoff.py",
-    "physics_playground/simulation_plugin.py",
-    "physics_playground/simulation_plugin_validation.py",
     "physics_playground/units.py",
     "physics_playground/validation.py",
 ]

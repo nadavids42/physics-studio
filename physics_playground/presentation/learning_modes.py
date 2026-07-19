@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
+from typing import TypeVar
 
 import streamlit as st
 
 from physics_playground.contracts import ModelAssumption, SummaryMetric
 from physics_playground.models.simulations import LearningMode
+from physics_playground.validation import PhysicsValidationError
+
+R = TypeVar("R")
+
+EXPECTED_MODEL_ERRORS = (PhysicsValidationError, FloatingPointError, OverflowError, MemoryError)
 
 MODE_HELP = {
     LearningMode.EXPLORE: "Change simple controls, make a prediction, and launch the experiment.",
@@ -41,6 +47,21 @@ def mode_navigation(*, key: str) -> LearningMode:
 
 def mode_heading(mode: LearningMode, title: str) -> None:
     st.subheader(f"{mode.value}: {title}")
+
+
+def run_model_safely(runner: Callable[[], R]) -> R | None:
+    """Run a model call, reporting expected failures in place instead of crashing the page."""
+
+    try:
+        return runner()
+    except EXPECTED_MODEL_ERRORS as error:
+        st.error(
+            "This experiment could not finish safely. Check the inputs and try values within "
+            "the recommended ranges."
+        )
+        with st.expander("Technical details"):
+            st.code(f"{type(error).__name__}: {error}")
+        return None
 
 
 def result_summary(metrics: Iterable[SummaryMetric], *, columns: int = 3) -> None:

@@ -8,7 +8,6 @@ from physics_playground.models.expansion import (
     SubjectArea,
 )
 from physics_playground.registry import SIMULATIONS_BY_ID
-from physics_playground.subjects.mechanics.cannonball.plugin import CANNONBALL_PLUGIN
 
 
 def manifest(simulation_id, parameter, result, physics, page, canvas, assumptions, limitations):
@@ -63,8 +62,8 @@ MECHANICS_MANIFESTS = (
         "ProjectileParameters",
         "ProjectileResult",
         "physics_playground.subjects.mechanics.cannonball.physics.simulate_projectile",
-        CANNONBALL_PLUGIN.presentation.page_entrypoint,
-        CANNONBALL_PLUGIN.presentation.renderer_entrypoint,
+        "physics_playground.subjects.mechanics.cannonball.page.render",
+        "physics_playground.subjects.mechanics.cannonball.scene.build_cannon_canvas",
         ("Point-mass projectile", "Uniform gravity", "Level launch and landing surface"),
         ("Two-dimensional motion", "Quadratic drag uses a fixed atmosphere model"),
     ),

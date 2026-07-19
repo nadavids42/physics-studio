@@ -46,7 +46,7 @@ def test_lesson_activity_selects_runtime_mode(monkeypatch: pytest.MonkeyPatch, t
     assert len(linked) == 1
 
 
-def test_notebook_replay_restores_target_controls_and_committed_setup(
+def test_notebook_replay_restores_target_controls_and_setup(
     monkeypatch: pytest.MonkeyPatch, tmp_path
 ) -> None:
     parameters = ProjectileParameters(32.0, 37.0, EARTH_GRAVITY_M_S2)
@@ -66,10 +66,7 @@ def test_notebook_replay_restores_target_controls_and_committed_setup(
     app.run(timeout=30)
     next(button for button in app.button if button.label == "↩ Reuse setup").click().run(timeout=30)
 
-    committed = app.session_state[simulation_key("cannonball", "committed_parameters")]
     assert not app.exception
-    assert committed.launch_speed_m_s == 32.0
-    assert committed.launch_angle_deg == 37.0
     assert next(item for item in app.slider if item.label == "Launch speed (m/s)").value == 32.0
     assert next(item for item in app.slider if item.label == "Launch angle (degrees)").value == 37
     assert any("Target: 44.4 m" in item.value for item in app.info)
