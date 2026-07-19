@@ -293,7 +293,7 @@ class SimulationActivity:
     mode: LearningMode | None = None
     parameter_preset: dict[str, float | int | str | bool] = field(default_factory=dict)
     observation_prompt: str = ""
-    completion_evidence: str = ""
+    expected_reflection: str = ""
     applicable_depths: frozenset[MathematicalDepth] = ALL_MATHEMATICAL_DEPTHS
     objective_ids: tuple[str, ...] = ()
     evidence_prompt: str = ""

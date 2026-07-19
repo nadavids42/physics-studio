@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from streamlit.testing.v1 import AppTest
 
-from physics_playground.education.assessments import ObjectiveEvidenceRecord
 from physics_playground.education.models import (
     CheckpointQuestion,
     MisconceptionCallout,
@@ -85,7 +84,7 @@ def test_every_activity_and_checkpoint_connects_to_objective_evidence() -> None:
         "m01-guided-observation",
         "m01-read-graph",
     }
-    assert all(item.completion_evidence for item in observation_activities)
+    assert all(item.expected_reflection for item in observation_activities)
 
 
 def test_lesson_meets_curriculum_specification_without_authoring_lesson_two() -> None:
@@ -145,7 +144,7 @@ def test_opening_and_running_do_not_create_mastery_or_evidence(monkeypatch, tmp_
     assert evidence_key not in app.session_state or not app.session_state[evidence_key]
 
 
-def test_guided_observation_records_reasoning_evidence_not_control_use(
+def test_guided_observation_records_a_reflection_not_objective_evidence(
     monkeypatch, tmp_path
 ) -> None:
     app = _lesson_app(monkeypatch, tmp_path)
@@ -164,7 +163,8 @@ def test_guided_observation_records_reasoning_evidence_not_control_use(
     _button_with_key(app, "m01-guided-observation.complete").click().run(timeout=30)
     progress = app.session_state[SHARED_STATE_KEYS.education_progress][LESSON_ID]
     assert "m01-guided-observation" in progress.completed_activity_ids
-    evidence = app.session_state[feature_key("education", "objective_evidence")]
-    assert evidence and all(isinstance(item, ObjectiveEvidenceRecord) for item in evidence)
-    assert {item.objective_id for item in evidence} == {"m01-measurement", "m01-inquiry"}
+    assert dict(progress.activity_responses)["m01-guided-observation"].startswith("At fixed speed")
+    # An ungraded observation is never recorded as objective evidence or mastery.
+    evidence_key = feature_key("education", "objective_evidence")
+    assert evidence_key not in app.session_state or not app.session_state[evidence_key]
     assert not progress.mastered_objective_ids

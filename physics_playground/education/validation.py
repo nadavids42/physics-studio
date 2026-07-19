@@ -126,9 +126,9 @@ def _validate_activity(
         raise PhysicsValidationError("Activities must reference lesson objectives.")
     if not activity.instructions or not all(item.strip() for item in activity.instructions):
         raise PhysicsValidationError("Simulation activities require actionable instructions.")
-    if activity.evidence_prompt and not activity.completion_evidence.strip():
+    if activity.evidence_prompt and not activity.expected_reflection.strip():
         raise PhysicsValidationError(
-            "Activities that collect evidence must describe the expected evidence."
+            "Activities that collect a reflection must describe the expected reflection."
         )
     expected = EXPECTED_MODES.get(activity.phase)
     if expected is not None and activity.mode is not expected:
