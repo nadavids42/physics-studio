@@ -6,16 +6,19 @@
   this ADR alone
 
 Implementation status (2026-07-18): the typed plugin contract and Streamlit runtime are implemented
-for Gas Laws and Cannonball. Parameter-schema, framework-neutral render-spec, assessment, progress,
-and model-migration contracts described below remain target architecture, not current behavior.
+for Gas Laws and Cannonball. Renderer-independent educational content, formative assessment,
+normalized progress/notebook persistence, protocol validation, and versioned local migrations are
+implemented. A fully renderer-neutral simulation parameter schema and render specification, hosted
+backend, and migration of the other 20 simulations remain target architecture.
 
 ## Context
 
 Physics Studio has 22 scientifically tested simulations, all in subject-owned vertical slices and
 all using the shared browser player. The physics boundary is sound, but Streamlit pages repeat
 parameter state, mode dispatch, execution, error handling, notebook recording, missions, and
-progress orchestration. The curriculum model is capable, yet only one complete lesson pathway
-exists. Profiles and notebooks are local, and only Cannonball uses the browser-native chart
+progress orchestration. Five connected Mechanics lessons are implemented through projectile
+motion; the remainder of the 24-lesson roadmap is specification rather than active course content.
+Profiles and notebooks are local, and only Cannonball uses the linked browser-native chart
 contract.
 
 The immediate goal is one excellent Mechanics course without rewriting the simulations or

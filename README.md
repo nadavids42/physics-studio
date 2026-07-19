@@ -15,13 +15,15 @@ to be childish by default.
 - A shared scientific visual system with responsive canvas rendering.
 - Prediction prompts, missions, local profiles, experiment notebooks, and lab-report exports.
 - Reduced-motion, high-contrast, large-text, keyboard, and nonvisual-description support.
-- A typed curriculum model and one complete projectile-motion learning pathway.
+- A typed curriculum model and five connected, evidence-gated Mechanics lessons from models and
+  measurement through projectile motion.
 - A typed plugin and shared Streamlit runtime exercised by Gas Laws and Cannonball; the other 20
   simulations continue through the compatible manifest/page path.
 - A framework-free JavaScript workspace with executable player and scene tests.
 
-Physics Studio is not yet a complete course platform. It does not currently provide accounts,
-teacher dashboards, adaptive assessment, or a broad multi-unit curriculum.
+Physics Studio is not yet a complete Mechanics course or course platform. The implemented lesson
+sequence stops after projectile motion; the remaining roadmap is specification only. The app does
+not currently provide accounts, teacher dashboards, adaptive assessment, or classroom management.
 
 ## Run the application
 
