@@ -73,3 +73,31 @@ def test_schema_migration_from_version_one(tmp_path):
     with sqlite3.connect(path) as db:
         assert db.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
         assert "updated_at" in {row[1] for row in db.execute("PRAGMA table_info(profiles)")}
+
+
+def test_schema_migration_from_version_two_preserves_progress(tmp_path):
+    path = tmp_path / "version-two.db"
+    payload = json.dumps(
+        {
+            "id": "old",
+            "display_name": "Returning Learner",
+            "educational_progress": {
+                "lesson": {"completed_activity_ids": ["activity"], "completed": False}
+            },
+        }
+    )
+    with sqlite3.connect(path) as db:
+        db.execute(
+            "CREATE TABLE profiles (id TEXT PRIMARY KEY, display_name TEXT NOT NULL, "
+            "payload TEXT NOT NULL, updated_at TEXT NOT NULL)"
+        )
+        db.execute(
+            "INSERT INTO profiles VALUES (?,?,?,?)",
+            ("old", "Returning Learner", payload, ""),
+        )
+        db.execute("PRAGMA user_version=2")
+    loaded = ProfileStore(path).load("old")
+    assert loaded.educational_progress["lesson"]["completed_activity_ids"] == ["activity"]
+    assert loaded.assessment_attempts == () and loaded.objective_evidence == ()
+    with sqlite3.connect(path) as db:
+        assert db.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION

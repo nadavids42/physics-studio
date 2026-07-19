@@ -14,7 +14,7 @@ from uuid import uuid4
 from physics_playground.serialization import dumps
 from physics_playground.version import APPLICATION_VERSION
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 
 class PersistenceUnavailable(RuntimeError):
@@ -36,6 +36,8 @@ class LocalProfile:
     profile_schema_version: int = SCHEMA_VERSION
     accessibility_settings: Mapping[str, object] = field(default_factory=dict)
     educational_progress: Mapping[str, Mapping[str, object]] = field(default_factory=dict)
+    assessment_attempts: tuple[Mapping[str, object], ...] = ()
+    objective_evidence: tuple[Mapping[str, object], ...] = ()
 
     def to_dict(self):
         return asdict(self)
@@ -56,6 +58,12 @@ class LocalProfile:
             profile_schema_version=SCHEMA_VERSION,
             accessibility_settings=dict(data.get("accessibility_settings", {})),
             educational_progress=dict(data.get("educational_progress", {})),
+            assessment_attempts=tuple(
+                dict(item) for item in data.get("assessment_attempts", ()) if isinstance(item, dict)
+            ),
+            objective_evidence=tuple(
+                dict(item) for item in data.get("objective_evidence", ()) if isinstance(item, dict)
+            ),
         )
 
 
@@ -98,6 +106,9 @@ class ProfileStore:
                 db.execute("ALTER TABLE profiles ADD COLUMN updated_at TEXT NOT NULL DEFAULT ''")
             db.execute("PRAGMA user_version=2")
             version = 2
+        if version == 2:
+            db.execute("PRAGMA user_version=3")
+            version = 3
         if version != SCHEMA_VERSION:
             raise PersistenceUnavailable(f"No migration path from schema {version}.")
 

@@ -60,9 +60,6 @@ class PathwayProgress:
         )
         return replace(
             updated,
-            mastered_objective_ids=tuple(
-                dict.fromkeys((*self.mastered_objective_ids, *objective_ids))
-            ),
             assessment_attempt_ids=tuple(
                 dict.fromkeys(
                     (*self.assessment_attempt_ids, *((attempt_id,) if attempt_id else ()))

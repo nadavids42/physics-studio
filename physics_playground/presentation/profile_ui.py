@@ -9,6 +9,7 @@ import streamlit as st
 
 from physics_playground.accessibility_settings import AccessibilitySettings
 from physics_playground.application_callbacks import ApplicationEvent
+from physics_playground.education.assessments import AssessmentAttempt, ObjectiveEvidenceRecord
 from physics_playground.education.progress import PathwayProgress
 from physics_playground.missions.service import MissionProgress
 from physics_playground.notebook import ExperimentNotebook
@@ -69,6 +70,12 @@ def load_into_session(profile: LocalProfile):
         lesson_id: PathwayProgress.from_dict(payload, lesson_id=lesson_id)
         for lesson_id, payload in profile.educational_progress.items()
     }
+    st.session_state[feature_key("education", "assessment_attempts")] = [
+        AssessmentAttempt.from_dict(item) for item in profile.assessment_attempts
+    ]
+    st.session_state[feature_key("education", "objective_evidence")] = [
+        ObjectiveEvidenceRecord.from_dict(item) for item in profile.objective_evidence
+    ]
     st.session_state[SHARED_STATE_KEYS.navigation_active] = profile.last_used_simulation
     st.session_state[FAVORITE_KEY] = profile.favorite_simulation
     if profile.last_used_simulation:
@@ -103,6 +110,16 @@ def profile_from_session(existing: LocalProfile) -> LocalProfile:
             for lesson_id, item in pathway_progress.items()
             if isinstance(item, PathwayProgress)
         },
+        assessment_attempts=tuple(
+            item.to_dict()
+            for item in st.session_state.get(feature_key("education", "assessment_attempts"), ())
+            if isinstance(item, AssessmentAttempt)
+        ),
+        objective_evidence=tuple(
+            item.to_dict()
+            for item in st.session_state.get(feature_key("education", "objective_evidence"), ())
+            if isinstance(item, ObjectiveEvidenceRecord)
+        ),
     )
 
 

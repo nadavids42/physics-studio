@@ -353,12 +353,17 @@ CANNONBALL_ASSESSMENTS = (
         lesson_id=CANNONBALL_LESSON.id,
         kind=QuestionKind.MULTIPLE_CHOICE,
         objective_ids=("projectile-range",),
-        correct_answer="angle-60",
         success_feedback=(
             "Complementary angles have equal sin(2theta), so 30° and 60° share a range."
         ),
+        retry_feedback="Revisit the complementary-angle comparison, then try again.",
+        correct_choice_ids=("angle-60",),
         hints=("Compare the value of 2theta for each candidate angle.",),
         remediation_lesson_ids=(),
+        misconception_by_choice=(
+            ("angle-45", "maximum-range-confused-with-complement"),
+            ("angle-75", "angles-must-sum-to-90"),
+        ),
     ),
 )
 

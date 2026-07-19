@@ -11,8 +11,11 @@ import streamlit as st
 from physics_playground.application_callbacks import NotebookChanged, publish
 from physics_playground.education.assessments import (
     AssessmentAttempt,
+    AssessmentResponse,
+    GradingStatus,
     ObjectiveEvidenceRecord,
-    evaluate_response,
+    deterministic_variant_id,
+    submit_response,
 )
 from physics_playground.education.audience import (
     AudienceLevel,
@@ -31,6 +34,7 @@ from physics_playground.education.models import (
     GuidedDerivation,
     Lesson,
     MisconceptionCallout,
+    QuestionKind,
     SimulationActivity,
     WorkedExample,
 )
@@ -194,53 +198,109 @@ def _render_checkpoint(
     required_section_ids: tuple[str, ...],
 ) -> PathwayProgress:
     definition = ASSESSMENTS_BY_ID[question.id]
-    st.markdown(f"#### Checkpoint: {question.prompt}")
+    attempts_key = feature_key("education", "assessment_attempts")
+    attempts = st.session_state.setdefault(attempts_key, [])
+    prior_attempts = tuple(
+        item
+        for item in attempts
+        if isinstance(item, AssessmentAttempt) and item.assessment_id == question.id
+    )
+    variant_id = deterministic_variant_id(
+        definition,
+        learner_id=_learner_id(),
+        attempt_number=len(prior_attempts) + 1,
+    )
+    variant = next((item for item in question.variants if item.id == variant_id), None)
+    prompt = variant.prompt if variant else question.prompt
+    choices = variant.choices if variant else question.choices
+    unit_options = variant.unit_options if variant else question.unit_options
+    st.markdown(f"#### Checkpoint: {prompt}")
+    if prior_attempts:
+        st.caption(
+            f"Attempt history: {len(prior_attempts)} submitted · "
+            f"latest status {prior_attempts[-1].status.value.replace('_', ' ')}"
+        )
     if question.id in progress.completed_checkpoint_ids:
         st.success("Checkpoint complete.")
         st.write(definition.success_feedback)
         return progress
     answer_key = feature_key("education", f"{lesson.id}.{question.id}.answer")
-    answer = st.radio(
-        "Choose an answer",
-        [choice.id for choice in question.choices],
-        format_func={choice.id: choice.text for choice in question.choices}.get,
-        key=answer_key,
-    )
-    if st.button("Check answer", key=feature_key("education", f"{question.id}.submit")):
-        correct = evaluate_response(definition, answer)
-        attempt = AssessmentAttempt(
-            id=uuid4().hex,
-            learner_id=_learner_id(),
-            lesson_id=lesson.id,
-            assessment_id=question.id,
-            response=answer,
-            correct=correct,
-            submitted_at=datetime.now(UTC),
+    response: AssessmentResponse
+    if question.kind is QuestionKind.MULTIPLE_CHOICE:
+        answer = st.radio(
+            "Choose an answer",
+            [choice.id for choice in choices],
+            format_func={choice.id: choice.text for choice in choices}.get,
+            key=answer_key,
         )
-        attempts_key = feature_key("education", "assessment_attempts")
-        attempts = st.session_state.setdefault(attempts_key, [])
-        attempts.append(attempt)
-        if correct:
+        response = AssessmentResponse(selected_choice_ids=(answer,))
+    elif question.kind is QuestionKind.MULTIPLE_SELECT:
+        selected = st.multiselect(
+            "Select all answers that apply",
+            [choice.id for choice in choices],
+            format_func={choice.id: choice.text for choice in choices}.get,
+            key=answer_key,
+        )
+        response = AssessmentResponse(selected_choice_ids=tuple(selected))
+    elif question.kind is QuestionKind.NUMERIC:
+        raw_value = st.text_input("Numeric response", key=answer_key)
+        selected_unit = st.selectbox(
+            "Response unit",
+            unit_options,
+            key=feature_key("education", f"{lesson.id}.{question.id}.unit"),
+        )
+        try:
+            numeric_value = float(raw_value)
+        except ValueError:
+            numeric_value = None
+        response = AssessmentResponse(numeric_value=numeric_value, unit=selected_unit)
+    else:
+        text = st.text_area(
+            "Constructed response for self-review",
+            key=answer_key,
+            help="The system records this response but does not claim to grade its reasoning.",
+        )
+        response = AssessmentResponse(text=text)
+    if st.button("Check answer", key=feature_key("education", f"{question.id}.submit")):
+        result = submit_response(
+            definition,
+            response,
+            learner_id=_learner_id(),
+            attempt_id=uuid4().hex,
+            submitted_at=datetime.now(UTC),
+            prior_attempts=prior_attempts,
+            variant_id=variant_id,
+        )
+        attempts.append(result.attempt)
+        if result.evidence:
+            evidence_key = feature_key("education", "objective_evidence")
+            st.session_state.setdefault(evidence_key, []).extend(result.evidence)
+        if result.attempt.status in {GradingStatus.CORRECT, GradingStatus.SELF_REVIEW}:
             activities, checkpoints = _requirements(lesson, preferences.mathematical_depth)
             updated = progress.complete_checkpoint(
                 question.id,
                 required_activity_ids=activities,
                 required_checkpoint_ids=checkpoints,
                 required_section_ids=required_section_ids,
-                objective_ids=question.objective_ids,
-                attempt_id=attempt.id,
+                attempt_id=result.attempt.id,
             )
             _save_progress(
                 updated,
                 kind=EducationEventKind.CHECKPOINT_ATTEMPTED,
                 checkpoint_id=question.id,
             )
-            _record_objective_evidence(lesson, question.objective_ids, question.id, "assessment")
-            st.success(definition.success_feedback)
+            st.success(result.feedback)
+            for mastery in result.mastery:
+                st.caption(
+                    f"Objective {mastery.objective_id}: assessment status "
+                    f"{mastery.status.value.replace('_', ' ')}"
+                )
             return updated
-        st.error("Not yet. Review the evidence and try again.")
-        if definition.hints:
-            st.info(f"Hint: {definition.hints[min(len(attempts) - 1, len(definition.hints) - 1)]}")
+        st.error(result.feedback)
+        if result.hint:
+            st.info(f"Hint: {result.hint}")
+        if result.attempt.misconception_tags:
+            st.caption("Review focus: " + ", ".join(result.attempt.misconception_tags))
     return progress
 
 

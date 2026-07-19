@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from collections.abc import Iterable
 
-from physics_playground.education.assessments import AssessmentDefinition
+from physics_playground.education.assessments import AssessmentDefinition, convert_unit
 from physics_playground.education.models import (
     ALL_MATHEMATICAL_DEPTHS,
     ActivityPhase,
@@ -94,10 +94,22 @@ def _validate_checkpoint(question: CheckpointQuestion, objective_ids: set[str]) 
     if not question.objective_ids or not set(question.objective_ids) <= objective_ids:
         raise PhysicsValidationError("Checkpoint objectives must reference lesson objectives.")
     if (
-        question.kind is QuestionKind.MULTIPLE_CHOICE
+        question.kind in {QuestionKind.MULTIPLE_CHOICE, QuestionKind.MULTIPLE_SELECT}
         and len(_unique_ids(question.choices, "Answer choice")) < 2
     ):
-        raise PhysicsValidationError("Multiple-choice checkpoints need at least two choices.")
+        raise PhysicsValidationError("Choice checkpoints need at least two choices.")
+    variant_ids = _unique_ids(question.variants, "Question variant")
+    for variant in question.variants:
+        _require_text(variant.prompt, "Question variant prompt")
+        if (
+            question.kind in {QuestionKind.MULTIPLE_CHOICE, QuestionKind.MULTIPLE_SELECT}
+            and len(_unique_ids(variant.choices, "Variant answer choice")) < 2
+        ):
+            raise PhysicsValidationError("Choice variants need at least two choices.")
+        if question.kind is QuestionKind.NUMERIC and not variant.unit_options:
+            raise PhysicsValidationError("Numeric variants require unit options.")
+    if len(variant_ids) != len(question.variants):
+        raise PhysicsValidationError("Question variant IDs must be unique.")
 
 
 def _validate_activity(
@@ -213,23 +225,76 @@ def _validate_assessments(
     if definition_ids != set(checkpoints):
         raise PhysicsValidationError("Assessment definitions must exactly match checkpoints.")
     for definition in definitions:
-        if definition.schema_version != 1 or definition.lesson_id not in lessons_by_id:
+        if definition.schema_version != 2 or definition.lesson_id not in lessons_by_id:
             raise PhysicsValidationError("Assessment definition has an invalid schema or lesson.")
         lesson, question = checkpoints[definition.id]
         if lesson.id != definition.lesson_id or question.kind is not definition.kind:
             raise PhysicsValidationError("Assessment definition does not match checkpoint content.")
         if set(definition.objective_ids) != set(question.objective_ids):
             raise PhysicsValidationError("Assessment objectives must match checkpoint objectives.")
-        if not definition.correct_answer or not definition.success_feedback:
-            raise PhysicsValidationError("Assessment definitions require an answer and feedback.")
-        if definition.kind is QuestionKind.MULTIPLE_CHOICE and definition.correct_answer not in {
-            choice.id for choice in question.choices
-        }:
-            raise PhysicsValidationError("Multiple-choice answer must reference a choice.")
+        if not definition.success_feedback or not definition.retry_feedback:
+            raise PhysicsValidationError("Assessment definitions require feedback.")
+        public_variants = {item.id: item for item in question.variants}
+        private_variants = {item.id: item for item in definition.variants}
+        if set(public_variants) != set(private_variants):
+            raise PhysicsValidationError("Public and private question variants must match.")
+        choice_ids = {choice.id for choice in question.choices}
+        if definition.kind in {QuestionKind.MULTIPLE_CHOICE, QuestionKind.MULTIPLE_SELECT} and (
+            not definition.correct_choice_ids
+            or not set(definition.correct_choice_ids) <= choice_ids
+        ):
+            raise PhysicsValidationError("Choice answers must reference visible choices.")
+        for variant_id, answer in private_variants.items():
+            visible = public_variants[variant_id]
+            visible_choice_ids = {choice.id for choice in visible.choices}
+            if definition.kind in {
+                QuestionKind.MULTIPLE_CHOICE,
+                QuestionKind.MULTIPLE_SELECT,
+            } and (
+                not answer.correct_choice_ids
+                or not set(answer.correct_choice_ids) <= visible_choice_ids
+            ):
+                raise PhysicsValidationError("Variant answers must reference visible choices.")
         if definition.kind is QuestionKind.NUMERIC and (
-            definition.tolerance is None or definition.tolerance < 0 or not definition.unit.strip()
+            (definition.expected_numeric_value is None and not definition.variants)
+            or any(item.expected_numeric_value is None for item in definition.variants)
+            or (
+                definition.expected_numeric_value is not None
+                and not math.isfinite(definition.expected_numeric_value)
+            )
+            or any(
+                item.expected_numeric_value is not None
+                and not math.isfinite(item.expected_numeric_value)
+                for item in definition.variants
+            )
+            or (definition.absolute_tolerance is None and definition.relative_tolerance is None)
+            or (definition.absolute_tolerance or 0) < 0
+            or (definition.relative_tolerance or 0) < 0
+            or not definition.canonical_unit.strip()
+            or not question.unit_options
         ):
             raise PhysicsValidationError("Numeric answers require tolerance and units.")
+        if definition.kind is QuestionKind.NUMERIC:
+            try:
+                for unit in question.unit_options:
+                    convert_unit(1.0, unit, definition.canonical_unit)
+                for variant in question.variants:
+                    for unit in variant.unit_options:
+                        convert_unit(1.0, unit, definition.canonical_unit)
+            except ValueError as error:
+                raise PhysicsValidationError(
+                    "Numeric response units must be supported and dimensionally compatible."
+                ) from error
+        if definition.kind is QuestionKind.SHORT_RESPONSE and (
+            definition.correct_choice_ids or definition.expected_numeric_value is not None
+        ):
+            raise PhysicsValidationError("Short responses must be marked for self-review.")
+        if (
+            definition.mastery_rule.required_correct_attempts <= 0
+            or definition.mastery_rule.within_most_recent_attempts
+            < definition.mastery_rule.required_correct_attempts
+        ):
+            raise PhysicsValidationError("Mastery rules require a valid explicit attempt window.")
         if not set(definition.remediation_lesson_ids) <= set(lessons_by_id):
             raise PhysicsValidationError("Assessment remediation must reference known lessons.")
 

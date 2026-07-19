@@ -42,6 +42,7 @@ class ActivityPhase(StrEnum):
 
 class QuestionKind(StrEnum):
     MULTIPLE_CHOICE = "multiple_choice"
+    MULTIPLE_SELECT = "multiple_select"
     NUMERIC = "numeric"
     SHORT_RESPONSE = "short_response"
 
@@ -166,6 +167,14 @@ class AnswerChoice:
 
 
 @dataclass(frozen=True, slots=True)
+class QuestionVariant:
+    id: str
+    prompt: str
+    choices: tuple[AnswerChoice, ...] = ()
+    unit_options: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class DiagramSpec:
     """Renderer-independent authored diagram reference and nonvisual equivalent."""
 
@@ -206,6 +215,8 @@ class CheckpointQuestion:
     kind: QuestionKind
     objective_ids: tuple[str, ...]
     choices: tuple[AnswerChoice, ...] = ()
+    unit_options: tuple[str, ...] = ()
+    variants: tuple[QuestionVariant, ...] = ()
     applicable_depths: frozenset[MathematicalDepth] = ALL_MATHEMATICAL_DEPTHS
     schema_version: int = 1
 
@@ -219,6 +230,18 @@ class CheckpointQuestion:
             "kind": self.kind.value,
             "objective_ids": list(self.objective_ids),
             "choices": [{"id": choice.id, "text": choice.text} for choice in self.choices],
+            "unit_options": list(self.unit_options),
+            "variants": [
+                {
+                    "id": variant.id,
+                    "prompt": variant.prompt,
+                    "choices": [
+                        {"id": choice.id, "text": choice.text} for choice in variant.choices
+                    ],
+                    "unit_options": list(variant.unit_options),
+                }
+                for variant in self.variants
+            ],
             "applicable_depths": sorted(depth.value for depth in self.applicable_depths),
         }
 
@@ -237,6 +260,21 @@ class CheckpointQuestion:
             choices=tuple(
                 AnswerChoice(str(item["id"]), str(item["text"]))
                 for item in choices
+                if isinstance(item, dict)
+            ),
+            unit_options=tuple(str(item) for item in data.get("unit_options", ())),
+            variants=tuple(
+                QuestionVariant(
+                    id=str(item["id"]),
+                    prompt=str(item["prompt"]),
+                    choices=tuple(
+                        AnswerChoice(str(choice["id"]), str(choice["text"]))
+                        for choice in item.get("choices", ())
+                        if isinstance(choice, dict)
+                    ),
+                    unit_options=tuple(str(unit) for unit in item.get("unit_options", ())),
+                )
+                for item in data.get("variants", ())
                 if isinstance(item, dict)
             ),
             applicable_depths=frozenset(

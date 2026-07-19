@@ -28,16 +28,17 @@ It describes implemented contracts, not adaptive-learning plans or lesson UI.
 
 Learner-visible content contains prompts and answer choices but no scoring answers. Correct answers,
 numeric tolerances, success feedback, hints, and remediation references live in private
-`AssessmentDefinition` objects. Learner responses live in `AssessmentAttempt`; completion and
-mastered-objective IDs live in `PathwayProgress`. These records do not import Streamlit or a
-renderer.
+`AssessmentDefinition` objects. Learner responses live in `AssessmentAttempt`; completion lives in
+`PathwayProgress`; assessment status and objective evidence are derived separately from trusted
+answer rules and attempt history. These records do not import Streamlit or a renderer.
 
 Curriculum, lessons, diagrams, checkpoints, assessment definitions, attempts, and progress now
 carry explicit schema versions at their serialization boundaries. Checkpoint serialization is safe
 for a learner-facing client because it cannot emit a correct answer or private feedback.
 
-Saved pathway progress without a version is treated as schema 1 and migrates to schema 2 with empty
-mastered-objective and attempt-reference collections. Unknown future schemas fail explicitly.
+Saved pathway progress without a version is treated as schema 1 and migrates through schema 3 with
+empty evidence references and resumable-section state. The legacy mastered-objective field remains
+readable but is no longer written. Unknown future schemas fail explicitly.
 
 ## Validation invariants
 
@@ -58,6 +59,6 @@ Validation now enforces:
 
 ## Explicit non-goals
 
-No adaptive sequencing, mastery probability, question randomization, attempt limits, hint unlocking,
+No adaptive sequencing, mastery probability, large question banks, attempt limits, hint unlocking,
 automatic remediation selection, grading service, or renderer behavior was added. Those are not
 required to represent the current Mechanics roadmap and would be speculative.

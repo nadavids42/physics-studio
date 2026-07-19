@@ -9,7 +9,9 @@ import pytest
 from physics_playground.education.assessments import (
     AssessmentAttempt,
     AssessmentDefinition,
-    evaluate_response,
+    AssessmentResponse,
+    GradingStatus,
+    submit_response,
 )
 from physics_playground.education.catalog import CURRICULUM
 from physics_playground.education.models import (
@@ -54,20 +56,24 @@ def test_assessment_definition_and_attempt_round_trip_separately() -> None:
         AssessmentDefinition.from_dict(json.loads(json.dumps(definition.to_dict()))) == definition
     )
 
-    first = AssessmentAttempt(
-        "attempt-1",
-        "learner",
-        CANNONBALL_LESSON.id,
-        definition.id,
-        "angle-45",
-        False,
-        datetime(2026, 7, 18, 12, tzinfo=UTC),
+    first_result = submit_response(
+        definition,
+        AssessmentResponse(selected_choice_ids=("angle-45",)),
+        learner_id="learner",
+        attempt_id="attempt-1",
+        submitted_at=datetime(2026, 7, 18, 12, tzinfo=UTC),
     )
-    second = replace(first, id="attempt-2", response="angle-60", correct=True)
+    first = first_result.attempt
+    second = replace(
+        first,
+        id="attempt-2",
+        response=AssessmentResponse(selected_choice_ids=("angle-60",)),
+        status=GradingStatus.CORRECT,
+    )
     assert AssessmentAttempt.from_dict(json.loads(json.dumps(first.to_dict()))) == first
     assert AssessmentAttempt.from_dict(json.loads(json.dumps(second.to_dict()))) == second
-    assert not evaluate_response(definition, first.response)
-    assert evaluate_response(definition, second.response)
+    assert not first.correct
+    assert second.correct
 
 
 def test_saved_v1_progress_migrates_and_v3_round_trips() -> None:
@@ -100,7 +106,7 @@ def test_successful_attempt_updates_progress_without_embedding_attempt() -> None
         attempt_id="attempt-2",
     )
     assert progress.completed
-    assert progress.mastered_objective_ids == ("projectile-range",)
+    assert progress.mastered_objective_ids == ()
     assert progress.assessment_attempt_ids == ("attempt-2",)
     assert "response" not in progress.to_dict()
 
@@ -119,7 +125,7 @@ def test_prerequisite_mastery_is_derived_from_separate_progress() -> None:
 
 
 def test_private_answer_definition_is_validated_against_visible_choices() -> None:
-    invalid = replace(CANNONBALL_ASSESSMENTS[0], correct_answer="missing")
+    invalid = replace(CANNONBALL_ASSESSMENTS[0], correct_choice_ids=("missing",))
     with pytest.raises(PhysicsValidationError, match="choice"):
         validate_curriculum_manifest(
             CURRICULUM, simulation_ids=SIMULATION_IDS, assessments=(invalid,)
